@@ -231,9 +231,16 @@ const Register = () => {
                   </div>
 
                   <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="athlete-terms"
-                      {...athleteForm.register("terms")}
+                    <Controller
+                      name="terms"
+                      control={athleteForm.control}
+                      render={({ field }) => (
+                        <Checkbox
+                          id="athlete-terms"
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                      )}
                     />
                     <Label htmlFor="athlete-terms" className="text-sm">
                       Aceito os <Link to="#" className="text-primary hover:underline">termos de uso</Link> e 
@@ -346,9 +353,16 @@ const Register = () => {
                   </div>
 
                   <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="prof-terms"
-                      {...professionalForm.register("terms")}
+                    <Controller
+                      name="terms"
+                      control={professionalForm.control}
+                      render={({ field }) => (
+                        <Checkbox
+                          id="prof-terms"
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                      )}
                     />
                     <Label htmlFor="prof-terms" className="text-sm">
                       Aceito os <Link to="#" className="text-primary hover:underline">termos de uso</Link> e 
