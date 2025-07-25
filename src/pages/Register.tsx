@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { Activity, Users, ArrowLeft } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
-import { useForm } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 
@@ -169,16 +169,22 @@ const Register = () => {
 
                     <div className="space-y-2">
                       <Label>Modalidade Principal</Label>
-                      <Select onValueChange={(value) => athleteForm.setValue("sport", value)}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Selecione sua modalidade" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {sports.map((sport) => (
-                            <SelectItem key={sport} value={sport}>{sport}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      <Controller
+                        name="sport"
+                        control={athleteForm.control}
+                        render={({ field }) => (
+                          <Select onValueChange={field.onChange} value={field.value}>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Selecione sua modalidade" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {sports.map((sport) => (
+                                <SelectItem key={sport} value={sport}>{sport}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        )}
+                      />
                       {athleteForm.formState.errors.sport && (
                         <p className="text-sm text-destructive">{athleteForm.formState.errors.sport.message}</p>
                       )}
@@ -186,16 +192,22 @@ const Register = () => {
 
                     <div className="space-y-2">
                       <Label>Nível</Label>
-                      <Select onValueChange={(value) => athleteForm.setValue("level", value)}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Selecione seu nível" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {levels.map((level) => (
-                            <SelectItem key={level} value={level}>{level}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      <Controller
+                        name="level"
+                        control={athleteForm.control}
+                        render={({ field }) => (
+                          <Select onValueChange={field.onChange} value={field.value}>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Selecione seu nível" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {levels.map((level) => (
+                                <SelectItem key={level} value={level}>{level}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        )}
+                      />
                       {athleteForm.formState.errors.level && (
                         <p className="text-sm text-destructive">{athleteForm.formState.errors.level.message}</p>
                       )}
@@ -271,16 +283,22 @@ const Register = () => {
 
                     <div className="space-y-2">
                       <Label>Profissão</Label>
-                      <Select onValueChange={(value) => professionalForm.setValue("profession", value)}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Selecione sua profissão" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {professions.map((profession) => (
-                            <SelectItem key={profession} value={profession}>{profession}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      <Controller
+                        name="profession"
+                        control={professionalForm.control}
+                        render={({ field }) => (
+                          <Select onValueChange={field.onChange} value={field.value}>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Selecione sua profissão" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {professions.map((profession) => (
+                                <SelectItem key={profession} value={profession}>{profession}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        )}
+                      />
                       {professionalForm.formState.errors.profession && (
                         <p className="text-sm text-destructive">{professionalForm.formState.errors.profession.message}</p>
                       )}
