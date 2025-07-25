@@ -9,32 +9,51 @@ All colors MUST be HSL.
 @layer base {
   :root {
     --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    --foreground: 215 25% 15%;
 
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card-foreground: 215 25% 15%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover-foreground: 215 25% 15%;
 
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
+    /* Professional sports blue - primary brand color */
+    --primary: 210 95% 45%;
+    --primary-foreground: 0 0% 100%;
+    --primary-glow: 210 85% 55%;
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    /* Performance green for success/health metrics */
+    --secondary: 150 60% 50%;
+    --secondary-foreground: 0 0% 100%;
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    --muted: 210 40% 96%;
+    --muted-foreground: 215 15% 55%;
 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    /* Energy accent - for performance highlights */
+    --accent: 35 95% 55%;
+    --accent-foreground: 0 0% 100%;
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    --border: 215 15% 88%;
+    --input: 215 15% 88%;
+    --ring: 210 95% 45%;
+
+    /* Sport-specific gradients */
+    --gradient-hero: linear-gradient(135deg, hsl(210 95% 45%), hsl(210 85% 55%));
+    --gradient-performance: linear-gradient(90deg, hsl(150 60% 50%), hsl(180 60% 50%));
+    --gradient-energy: linear-gradient(45deg, hsl(35 95% 55%), hsl(25 95% 60%));
+    --gradient-subtle: linear-gradient(180deg, hsl(210 40% 98%), hsl(210 30% 96%));
+
+    /* Professional shadows */
+    --shadow-sport: 0 10px 30px -5px hsl(210 95% 45% / 0.3);
+    --shadow-performance: 0 8px 25px -5px hsl(150 60% 50% / 0.2);
+    --shadow-card: 0 4px 20px -2px hsl(215 25% 15% / 0.1);
+
+    /* Animation variables */
+    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-bounce: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
 
     --radius: 0.5rem;
 
