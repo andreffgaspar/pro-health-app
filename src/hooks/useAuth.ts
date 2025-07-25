@@ -26,16 +26,15 @@ export const useAuth = () => {
         setSession(session);
         setUser(session?.user ?? null);
         
-        // Fetch profile when user logs in
+        // Fetch profile when user logs in, or set loading to false if no user
         if (session?.user) {
           setTimeout(() => {
             fetchProfile(session.user.id);
           }, 0);
         } else {
           setProfile(null);
+          setLoading(false);
         }
-        
-        setLoading(false);
       }
     );
 
@@ -46,8 +45,9 @@ export const useAuth = () => {
       
       if (session?.user) {
         fetchProfile(session.user.id);
+      } else {
+        setLoading(false);
       }
-      setLoading(false);
     });
 
     return () => subscription.unsubscribe();
@@ -63,12 +63,15 @@ export const useAuth = () => {
 
       if (error) {
         console.error('Error fetching profile:', error);
+        setLoading(false);
         return;
       }
 
       setProfile(data as Profile);
+      setLoading(false);
     } catch (error) {
       console.error('Error fetching profile:', error);
+      setLoading(false);
     }
   };
 
