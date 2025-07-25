@@ -37,6 +37,18 @@ const Login = () => {
     }
   };
 
+  const handleDemoLogin = (userType: "athlete" | "professional") => {
+    // Demo login - bypass form validation
+    localStorage.setItem("userType", userType);
+    localStorage.setItem("userName", userType === "athlete" ? "Demo Atleta" : "Demo Profissional");
+    
+    if (userType === "athlete") {
+      navigate("/athlete-dashboard");
+    } else {
+      navigate("/professional-dashboard");
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-subtle flex items-center justify-center p-6">
       <div className="w-full max-w-md">
@@ -128,6 +140,33 @@ const Login = () => {
               >
                 Entrar
               </Button>
+
+              {/* Demo Buttons */}
+              <div className="space-y-3 pt-4 border-t">
+                <p className="text-sm text-muted-foreground text-center">
+                  Acesso rápido para demonstração:
+                </p>
+                <div className="space-y-2">
+                  <Button 
+                    type="button"
+                    variant="outline" 
+                    className="w-full" 
+                    onClick={() => handleDemoLogin("athlete")}
+                  >
+                    <Activity className="w-4 h-4 mr-2" />
+                    Demo Atleta
+                  </Button>
+                  <Button 
+                    type="button"
+                    variant="outline" 
+                    className="w-full" 
+                    onClick={() => handleDemoLogin("professional")}
+                  >
+                    <Users className="w-4 h-4 mr-2" />
+                    Demo Profissional
+                  </Button>
+                </div>
+              </div>
             </form>
           </CardContent>
         </Card>
