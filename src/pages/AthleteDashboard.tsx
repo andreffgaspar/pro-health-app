@@ -19,6 +19,7 @@ import {
   Zap
 } from "lucide-react";
 import DataInputModal from "@/components/DataInputModal";
+import CommunicationCenter from "@/components/CommunicationCenter";
 import { Link, useNavigate } from "react-router-dom";
 import { LineChart, Line, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from "recharts";
 import { useAuth } from "@/hooks/useAuth";
@@ -334,6 +335,22 @@ const AthleterDashboard = () => {
                 </ResponsiveContainer>
               </TabsContent>
             </Tabs>
+          </CardContent>
+        </Card>
+
+        {/* Communication Center */}
+        <Card className="mt-8">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Heart className="w-5 h-5 text-primary" />
+              Centro de Comunicação com Profissionais
+            </CardTitle>
+            <CardDescription>
+              Converse diretamente com nutricionistas, fisioterapeutas, médicos e outros profissionais
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <CommunicationCenter />
           </CardContent>
         </Card>
 

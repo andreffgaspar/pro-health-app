@@ -8,16 +8,17 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 import { 
   Plus, 
   Moon, 
   Utensils, 
   Activity, 
   Heart, 
-  Droplets,
-  Clock,
-  Target,
-  Save
+  Save,
+  Stethoscope,
+  UserMinus
 } from "lucide-react";
 
 interface DataInputModalProps {
@@ -27,44 +28,126 @@ interface DataInputModalProps {
 const DataInputModal = ({ trigger }: DataInputModalProps) => {
   const [open, setOpen] = useState(false);
   const { toast } = useToast();
+  const { user } = useAuth();
   
-  // State for form data
+  // Enhanced state for form data
   const [sleepData, setSleepData] = useState({
     hours: "",
     quality: "",
     bedTime: "",
-    wakeTime: ""
+    wakeTime: "",
+    interruptions: "",
+    notes: ""
   });
 
   const [nutritionData, setNutritionData] = useState({
     calories: "",
+    protein: "",
+    carbs: "",
+    fats: "",
+    fiber: "",
     water: "",
     meals: "",
-    supplements: ""
+    supplements: "",
+    allergies: "",
+    dietaryRestrictions: "",
+    notes: ""
   });
 
   const [trainingData, setTrainingData] = useState({
+    type: "",
     duration: "",
     intensity: "",
-    type: "",
-    rpe: "",
+    exercises: "",
+    sets: "",
+    reps: "",
+    weight: "",
+    calories: "",
+    heartRateAvg: "",
+    heartRateMax: "",
+    perceivedExertion: "",
+    location: "",
+    equipment: "",
+    weather: "",
+    injuries: "",
+    notes: ""
+  });
+
+  const [physiotherapyData, setPhysiotherapyData] = useState({
+    therapistName: "",
+    sessionType: "",
+    duration: "",
+    exercises: "",
+    painLevel: "",
+    mobility: "",
+    strength: "",
+    recommendations: "",
+    nextSession: "",
+    notes: ""
+  });
+
+  const [medicalData, setMedicalData] = useState({
+    doctorName: "",
+    appointmentType: "",
+    symptoms: "",
+    diagnosis: "",
+    medications: "",
+    dosage: "",
+    sideEffects: "",
+    recommendations: "",
+    followUp: "",
+    labResults: "",
     notes: ""
   });
 
   const [vitalData, setVitalData] = useState({
-    restingHR: "",
+    heartRate: "",
+    bloodPressure: "",
     weight: "",
     bodyFat: "",
-    mood: "",
-    energy: ""
+    muscleMass: "",
+    temperature: "",
+    oxygenSaturation: "",
+    glucose: "",
+    notes: ""
   });
 
-  const handleSaveData = (dataType: string) => {
-    // Simulate data saving
-    toast({
-      title: "Dados salvos com sucesso!",
-      description: `Seus dados de ${dataType} foram registrados.`,
-    });
+  const handleSaveData = async (dataType: string, data: any) => {
+    if (!user) return;
+
+    try {
+      const { error } = await supabase
+        .from('athlete_data')
+        .insert([{
+          athlete_id: user.id,
+          data_type: dataType,
+          data: data,
+          recorded_at: new Date().toISOString()
+        }]);
+
+      if (error) throw error;
+
+      toast({
+        title: "Dados salvos com sucesso!",
+        description: `Seus dados de ${dataType} foram registrados.`,
+      });
+
+      // Reset form data based on type
+      if (dataType === 'sleep') setSleepData({ hours: "", quality: "", bedTime: "", wakeTime: "", interruptions: "", notes: "" });
+      else if (dataType === 'nutrition') setNutritionData({ calories: "", protein: "", carbs: "", fats: "", fiber: "", water: "", meals: "", supplements: "", allergies: "", dietaryRestrictions: "", notes: "" });
+      else if (dataType === 'training') setTrainingData({ type: "", duration: "", intensity: "", exercises: "", sets: "", reps: "", weight: "", calories: "", heartRateAvg: "", heartRateMax: "", perceivedExertion: "", location: "", equipment: "", weather: "", injuries: "", notes: "" });
+      else if (dataType === 'physiotherapy') setPhysiotherapyData({ therapistName: "", sessionType: "", duration: "", exercises: "", painLevel: "", mobility: "", strength: "", recommendations: "", nextSession: "", notes: "" });
+      else if (dataType === 'medical') setMedicalData({ doctorName: "", appointmentType: "", symptoms: "", diagnosis: "", medications: "", dosage: "", sideEffects: "", recommendations: "", followUp: "", labResults: "", notes: "" });
+      else if (dataType === 'vitals') setVitalData({ heartRate: "", bloodPressure: "", weight: "", bodyFat: "", muscleMass: "", temperature: "", oxygenSaturation: "", glucose: "", notes: "" });
+
+    } catch (error) {
+      console.error('Error saving data:', error);
+      toast({
+        title: "Erro ao salvar",
+        description: "Não foi possível salvar os dados. Tente novamente.",
+        variant: "destructive"
+      });
+    }
   };
 
   const defaultTrigger = (
@@ -79,34 +162,42 @@ const DataInputModal = ({ trigger }: DataInputModalProps) => {
       <DialogTrigger asChild>
         {trigger || defaultTrigger}
       </DialogTrigger>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Target className="w-5 h-5 text-primary" />
-            Registrar Dados de Performance
+            <Activity className="w-5 h-5 text-primary" />
+            Registrar Dados de Performance e Saúde
           </DialogTitle>
           <DialogDescription>
-            Adicione suas métricas diárias para acompanhar sua evolução
+            Adicione suas métricas detalhadas para acompanhar sua evolução completa
           </DialogDescription>
         </DialogHeader>
 
         <Tabs defaultValue="sleep" className="w-full">
-          <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="sleep" className="gap-2">
-              <Moon className="w-4 h-4" />
+          <TabsList className="grid w-full grid-cols-6">
+            <TabsTrigger value="sleep" className="gap-1 text-xs">
+              <Moon className="w-3 h-3" />
               Sono
             </TabsTrigger>
-            <TabsTrigger value="nutrition" className="gap-2">
-              <Utensils className="w-4 h-4" />
+            <TabsTrigger value="nutrition" className="gap-1 text-xs">
+              <Utensils className="w-3 h-3" />
               Nutrição
             </TabsTrigger>
-            <TabsTrigger value="training" className="gap-2">
-              <Activity className="w-4 h-4" />
+            <TabsTrigger value="training" className="gap-1 text-xs">
+              <Activity className="w-3 h-3" />
               Treino
             </TabsTrigger>
-            <TabsTrigger value="vitals" className="gap-2">
-              <Heart className="w-4 h-4" />
-              Dados Vitais
+            <TabsTrigger value="physiotherapy" className="gap-1 text-xs">
+              <UserMinus className="w-3 h-3" />
+              Fisioterapia
+            </TabsTrigger>
+            <TabsTrigger value="medical" className="gap-1 text-xs">
+              <Stethoscope className="w-3 h-3" />
+              Médico
+            </TabsTrigger>
+            <TabsTrigger value="vitals" className="gap-1 text-xs">
+              <Heart className="w-3 h-3" />
+              Vitais
             </TabsTrigger>
           </TabsList>
 
@@ -119,19 +210,17 @@ const DataInputModal = ({ trigger }: DataInputModalProps) => {
                   Dados do Sono
                 </CardTitle>
                 <CardDescription>
-                  Registre informações sobre sua qualidade de sono
+                  Registre informações detalhadas sobre sua qualidade de sono
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="sleep-hours">Horas de Sono</Label>
                     <Input
                       id="sleep-hours"
                       type="number"
                       step="0.5"
-                      min="0"
-                      max="12"
                       placeholder="8.5"
                       value={sleepData.hours}
                       onChange={(e) => setSleepData({...sleepData, hours: e.target.value})}
@@ -155,6 +244,17 @@ const DataInputModal = ({ trigger }: DataInputModalProps) => {
                   </div>
 
                   <div className="space-y-2">
+                    <Label htmlFor="interruptions">Interrupções</Label>
+                    <Input
+                      id="interruptions"
+                      type="number"
+                      placeholder="2"
+                      value={sleepData.interruptions}
+                      onChange={(e) => setSleepData({...sleepData, interruptions: e.target.value})}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
                     <Label htmlFor="bed-time">Hora de Dormir</Label>
                     <Input
                       id="bed-time"
@@ -174,8 +274,18 @@ const DataInputModal = ({ trigger }: DataInputModalProps) => {
                     />
                   </div>
                 </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="sleep-notes">Observações sobre o Sono</Label>
+                  <Textarea
+                    id="sleep-notes"
+                    placeholder="Descreva como foi seu sono, fatores que influenciaram..."
+                    value={sleepData.notes}
+                    onChange={(e) => setSleepData({...sleepData, notes: e.target.value})}
+                  />
+                </div>
                 
-                <Button onClick={() => handleSaveData("sono")} className="w-full">
+                <Button onClick={() => handleSaveData("sleep", sleepData)} className="w-full">
                   <Save className="w-4 h-4 mr-2" />
                   Salvar Dados do Sono
                 </Button>
@@ -192,19 +302,63 @@ const DataInputModal = ({ trigger }: DataInputModalProps) => {
                   Dados Nutricionais
                 </CardTitle>
                 <CardDescription>
-                  Registre sua alimentação e hidratação
+                  Registre informações detalhadas sobre alimentação e suplementação
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="calories">Calorias Consumidas</Label>
+                    <Label htmlFor="calories">Calorias (kcal)</Label>
                     <Input
                       id="calories"
                       type="number"
                       placeholder="2250"
                       value={nutritionData.calories}
                       onChange={(e) => setNutritionData({...nutritionData, calories: e.target.value})}
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="protein">Proteínas (g)</Label>
+                    <Input
+                      id="protein"
+                      type="number"
+                      placeholder="150"
+                      value={nutritionData.protein}
+                      onChange={(e) => setNutritionData({...nutritionData, protein: e.target.value})}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="carbs">Carboidratos (g)</Label>
+                    <Input
+                      id="carbs"
+                      type="number"
+                      placeholder="300"
+                      value={nutritionData.carbs}
+                      onChange={(e) => setNutritionData({...nutritionData, carbs: e.target.value})}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="fats">Gorduras (g)</Label>
+                    <Input
+                      id="fats"
+                      type="number"
+                      placeholder="80"
+                      value={nutritionData.fats}
+                      onChange={(e) => setNutritionData({...nutritionData, fats: e.target.value})}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="fiber">Fibras (g)</Label>
+                    <Input
+                      id="fiber"
+                      type="number"
+                      placeholder="25"
+                      value={nutritionData.fiber}
+                      onChange={(e) => setNutritionData({...nutritionData, fiber: e.target.value})}
                     />
                   </div>
                   
@@ -221,27 +375,59 @@ const DataInputModal = ({ trigger }: DataInputModalProps) => {
                   </div>
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="meals">Refeições</Label>
-                  <Textarea
-                    id="meals"
-                    placeholder="Descreva suas principais refeições..."
-                    value={nutritionData.meals}
-                    onChange={(e) => setNutritionData({...nutritionData, meals: e.target.value})}
-                  />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="meals">Refeições Principais</Label>
+                    <Textarea
+                      id="meals"
+                      placeholder="Café da manhã: aveia com frutas&#10;Almoço: arroz, feijão, frango..."
+                      value={nutritionData.meals}
+                      onChange={(e) => setNutritionData({...nutritionData, meals: e.target.value})}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="supplements">Suplementos</Label>
+                    <Textarea
+                      id="supplements"
+                      placeholder="Whey protein 30g, Creatina 5g, Vitamina D..."
+                      value={nutritionData.supplements}
+                      onChange={(e) => setNutritionData({...nutritionData, supplements: e.target.value})}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="allergies">Alergias Alimentares</Label>
+                    <Input
+                      id="allergies"
+                      placeholder="Lactose, amendoim..."
+                      value={nutritionData.allergies}
+                      onChange={(e) => setNutritionData({...nutritionData, allergies: e.target.value})}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="restrictions">Restrições Dietéticas</Label>
+                    <Input
+                      id="restrictions"
+                      placeholder="Vegetariano, sem glúten..."
+                      value={nutritionData.dietaryRestrictions}
+                      onChange={(e) => setNutritionData({...nutritionData, dietaryRestrictions: e.target.value})}
+                    />
+                  </div>
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="supplements">Suplementos</Label>
-                  <Input
-                    id="supplements"
-                    placeholder="Whey, Creatina, Vitaminas..."
-                    value={nutritionData.supplements}
-                    onChange={(e) => setNutritionData({...nutritionData, supplements: e.target.value})}
+                  <Label htmlFor="nutrition-notes">Observações Nutricionais</Label>
+                  <Textarea
+                    id="nutrition-notes"
+                    placeholder="Como se sentiu após as refeições, digestão, energia..."
+                    value={nutritionData.notes}
+                    onChange={(e) => setNutritionData({...nutritionData, notes: e.target.value})}
                   />
                 </div>
                 
-                <Button onClick={() => handleSaveData("nutrição")} className="w-full">
+                <Button onClick={() => handleSaveData("nutrition", nutritionData)} className="w-full">
                   <Save className="w-4 h-4 mr-2" />
                   Salvar Dados Nutricionais
                 </Button>
@@ -258,11 +444,29 @@ const DataInputModal = ({ trigger }: DataInputModalProps) => {
                   Dados do Treino
                 </CardTitle>
                 <CardDescription>
-                  Registre informações sobre sua sessão de treino
+                  Registre informações detalhadas sobre sua sessão de treino
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="training-type">Tipo de Treino</Label>
+                    <Select value={trainingData.type} onValueChange={(value) => setTrainingData({...trainingData, type: value})}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione o tipo" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="cardio">Cardio</SelectItem>
+                        <SelectItem value="forca">Força/Musculação</SelectItem>
+                        <SelectItem value="hiit">HIIT</SelectItem>
+                        <SelectItem value="funcional">Funcional</SelectItem>
+                        <SelectItem value="esporte">Esporte Específico</SelectItem>
+                        <SelectItem value="flexibilidade">Flexibilidade/Yoga</SelectItem>
+                        <SelectItem value="tecnico">Técnico</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
                   <div className="space-y-2">
                     <Label htmlFor="duration">Duração (minutos)</Label>
                     <Input
@@ -278,32 +482,87 @@ const DataInputModal = ({ trigger }: DataInputModalProps) => {
                     <Label>Intensidade</Label>
                     <Select value={trainingData.intensity} onValueChange={(value) => setTrainingData({...trainingData, intensity: value})}>
                       <SelectTrigger>
-                        <SelectValue placeholder="Selecione a intensidade" />
+                        <SelectValue placeholder="Intensidade" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="baixa">Baixa</SelectItem>
-                        <SelectItem value="moderada">Moderada</SelectItem>
-                        <SelectItem value="alta">Alta</SelectItem>
-                        <SelectItem value="maxima">Máxima</SelectItem>
+                        <SelectItem value="baixa">Baixa (50-60%)</SelectItem>
+                        <SelectItem value="moderada">Moderada (60-70%)</SelectItem>
+                        <SelectItem value="alta">Alta (70-85%)</SelectItem>
+                        <SelectItem value="maxima">Máxima (85%+)</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="type">Tipo de Treino</Label>
+                    <Label htmlFor="sets">Séries</Label>
                     <Input
-                      id="type"
-                      placeholder="Cardio, Força, Técnico..."
-                      value={trainingData.type}
-                      onChange={(e) => setTrainingData({...trainingData, type: e.target.value})}
+                      id="sets"
+                      type="number"
+                      placeholder="4"
+                      value={trainingData.sets}
+                      onChange={(e) => setTrainingData({...trainingData, sets: e.target.value})}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="reps">Repetições</Label>
+                    <Input
+                      id="reps"
+                      placeholder="8-12"
+                      value={trainingData.reps}
+                      onChange={(e) => setTrainingData({...trainingData, reps: e.target.value})}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="training-weight">Peso Total (kg)</Label>
+                    <Input
+                      id="training-weight"
+                      type="number"
+                      placeholder="1200"
+                      value={trainingData.weight}
+                      onChange={(e) => setTrainingData({...trainingData, weight: e.target.value})}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="training-calories">Calorias Queimadas</Label>
+                    <Input
+                      id="training-calories"
+                      type="number"
+                      placeholder="450"
+                      value={trainingData.calories}
+                      onChange={(e) => setTrainingData({...trainingData, calories: e.target.value})}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="hr-avg">FC Média (bpm)</Label>
+                    <Input
+                      id="hr-avg"
+                      type="number"
+                      placeholder="145"
+                      value={trainingData.heartRateAvg}
+                      onChange={(e) => setTrainingData({...trainingData, heartRateAvg: e.target.value})}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="hr-max">FC Máxima (bpm)</Label>
+                    <Input
+                      id="hr-max"
+                      type="number"
+                      placeholder="175"
+                      value={trainingData.heartRateMax}
+                      onChange={(e) => setTrainingData({...trainingData, heartRateMax: e.target.value})}
                     />
                   </div>
 
                   <div className="space-y-2">
                     <Label>RPE (1-10)</Label>
-                    <Select value={trainingData.rpe} onValueChange={(value) => setTrainingData({...trainingData, rpe: value})}>
+                    <Select value={trainingData.perceivedExertion} onValueChange={(value) => setTrainingData({...trainingData, perceivedExertion: value})}>
                       <SelectTrigger>
-                        <SelectValue placeholder="Percepção de esforço" />
+                        <SelectValue placeholder="Esforço percebido" />
                       </SelectTrigger>
                       <SelectContent>
                         {Array.from({length: 10}, (_, i) => (
@@ -317,21 +576,369 @@ const DataInputModal = ({ trigger }: DataInputModalProps) => {
                       </SelectContent>
                     </Select>
                   </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="location">Local</Label>
+                    <Input
+                      id="location"
+                      placeholder="Academia, casa, parque..."
+                      value={trainingData.location}
+                      onChange={(e) => setTrainingData({...trainingData, location: e.target.value})}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="weather">Clima</Label>
+                    <Input
+                      id="weather"
+                      placeholder="Ensolarado, 25°C..."
+                      value={trainingData.weather}
+                      onChange={(e) => setTrainingData({...trainingData, weather: e.target.value})}
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="exercises">Exercícios Realizados</Label>
+                    <Textarea
+                      id="exercises"
+                      placeholder="Agachamento 4x8, Supino 3x10, Corrida 30min..."
+                      value={trainingData.exercises}
+                      onChange={(e) => setTrainingData({...trainingData, exercises: e.target.value})}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="equipment">Equipamentos Utilizados</Label>
+                    <Textarea
+                      id="equipment"
+                      placeholder="Halteres, barras, esteira, TRX..."
+                      value={trainingData.equipment}
+                      onChange={(e) => setTrainingData({...trainingData, equipment: e.target.value})}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="injuries">Lesões/Limitações</Label>
+                    <Textarea
+                      id="injuries"
+                      placeholder="Dor no joelho direito, cuidado com ombro..."
+                      value={trainingData.injuries}
+                      onChange={(e) => setTrainingData({...trainingData, injuries: e.target.value})}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="training-notes">Observações do Treino</Label>
+                    <Textarea
+                      id="training-notes"
+                      placeholder="Como se sentiu, evolução, pontos de atenção..."
+                      value={trainingData.notes}
+                      onChange={(e) => setTrainingData({...trainingData, notes: e.target.value})}
+                    />
+                  </div>
+                </div>
+                
+                <Button onClick={() => handleSaveData("training", trainingData)} className="w-full">
+                  <Save className="w-4 h-4 mr-2" />
+                  Salvar Dados do Treino
+                </Button>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Physiotherapy Tab */}
+          <TabsContent value="physiotherapy">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <UserMinus className="w-5 h-5 text-purple-500" />
+                  Dados de Fisioterapia
+                </CardTitle>
+                <CardDescription>
+                  Registre informações sobre sessões de fisioterapia e reabilitação
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="therapist">Nome do Fisioterapeuta</Label>
+                    <Input
+                      id="therapist"
+                      placeholder="Dr. João Silva"
+                      value={physiotherapyData.therapistName}
+                      onChange={(e) => setPhysiotherapyData({...physiotherapyData, therapistName: e.target.value})}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Tipo de Sessão</Label>
+                    <Select value={physiotherapyData.sessionType} onValueChange={(value) => setPhysiotherapyData({...physiotherapyData, sessionType: value})}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Tipo de sessão" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="avaliacao">Avaliação</SelectItem>
+                        <SelectItem value="tratamento">Tratamento</SelectItem>
+                        <SelectItem value="reabilitacao">Reabilitação</SelectItem>
+                        <SelectItem value="preventivo">Preventivo</SelectItem>
+                        <SelectItem value="massagem">Massagem Terapêutica</SelectItem>
+                        <SelectItem value="alongamento">Alongamento</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="physio-duration">Duração (minutos)</Label>
+                    <Input
+                      id="physio-duration"
+                      type="number"
+                      placeholder="60"
+                      value={physiotherapyData.duration}
+                      onChange={(e) => setPhysiotherapyData({...physiotherapyData, duration: e.target.value})}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Nível de Dor (0-10)</Label>
+                    <Select value={physiotherapyData.painLevel} onValueChange={(value) => setPhysiotherapyData({...physiotherapyData, painLevel: value})}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Intensidade da dor" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {Array.from({length: 11}, (_, i) => (
+                          <SelectItem key={i} value={String(i)}>{i} - {
+                            i === 0 ? "Sem dor" :
+                            i <= 3 ? "Leve" :
+                            i <= 6 ? "Moderada" :
+                            i <= 8 ? "Intensa" : "Insuportável"
+                          }</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Mobilidade</Label>
+                    <Select value={physiotherapyData.mobility} onValueChange={(value) => setPhysiotherapyData({...physiotherapyData, mobility: value})}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Avalie a mobilidade" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="limitada">Limitada</SelectItem>
+                        <SelectItem value="reduzida">Reduzida</SelectItem>
+                        <SelectItem value="normal">Normal</SelectItem>
+                        <SelectItem value="boa">Boa</SelectItem>
+                        <SelectItem value="excelente">Excelente</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Força Muscular</Label>
+                    <Select value={physiotherapyData.strength} onValueChange={(value) => setPhysiotherapyData({...physiotherapyData, strength: value})}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Avalie a força" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="muito-fraca">Muito Fraca</SelectItem>
+                        <SelectItem value="fraca">Fraca</SelectItem>
+                        <SelectItem value="normal">Normal</SelectItem>
+                        <SelectItem value="boa">Boa</SelectItem>
+                        <SelectItem value="muito-boa">Muito Boa</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="next-session">Próxima Sessão</Label>
+                    <Input
+                      id="next-session"
+                      type="date"
+                      value={physiotherapyData.nextSession}
+                      onChange={(e) => setPhysiotherapyData({...physiotherapyData, nextSession: e.target.value})}
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="physio-exercises">Exercícios Realizados</Label>
+                    <Textarea
+                      id="physio-exercises"
+                      placeholder="Fortalecimento de quadríceps, alongamento de isquiotibiais..."
+                      value={physiotherapyData.exercises}
+                      onChange={(e) => setPhysiotherapyData({...physiotherapyData, exercises: e.target.value})}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="recommendations">Recomendações</Label>
+                    <Textarea
+                      id="recommendations"
+                      placeholder="Gelo 3x ao dia, evitar corrida por 1 semana..."
+                      value={physiotherapyData.recommendations}
+                      onChange={(e) => setPhysiotherapyData({...physiotherapyData, recommendations: e.target.value})}
+                    />
+                  </div>
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="notes">Observações</Label>
+                  <Label htmlFor="physio-notes">Observações da Sessão</Label>
                   <Textarea
-                    id="notes"
-                    placeholder="Como se sentiu durante o treino, lesões, pontos de atenção..."
-                    value={trainingData.notes}
-                    onChange={(e) => setTrainingData({...trainingData, notes: e.target.value})}
+                    id="physio-notes"
+                    placeholder="Evolução do tratamento, feedback do paciente..."
+                    value={physiotherapyData.notes}
+                    onChange={(e) => setPhysiotherapyData({...physiotherapyData, notes: e.target.value})}
                   />
                 </div>
                 
-                <Button onClick={() => handleSaveData("treino")} className="w-full">
+                <Button onClick={() => handleSaveData("physiotherapy", physiotherapyData)} className="w-full">
                   <Save className="w-4 h-4 mr-2" />
-                  Salvar Dados do Treino
+                  Salvar Dados de Fisioterapia
+                </Button>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Medical Tab */}
+          <TabsContent value="medical">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Stethoscope className="w-5 h-5 text-red-600" />
+                  Dados Médicos
+                </CardTitle>
+                <CardDescription>
+                  Registre informações sobre consultas médicas e exames
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="doctor">Nome do Médico</Label>
+                    <Input
+                      id="doctor"
+                      placeholder="Dr. Maria Santos"
+                      value={medicalData.doctorName}
+                      onChange={(e) => setMedicalData({...medicalData, doctorName: e.target.value})}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Tipo de Consulta</Label>
+                    <Select value={medicalData.appointmentType} onValueChange={(value) => setMedicalData({...medicalData, appointmentType: value})}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Tipo de consulta" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="rotina">Check-up de Rotina</SelectItem>
+                        <SelectItem value="emergencia">Emergência</SelectItem>
+                        <SelectItem value="especialista">Especialista</SelectItem>
+                        <SelectItem value="acompanhamento">Acompanhamento</SelectItem>
+                        <SelectItem value="preventiva">Consulta Preventiva</SelectItem>
+                        <SelectItem value="exames">Resultado de Exames</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="follow-up">Data do Retorno</Label>
+                    <Input
+                      id="follow-up"
+                      type="date"
+                      value={medicalData.followUp}
+                      onChange={(e) => setMedicalData({...medicalData, followUp: e.target.value})}
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="symptoms">Sintomas Relatados</Label>
+                    <Textarea
+                      id="symptoms"
+                      placeholder="Dor de cabeça, fadiga, dor no joelho..."
+                      value={medicalData.symptoms}
+                      onChange={(e) => setMedicalData({...medicalData, symptoms: e.target.value})}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="diagnosis">Diagnóstico</Label>
+                    <Textarea
+                      id="diagnosis"
+                      placeholder="Diagnóstico médico, CID se aplicável..."
+                      value={medicalData.diagnosis}
+                      onChange={(e) => setMedicalData({...medicalData, diagnosis: e.target.value})}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="medications">Medicamentos Prescritos</Label>
+                    <Textarea
+                      id="medications"
+                      placeholder="Paracetamol, Ibuprofeno, Vitamina D..."
+                      value={medicalData.medications}
+                      onChange={(e) => setMedicalData({...medicalData, medications: e.target.value})}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="dosage">Dosagem e Frequência</Label>
+                    <Textarea
+                      id="dosage"
+                      placeholder="500mg 2x ao dia, 1 comprimido pela manhã..."
+                      value={medicalData.dosage}
+                      onChange={(e) => setMedicalData({...medicalData, dosage: e.target.value})}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="side-effects">Efeitos Colaterais</Label>
+                    <Textarea
+                      id="side-effects"
+                      placeholder="Sonolência, náusea, dor de estômago..."
+                      value={medicalData.sideEffects}
+                      onChange={(e) => setMedicalData({...medicalData, sideEffects: e.target.value})}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="lab-results">Resultados de Exames</Label>
+                    <Textarea
+                      id="lab-results"
+                      placeholder="Glicemia: 85mg/dL, Colesterol: 180mg/dL..."
+                      value={medicalData.labResults}
+                      onChange={(e) => setMedicalData({...medicalData, labResults: e.target.value})}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="medical-recommendations">Recomendações Médicas</Label>
+                    <Textarea
+                      id="medical-recommendations"
+                      placeholder="Repouso, mudanças na dieta, exercícios específicos..."
+                      value={medicalData.recommendations}
+                      onChange={(e) => setMedicalData({...medicalData, recommendations: e.target.value})}
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="medical-notes">Observações Médicas</Label>
+                  <Textarea
+                    id="medical-notes"
+                    placeholder="Observações gerais da consulta, orientações especiais..."
+                    value={medicalData.notes}
+                    onChange={(e) => setMedicalData({...medicalData, notes: e.target.value})}
+                  />
+                </div>
+                
+                <Button onClick={() => handleSaveData("medical", medicalData)} className="w-full">
+                  <Save className="w-4 h-4 mr-2" />
+                  Salvar Dados Médicos
                 </Button>
               </CardContent>
             </Card>
@@ -346,26 +953,36 @@ const DataInputModal = ({ trigger }: DataInputModalProps) => {
                   Dados Vitais
                 </CardTitle>
                 <CardDescription>
-                  Registre seus indicadores de saúde
+                  Registre seus indicadores vitais e biométricos
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="resting-hr">FC Repouso (bpm)</Label>
+                    <Label htmlFor="heart-rate">Frequência Cardíaca (bpm)</Label>
                     <Input
-                      id="resting-hr"
+                      id="heart-rate"
                       type="number"
                       placeholder="65"
-                      value={vitalData.restingHR}
-                      onChange={(e) => setVitalData({...vitalData, restingHR: e.target.value})}
+                      value={vitalData.heartRate}
+                      onChange={(e) => setVitalData({...vitalData, heartRate: e.target.value})}
                     />
                   </div>
                   
                   <div className="space-y-2">
-                    <Label htmlFor="weight">Peso (kg)</Label>
+                    <Label htmlFor="blood-pressure">Pressão Arterial (mmHg)</Label>
                     <Input
-                      id="weight"
+                      id="blood-pressure"
+                      placeholder="120/80"
+                      value={vitalData.bloodPressure}
+                      onChange={(e) => setVitalData({...vitalData, bloodPressure: e.target.value})}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="vital-weight">Peso (kg)</Label>
+                    <Input
+                      id="vital-weight"
                       type="number"
                       step="0.1"
                       placeholder="75.5"
@@ -375,7 +992,7 @@ const DataInputModal = ({ trigger }: DataInputModalProps) => {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="body-fat">% Gordura</Label>
+                    <Label htmlFor="body-fat">% Gordura Corporal</Label>
                     <Input
                       id="body-fat"
                       type="number"
@@ -387,39 +1004,63 @@ const DataInputModal = ({ trigger }: DataInputModalProps) => {
                   </div>
 
                   <div className="space-y-2">
-                    <Label>Humor/Bem-estar</Label>
-                    <Select value={vitalData.mood} onValueChange={(value) => setVitalData({...vitalData, mood: value})}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Como se sente hoje?" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="1">😢 Muito Ruim</SelectItem>
-                        <SelectItem value="2">😟 Ruim</SelectItem>
-                        <SelectItem value="3">😐 Regular</SelectItem>
-                        <SelectItem value="4">😊 Bom</SelectItem>
-                        <SelectItem value="5">😄 Excelente</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <Label htmlFor="muscle-mass">Massa Muscular (kg)</Label>
+                    <Input
+                      id="muscle-mass"
+                      type="number"
+                      step="0.1"
+                      placeholder="45.2"
+                      value={vitalData.muscleMass}
+                      onChange={(e) => setVitalData({...vitalData, muscleMass: e.target.value})}
+                    />
                   </div>
 
-                  <div className="space-y-2 md:col-span-2">
-                    <Label>Nível de Energia</Label>
-                    <Select value={vitalData.energy} onValueChange={(value) => setVitalData({...vitalData, energy: value})}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Seu nível de energia hoje" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="1">1 - Muito Baixo</SelectItem>
-                        <SelectItem value="2">2 - Baixo</SelectItem>
-                        <SelectItem value="3">3 - Moderado</SelectItem>
-                        <SelectItem value="4">4 - Alto</SelectItem>
-                        <SelectItem value="5">5 - Muito Alto</SelectItem>
-                      </SelectContent>
-                    </Select>
+                  <div className="space-y-2">
+                    <Label htmlFor="temperature">Temperatura (°C)</Label>
+                    <Input
+                      id="temperature"
+                      type="number"
+                      step="0.1"
+                      placeholder="36.5"
+                      value={vitalData.temperature}
+                      onChange={(e) => setVitalData({...vitalData, temperature: e.target.value})}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="oxygen">Saturação O₂ (%)</Label>
+                    <Input
+                      id="oxygen"
+                      type="number"
+                      placeholder="98"
+                      value={vitalData.oxygenSaturation}
+                      onChange={(e) => setVitalData({...vitalData, oxygenSaturation: e.target.value})}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="glucose">Glicemia (mg/dL)</Label>
+                    <Input
+                      id="glucose"
+                      type="number"
+                      placeholder="85"
+                      value={vitalData.glucose}
+                      onChange={(e) => setVitalData({...vitalData, glucose: e.target.value})}
+                    />
                   </div>
                 </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="vital-notes">Observações sobre Sinais Vitais</Label>
+                  <Textarea
+                    id="vital-notes"
+                    placeholder="Contexto da medição, como se sentia no momento..."
+                    value={vitalData.notes}
+                    onChange={(e) => setVitalData({...vitalData, notes: e.target.value})}
+                  />
+                </div>
                 
-                <Button onClick={() => handleSaveData("dados vitais")} className="w-full">
+                <Button onClick={() => handleSaveData("vitals", vitalData)} className="w-full">
                   <Save className="w-4 h-4 mr-2" />
                   Salvar Dados Vitais
                 </Button>
