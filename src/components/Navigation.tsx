@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Menu, Activity, Users, Star } from "lucide-react";
 import { useState } from "react";
+import { Link } from "react-router-dom";
 
 const Navigation = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -44,11 +45,11 @@ const Navigation = () => {
 
           {/* Desktop CTA */}
           <div className="hidden md:flex items-center gap-4">
-            <Button variant="ghost">
-              Entrar
+            <Button variant="ghost" asChild>
+              <Link to="/login">Entrar</Link>
             </Button>
-            <Button variant="sport">
-              Começar Agora
+            <Button variant="sport" asChild>
+              <Link to="/register">Começar Agora</Link>
             </Button>
           </div>
 
@@ -76,11 +77,11 @@ const Navigation = () => {
                   );
                 })}
                 <div className="flex flex-col gap-3 mt-8">
-                  <Button variant="ghost" className="justify-start">
-                    Entrar
+                  <Button variant="ghost" className="justify-start" asChild>
+                    <Link to="/login">Entrar</Link>
                   </Button>
-                  <Button variant="sport" className="justify-start">
-                    Começar Agora
+                  <Button variant="sport" className="justify-start" asChild>
+                    <Link to="/register">Começar Agora</Link>
                   </Button>
                 </div>
               </div>

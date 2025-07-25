@@ -1,6 +1,7 @@
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Link } from "react-router-dom";
 import { 
   Activity, 
   Brain, 
@@ -183,11 +184,11 @@ const Features = () => {
             Junte-se aos milhares de atletas e profissionais que já confiam na nossa plataforma.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button variant="hero" size="lg" className="px-8">
-              Começar como Atleta
+            <Button variant="hero" size="lg" className="px-8" asChild>
+              <Link to="/register">Começar como Atleta</Link>
             </Button>
-            <Button variant="performance" size="lg" className="px-8">
-              Sou Profissional
+            <Button variant="performance" size="lg" className="px-8" asChild>
+              <Link to="/register">Sou Profissional</Link>
             </Button>
           </div>
         </div>

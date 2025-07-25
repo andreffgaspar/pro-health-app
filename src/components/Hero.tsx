@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ArrowRight, Users, TrendingUp, Shield, Smartphone } from "lucide-react";
+import { Link } from "react-router-dom";
 import heroImage from "@/assets/hero-sports-app.jpg";
 
 const Hero = () => {
@@ -41,13 +42,17 @@ const Hero = () => {
 
           {/* CTA Buttons */}
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-            <Button variant="hero" size="lg" className="text-lg px-8 py-6 animate-pulse-glow">
-              Começar como Atleta
-              <ArrowRight className="w-5 h-5" />
+            <Button variant="hero" size="lg" className="text-lg px-8 py-6 animate-pulse-glow" asChild>
+              <Link to="/register">
+                Começar como Atleta
+                <ArrowRight className="w-5 h-5" />
+              </Link>
             </Button>
-            <Button variant="sport" size="lg" className="text-lg px-8 py-6">
-              Sou Profissional
-              <Users className="w-5 h-5" />
+            <Button variant="sport" size="lg" className="text-lg px-8 py-6" asChild>
+              <Link to="/register">
+                Sou Profissional
+                <Users className="w-5 h-5" />
+              </Link>
             </Button>
           </div>
 
