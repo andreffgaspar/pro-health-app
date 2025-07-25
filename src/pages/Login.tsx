@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -9,6 +9,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { useAuth } from "@/hooks/useAuth";
 
 const loginSchema = z.object({
   email: z.string().email("Email inválido"),
@@ -17,36 +18,35 @@ const loginSchema = z.object({
 
 const Login = () => {
   const [activeTab, setActiveTab] = useState<"athlete" | "professional">("athlete");
+  const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
+  const { signIn, user, profile } = useAuth();
 
   const form = useForm({
     resolver: zodResolver(loginSchema)
   });
 
-  const onSubmit = (data: z.infer<typeof loginSchema>) => {
-    console.log("Login:", data, "Type:", activeTab);
-    
-    // Simulate successful login
-    localStorage.setItem("userType", activeTab);
-    localStorage.setItem("userName", data.email.split("@")[0]);
-    
-    if (activeTab === "athlete") {
-      navigate("/athlete-dashboard");
-    } else {
-      navigate("/professional-dashboard");
+  // Redirect if already logged in
+  useEffect(() => {
+    if (user && profile) {
+      if (profile.user_type === 'athlete') {
+        navigate('/athlete-dashboard');
+      } else if (profile.user_type === 'professional') {
+        navigate('/professional-dashboard');
+      }
     }
-  };
+  }, [user, profile, navigate]);
 
-  const handleDemoLogin = (userType: "athlete" | "professional") => {
-    // Demo login - bypass form validation
-    localStorage.setItem("userType", userType);
-    localStorage.setItem("userName", userType === "athlete" ? "Demo Atleta" : "Demo Profissional");
+  const onSubmit = async (data: z.infer<typeof loginSchema>) => {
+    setIsLoading(true);
     
-    if (userType === "athlete") {
-      navigate("/athlete-dashboard");
-    } else {
-      navigate("/professional-dashboard");
+    const { error } = await signIn(data.email, data.password);
+    
+    if (!error) {
+      // Navigation will be handled by the useEffect above
     }
+    
+    setIsLoading(false);
   };
 
   return (
@@ -137,36 +137,10 @@ const Login = () => {
                 variant={activeTab === "athlete" ? "hero" : "performance"} 
                 className="w-full" 
                 size="lg"
+                disabled={isLoading}
               >
-                Entrar
+                {isLoading ? "Entrando..." : "Entrar"}
               </Button>
-
-              {/* Demo Buttons */}
-              <div className="space-y-3 pt-4 border-t">
-                <p className="text-sm text-muted-foreground text-center">
-                  Acesso rápido para demonstração:
-                </p>
-                <div className="space-y-2">
-                  <Button 
-                    type="button"
-                    variant="outline" 
-                    className="w-full" 
-                    onClick={() => handleDemoLogin("athlete")}
-                  >
-                    <Activity className="w-4 h-4 mr-2" />
-                    Demo Atleta
-                  </Button>
-                  <Button 
-                    type="button"
-                    variant="outline" 
-                    className="w-full" 
-                    onClick={() => handleDemoLogin("professional")}
-                  >
-                    <Users className="w-4 h-4 mr-2" />
-                    Demo Profissional
-                  </Button>
-                </div>
-              </div>
             </form>
           </CardContent>
         </Card>

@@ -9,6 +9,7 @@ import Register from "./pages/Register";
 import AthleteDashboard from "./pages/AthleteDashboard";
 import ProfessionalDashboard from "./pages/ProfessionalDashboard";
 import NotFound from "./pages/NotFound";
+import { ProtectedRoute } from "./components/ProtectedRoute";
 
 const queryClient = new QueryClient();
 
@@ -22,8 +23,16 @@ const App = () => (
           <Route path="/" element={<Index />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
-          <Route path="/athlete-dashboard" element={<AthleteDashboard />} />
-          <Route path="/professional-dashboard" element={<ProfessionalDashboard />} />
+          <Route path="/athlete-dashboard" element={
+            <ProtectedRoute requiredUserType="athlete">
+              <AthleteDashboard />
+            </ProtectedRoute>
+          } />
+          <Route path="/professional-dashboard" element={
+            <ProtectedRoute requiredUserType="professional">
+              <ProfessionalDashboard />
+            </ProtectedRoute>
+          } />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { LineChart, Line, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from "recharts";
+import { useAuth } from "@/hooks/useAuth";
 
 // Mock data for athletes
 const athletes = [
@@ -95,24 +96,11 @@ const performanceComparison = [
 
 const ProfessionalDashboard = () => {
   const navigate = useNavigate();
-  const [userName, setUserName] = useState("");
+  const { user, profile, signOut } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
 
-  useEffect(() => {
-    const userType = localStorage.getItem("userType");
-    const storedName = localStorage.getItem("userName");
-    
-    if (userType !== "professional") {
-      navigate("/login");
-      return;
-    }
-    
-    setUserName(storedName || "Profissional");
-  }, [navigate]);
-
-  const handleLogout = () => {
-    localStorage.removeItem("userType");
-    localStorage.removeItem("userName");
+  const handleLogout = async () => {
+    await signOut();
     navigate("/");
   };
 
@@ -137,7 +125,7 @@ const ProfessionalDashboard = () => {
                 <Users className="w-6 h-6 text-secondary-foreground" />
               </div>
               <div>
-                <h1 className="text-xl font-bold">Olá, Dr. {userName}!</h1>
+                <h1 className="text-xl font-bold">Olá, Dr. {profile?.full_name || user?.email || "Profissional"}!</h1>
                 <p className="text-sm text-muted-foreground">Dashboard Profissional</p>
               </div>
             </div>

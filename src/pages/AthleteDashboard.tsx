@@ -21,6 +21,7 @@ import {
 import DataInputModal from "@/components/DataInputModal";
 import { Link, useNavigate } from "react-router-dom";
 import { LineChart, Line, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from "recharts";
+import { useAuth } from "@/hooks/useAuth";
 
 // Mock data for charts
 const performanceData = [
@@ -45,23 +46,10 @@ const weeklyData = [
 
 const AthleterDashboard = () => {
   const navigate = useNavigate();
-  const [userName, setUserName] = useState("");
+  const { user, profile, signOut } = useAuth();
 
-  useEffect(() => {
-    const userType = localStorage.getItem("userType");
-    const storedName = localStorage.getItem("userName");
-    
-    if (userType !== "athlete") {
-      navigate("/login");
-      return;
-    }
-    
-    setUserName(storedName || "Atleta");
-  }, [navigate]);
-
-  const handleLogout = () => {
-    localStorage.removeItem("userType");
-    localStorage.removeItem("userName");
+  const handleLogout = async () => {
+    await signOut();
     navigate("/");
   };
 
@@ -85,7 +73,7 @@ const AthleterDashboard = () => {
                 <Activity className="w-6 h-6 text-primary-foreground" />
               </div>
               <div>
-                <h1 className="text-xl font-bold">Olá, {userName}!</h1>
+                <h1 className="text-xl font-bold">Olá, {profile?.full_name || user?.email || "Atleta"}!</h1>
                 <p className="text-sm text-muted-foreground">Dashboard do Atleta</p>
               </div>
             </div>

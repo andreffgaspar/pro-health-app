@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -11,6 +11,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { useAuth } from "@/hooks/useAuth";
 
 // Validation schemas
 const athleteSchema = z.object({
@@ -35,7 +36,9 @@ const professionalSchema = z.object({
 
 const Register = () => {
   const [activeTab, setActiveTab] = useState<"athlete" | "professional">("athlete");
+  const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
+  const { signUp, user, profile } = useAuth();
 
   const athleteForm = useForm({
     resolver: zodResolver(athleteSchema)
@@ -45,20 +48,33 @@ const Register = () => {
     resolver: zodResolver(professionalSchema)
   });
 
-  const onAthleteSubmit = (data: z.infer<typeof athleteSchema>) => {
-    console.log("Athlete registration:", data);
-    // Simulate successful registration
-    localStorage.setItem("userType", "athlete");
-    localStorage.setItem("userName", data.name);
-    navigate("/athlete-dashboard");
+  // Redirect if already logged in
+  useEffect(() => {
+    if (user && profile) {
+      if (profile.user_type === 'athlete') {
+        navigate('/athlete-dashboard');
+      } else if (profile.user_type === 'professional') {
+        navigate('/professional-dashboard');
+      }
+    }
+  }, [user, profile, navigate]);
+
+  const onAthleteSubmit = async (data: z.infer<typeof athleteSchema>) => {
+    setIsLoading(true);
+    const { error } = await signUp(data.email, data.password, data.name, 'athlete');
+    if (!error) {
+      // Navigation will be handled by the useEffect above
+    }
+    setIsLoading(false);
   };
 
-  const onProfessionalSubmit = (data: z.infer<typeof professionalSchema>) => {
-    console.log("Professional registration:", data);
-    // Simulate successful registration
-    localStorage.setItem("userType", "professional");
-    localStorage.setItem("userName", data.name);
-    navigate("/professional-dashboard");
+  const onProfessionalSubmit = async (data: z.infer<typeof professionalSchema>) => {
+    setIsLoading(true);
+    const { error } = await signUp(data.email, data.password, data.name, 'professional');
+    if (!error) {
+      // Navigation will be handled by the useEffect above
+    }
+    setIsLoading(false);
   };
 
   const sports = [
@@ -228,8 +244,8 @@ const Register = () => {
                     <p className="text-sm text-destructive">{athleteForm.formState.errors.terms.message}</p>
                   )}
 
-                  <Button type="submit" variant="hero" className="w-full" size="lg">
-                    Criar Conta de Atleta
+                  <Button type="submit" variant="hero" className="w-full" size="lg" disabled={isLoading}>
+                    {isLoading ? "Criando conta..." : "Criar Conta de Atleta"}
                   </Button>
                 </form>
               </TabsContent>
@@ -343,8 +359,8 @@ const Register = () => {
                     <p className="text-sm text-destructive">{professionalForm.formState.errors.terms.message}</p>
                   )}
 
-                  <Button type="submit" variant="performance" className="w-full" size="lg">
-                    Criar Conta de Profissional
+                  <Button type="submit" variant="performance" className="w-full" size="lg" disabled={isLoading}>
+                    {isLoading ? "Criando conta..." : "Criar Conta de Profissional"}
                   </Button>
                 </form>
               </TabsContent>
