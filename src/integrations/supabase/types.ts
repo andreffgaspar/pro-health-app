@@ -49,6 +49,57 @@ export type Database = {
           },
         ]
       }
+      athlete_professional_relationships: {
+        Row: {
+          accepted_at: string | null
+          athlete_id: string
+          created_at: string
+          id: string
+          invited_at: string
+          professional_id: string
+          specialty: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          athlete_id: string
+          created_at?: string
+          id?: string
+          invited_at?: string
+          professional_id: string
+          specialty: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          accepted_at?: string | null
+          athlete_id?: string
+          created_at?: string
+          id?: string
+          invited_at?: string
+          professional_id?: string
+          specialty?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "athlete_professional_relationships_athlete_id_fkey"
+            columns: ["athlete_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "athlete_professional_relationships_professional_id_fkey"
+            columns: ["professional_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
       conversations: {
         Row: {
           athlete_id: string
@@ -130,6 +181,50 @@ export type Database = {
           {
             foreignKeyName: "messages_sender_id_fkey"
             columns: ["sender_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      professional_invitations: {
+        Row: {
+          athlete_id: string
+          created_at: string
+          email: string
+          expires_at: string
+          id: string
+          message: string | null
+          specialty: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          athlete_id: string
+          created_at?: string
+          email: string
+          expires_at?: string
+          id?: string
+          message?: string | null
+          specialty: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          athlete_id?: string
+          created_at?: string
+          email?: string
+          expires_at?: string
+          id?: string
+          message?: string | null
+          specialty?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "professional_invitations_athlete_id_fkey"
+            columns: ["athlete_id"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["user_id"]

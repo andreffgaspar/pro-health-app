@@ -7,6 +7,7 @@ import Index from "./pages/Index";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import AthleteDashboard from "./pages/AthleteDashboard";
+import AthleteSettings from "./pages/AthleteSettings";
 import ProfessionalDashboard from "./pages/ProfessionalDashboard";
 import NotFound from "./pages/NotFound";
 import { ProtectedRoute } from "./components/ProtectedRoute";
@@ -26,6 +27,11 @@ const App = () => (
           <Route path="/athlete-dashboard" element={
             <ProtectedRoute requiredUserType="athlete">
               <AthleteDashboard />
+            </ProtectedRoute>
+          } />
+          <Route path="/athlete-settings" element={
+            <ProtectedRoute requiredUserType="athlete">
+              <AthleteSettings />
             </ProtectedRoute>
           } />
           <Route path="/professional-dashboard" element={
