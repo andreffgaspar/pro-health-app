@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -26,13 +26,20 @@ import {
 
 interface DataInputModalProps {
   trigger?: React.ReactNode;
+  initialTab?: string;
 }
 
-const DataInputModal = ({ trigger }: DataInputModalProps) => {
+const DataInputModal = ({ trigger, initialTab = "sleep" }: DataInputModalProps) => {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState(initialTab);
   const { toast } = useToast();
   const { user } = useAuth();
+  
+  // Update active tab when initialTab prop changes
+  useEffect(() => {
+    setActiveTab(initialTab);
+  }, [initialTab]);
   
   // Enhanced state for form data
   const [sleepData, setSleepData] = useState({
@@ -342,7 +349,7 @@ const DataInputModal = ({ trigger }: DataInputModalProps) => {
           </DialogDescription>
         </DialogHeader>
 
-        <Tabs defaultValue="sleep" className="w-full">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid w-full grid-cols-6">
             <TabsTrigger value="sleep" className="gap-1 text-xs">
               <Moon className="w-3 h-3" />

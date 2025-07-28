@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -33,10 +33,31 @@ const AthleterDashboard = () => {
   const { user, profile, signOut } = useAuth();
   const { todaysMetrics, weeklyData, performanceData, loading } = useAthleteData();
   const [showProfileSettings, setShowProfileSettings] = useState(false);
+  const sleepTriggerRef = useRef<HTMLButtonElement>(null);
+  const nutritionTriggerRef = useRef<HTMLButtonElement>(null);
+  const trainingTriggerRef = useRef<HTMLButtonElement>(null);
+  const vitalsTriggerRef = useRef<HTMLButtonElement>(null);
 
   const handleLogout = async () => {
     await signOut();
     navigate("/");
+  };
+
+  const openModalWithTab = (tab: string) => {
+    switch (tab) {
+      case "sleep":
+        sleepTriggerRef.current?.click();
+        break;
+      case "nutrition":
+        nutritionTriggerRef.current?.click();
+        break;
+      case "training":
+        trainingTriggerRef.current?.click();
+        break;
+      case "vitals":
+        vitalsTriggerRef.current?.click();
+        break;
+    }
   };
 
   return (
@@ -74,7 +95,10 @@ const AthleterDashboard = () => {
       <div className="container mx-auto px-6 py-8">
         {/* Quick Metrics */}
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 mb-8">
-          <Card className="p-4 hover:shadow-card-sport transition-shadow">
+          <Card 
+            className="p-4 hover:shadow-card-sport transition-shadow cursor-pointer" 
+            onClick={() => openModalWithTab("sleep")}
+          >
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 bg-blue-500/10 rounded-lg flex items-center justify-center">
                 <Moon className="w-5 h-5 text-blue-500" />
@@ -86,7 +110,10 @@ const AthleterDashboard = () => {
             </div>
           </Card>
 
-          <Card className="p-4 hover:shadow-card-sport transition-shadow">
+          <Card 
+            className="p-4 hover:shadow-card-sport transition-shadow cursor-pointer" 
+            onClick={() => openModalWithTab("vitals")}
+          >
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 bg-red-500/10 rounded-lg flex items-center justify-center">
                 <Heart className="w-5 h-5 text-red-500" />
@@ -98,7 +125,10 @@ const AthleterDashboard = () => {
             </div>
           </Card>
 
-          <Card className="p-4 hover:shadow-card-sport transition-shadow">
+          <Card 
+            className="p-4 hover:shadow-card-sport transition-shadow cursor-pointer" 
+            onClick={() => openModalWithTab("nutrition")}
+          >
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 bg-orange-500/10 rounded-lg flex items-center justify-center">
                 <Utensils className="w-5 h-5 text-orange-500" />
@@ -110,7 +140,10 @@ const AthleterDashboard = () => {
             </div>
           </Card>
 
-          <Card className="p-4 hover:shadow-card-sport transition-shadow">
+          <Card 
+            className="p-4 hover:shadow-card-sport transition-shadow cursor-pointer" 
+            onClick={() => openModalWithTab("nutrition")}
+          >
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 bg-cyan-500/10 rounded-lg flex items-center justify-center">
                 <Activity className="w-5 h-5 text-cyan-500" />
@@ -122,7 +155,10 @@ const AthleterDashboard = () => {
             </div>
           </Card>
 
-          <Card className="p-4 hover:shadow-card-sport transition-shadow">
+          <Card 
+            className="p-4 hover:shadow-card-sport transition-shadow cursor-pointer" 
+            onClick={() => openModalWithTab("training")}
+          >
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 bg-green-500/10 rounded-lg flex items-center justify-center">
                 <Clock className="w-5 h-5 text-green-500" />
@@ -134,7 +170,10 @@ const AthleterDashboard = () => {
             </div>
           </Card>
 
-          <Card className="p-4 hover:shadow-card-sport transition-shadow">
+          <Card 
+            className="p-4 hover:shadow-card-sport transition-shadow cursor-pointer" 
+            onClick={() => openModalWithTab("vitals")}
+          >
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 bg-purple-500/10 rounded-lg flex items-center justify-center">
                 <Zap className="w-5 h-5 text-purple-500" />
@@ -254,7 +293,15 @@ const AthleterDashboard = () => {
                 <Progress value={Math.min((todaysMetrics.sleep / 8) * 100, 100)} className="h-2" />
               </div>
 
-              <DataInputModal />
+              <DataInputModal 
+                initialTab="sleep"
+                trigger={
+                  <Button className="w-full gap-2">
+                    <Plus className="w-4 h-4" />
+                    Registrar Dados
+                  </Button>
+                }
+              />
             </CardContent>
           </Card>
         </div>
@@ -409,30 +456,30 @@ const AthleterDashboard = () => {
 
         {/* Quick Actions */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-8">
-          <DataInputModal 
-            trigger={
-              <Button variant="outline" className="h-16 flex flex-col gap-1">
-                <Plus className="w-5 h-5" />
-                <span className="text-xs">Novo Treino</span>
-              </Button>
-            }
-          />
-          <DataInputModal 
-            trigger={
-              <Button variant="outline" className="h-16 flex flex-col gap-1">
-                <Utensils className="w-5 h-5" />
-                <span className="text-xs">Registrar Refeição</span>
-              </Button>
-            }
-          />
-          <DataInputModal 
-            trigger={
-              <Button variant="outline" className="h-16 flex flex-col gap-1">
-                <Heart className="w-5 h-5" />
-                <span className="text-xs">Dados Vitais</span>
-              </Button>
-            }
-          />
+          <Button 
+            variant="outline" 
+            className="h-16 flex flex-col gap-1"
+            onClick={() => openModalWithTab("training")}
+          >
+            <Plus className="w-5 h-5" />
+            <span className="text-xs">Novo Treino</span>
+          </Button>
+          <Button 
+            variant="outline" 
+            className="h-16 flex flex-col gap-1"
+            onClick={() => openModalWithTab("nutrition")}
+          >
+            <Utensils className="w-5 h-5" />
+            <span className="text-xs">Registrar Refeição</span>
+          </Button>
+          <Button 
+            variant="outline" 
+            className="h-16 flex flex-col gap-1"
+            onClick={() => openModalWithTab("vitals")}
+          >
+            <Heart className="w-5 h-5" />
+            <span className="text-xs">Dados Vitais</span>
+          </Button>
           <DataVisualization 
             trigger={
               <Button variant="outline" className="h-16 flex flex-col gap-1">
@@ -440,6 +487,26 @@ const AthleterDashboard = () => {
                 <span className="text-xs">Ver Dados Salvos</span>
               </Button>
             }
+          />
+        </div>
+
+        {/* Hidden Modal Triggers for Quick Access Cards */}
+        <div style={{ display: 'none' }}>
+          <DataInputModal 
+            initialTab="sleep"
+            trigger={<Button ref={sleepTriggerRef}>Hidden Sleep Trigger</Button>}
+          />
+          <DataInputModal 
+            initialTab="nutrition"
+            trigger={<Button ref={nutritionTriggerRef}>Hidden Nutrition Trigger</Button>}
+          />
+          <DataInputModal 
+            initialTab="training"
+            trigger={<Button ref={trainingTriggerRef}>Hidden Training Trigger</Button>}
+          />
+          <DataInputModal 
+            initialTab="vitals"
+            trigger={<Button ref={vitalsTriggerRef}>Hidden Vitals Trigger</Button>}
           />
         </div>
 
