@@ -161,43 +161,79 @@ const CommunicationCenter = () => {
 
   const fetchConversations = async () => {
     try {
-      const { data, error } = await supabase
-        .from('conversations')
-        .select(`
-          id,
-          athlete_id,
-          professional_id,
-          title,
-          updated_at,
-          athlete:profiles!conversations_athlete_id_fkey(full_name),
-          professional:profiles!conversations_professional_id_fkey(full_name)
-        `)
-        .or(
-          isAthlete 
-            ? `athlete_id.eq.${user?.id}` 
-            : `professional_id.eq.${user?.id}`
-        );
+      if (isAthlete) {
+        // For athletes, only show conversations with accepted professionals
+        const { data: relationshipsData, error: relationshipsError } = await supabase
+          .from('athlete_professional_relationships')
+          .select('professional_id')
+          .eq('athlete_id', user?.id)
+          .eq('status', 'accepted');
 
-      if (error) throw error;
-      
-      const formattedConversations = data?.map(conv => {
-        const otherPartyId = isAthlete ? conv.professional_id : conv.athlete_id;
-        const otherPartyName = isAthlete 
-          ? (conv.professional as any)?.full_name 
-          : (conv.athlete as any)?.full_name;
+        if (relationshipsError) throw relationshipsError;
+
+        const acceptedProfessionalIds = relationshipsData?.map(rel => rel.professional_id) || [];
+
+        if (acceptedProfessionalIds.length === 0) {
+          setConversations([]);
+          return;
+        }
+
+        const { data, error } = await supabase
+          .from('conversations')
+          .select(`
+            id,
+            athlete_id,
+            professional_id,
+            title,
+            updated_at,
+            athlete:profiles!conversations_athlete_id_fkey(full_name),
+            professional:profiles!conversations_professional_id_fkey(full_name)
+          `)
+          .eq('athlete_id', user?.id)
+          .in('professional_id', acceptedProfessionalIds);
+
+        if (error) throw error;
         
-        return {
+        const formattedConversations = data?.map(conv => ({
           id: conv.id,
           athlete_id: conv.athlete_id,
           professional_id: conv.professional_id,
-          other_party_id: otherPartyId,
-          other_party_name: otherPartyName || (isAthlete ? 'Profissional' : 'Atleta'),
+          other_party_id: conv.professional_id,
+          other_party_name: (conv.professional as any)?.full_name || 'Profissional',
           title: conv.title,
           updated_at: conv.updated_at
-        };
-      }) || [];
+        })) || [];
 
-      setConversations(formattedConversations);
+        setConversations(formattedConversations);
+      } else {
+        // For professionals, show conversations with their athletes
+        const { data, error } = await supabase
+          .from('conversations')
+          .select(`
+            id,
+            athlete_id,
+            professional_id,
+            title,
+            updated_at,
+            athlete:profiles!conversations_athlete_id_fkey(full_name),
+            professional:profiles!conversations_professional_id_fkey(full_name)
+          `)
+          .eq('professional_id', user?.id);
+
+        if (error) throw error;
+        
+        const formattedConversations = data?.map(conv => ({
+          id: conv.id,
+          athlete_id: conv.athlete_id,
+          professional_id: conv.professional_id,
+          other_party_id: conv.athlete_id,
+          other_party_name: (conv.athlete as any)?.full_name || 'Atleta',
+          title: conv.title,
+          updated_at: conv.updated_at
+        })) || [];
+
+        setConversations(formattedConversations);
+      }
     } catch (error) {
       console.error('Error fetching conversations:', error);
     }
