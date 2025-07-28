@@ -19,6 +19,7 @@ import {
   Zap
 } from "lucide-react";
 import DataInputModal from "@/components/DataInputModal";
+import DataVisualization from "@/components/DataVisualization";
 import CommunicationCenter from "@/components/CommunicationCenter";
 import SessionScheduler from "@/components/SessionScheduler";
 import { Link, useNavigate } from "react-router-dom";
@@ -406,10 +407,14 @@ const AthleterDashboard = () => {
               </Button>
             }
           />
-          <Button variant="outline" className="h-16 flex flex-col gap-1">
-            <TrendingUp className="w-5 h-5" />
-            <span className="text-xs">Ver Relatório</span>
-          </Button>
+          <DataVisualization 
+            trigger={
+              <Button variant="outline" className="h-16 flex flex-col gap-1">
+                <TrendingUp className="w-5 h-5" />
+                <span className="text-xs">Ver Dados Salvos</span>
+              </Button>
+            }
+          />
         </div>
       </div>
     </div>

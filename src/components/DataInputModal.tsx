@@ -30,6 +30,7 @@ interface DataInputModalProps {
 
 const DataInputModal = ({ trigger }: DataInputModalProps) => {
   const [open, setOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
   const { toast } = useToast();
   const { user } = useAuth();
   
@@ -117,9 +118,28 @@ const DataInputModal = ({ trigger }: DataInputModalProps) => {
   });
 
   const handleSaveData = async (dataType: string, data: any) => {
-    if (!user) return;
+    if (!user) {
+      toast({
+        title: "Erro",
+        description: "Você precisa estar logado para salvar dados.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Validate required fields based on data type
+    const validationErrors = validateDataFields(dataType, data);
+    if (validationErrors.length > 0) {
+      toast({
+        title: "Campos obrigatórios",
+        description: `Preencha: ${validationErrors.join(', ')}`,
+        variant: "destructive"
+      });
+      return;
+    }
 
     try {
+      setLoading(true);
       let uploadedFiles: string[] = [];
 
       // Handle file uploads for medical data
@@ -163,16 +183,14 @@ const DataInputModal = ({ trigger }: DataInputModalProps) => {
 
       toast({
         title: "Dados salvos com sucesso!",
-        description: `Seus dados de ${dataType} foram registrados.${uploadedFiles.length > 0 ? ` ${uploadedFiles.length} arquivo(s) anexado(s).` : ''}`,
+        description: `Seus dados de ${getDataTypeLabel(dataType)} foram registrados.${uploadedFiles.length > 0 ? ` ${uploadedFiles.length} arquivo(s) anexado(s).` : ''}`,
       });
 
       // Reset form data based on type
-      if (dataType === 'sleep') setSleepData({ hours: "", quality: "", bedTime: "", wakeTime: "", interruptions: "", notes: "" });
-      else if (dataType === 'nutrition') setNutritionData({ calories: "", protein: "", carbs: "", fats: "", fiber: "", water: "", meals: "", supplements: "", allergies: "", dietaryRestrictions: "", notes: "" });
-      else if (dataType === 'training') setTrainingData({ type: "", duration: "", intensity: "", exercises: "", sets: "", reps: "", weight: "", calories: "", heartRateAvg: "", heartRateMax: "", perceivedExertion: "", location: "", equipment: "", weather: "", injuries: "", notes: "" });
-      else if (dataType === 'physiotherapy') setPhysiotherapyData({ therapistName: "", sessionType: "", duration: "", exercises: "", painLevel: "", mobility: "", strength: "", recommendations: "", nextSession: "", notes: "" });
-      else if (dataType === 'medical') setMedicalData({ doctorName: "", appointmentType: "", symptoms: "", diagnosis: "", medications: "", dosage: "", sideEffects: "", recommendations: "", followUp: "", labResults: "", notes: "", files: [] });
-      else if (dataType === 'vitals') setVitalData({ heartRate: "", bloodPressure: "", weight: "", bodyFat: "", muscleMass: "", temperature: "", oxygenSaturation: "", glucose: "", notes: "" });
+      resetFormData(dataType);
+      
+      // Close modal after successful save
+      setOpen(false);
 
     } catch (error) {
       console.error('Error saving data:', error);
@@ -181,6 +199,75 @@ const DataInputModal = ({ trigger }: DataInputModalProps) => {
         description: "Não foi possível salvar os dados. Tente novamente.",
         variant: "destructive"
       });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const validateDataFields = (dataType: string, data: any): string[] => {
+    const errors: string[] = [];
+    
+    switch (dataType) {
+      case 'sleep':
+        if (!data.hours) errors.push('Horas de sono');
+        if (!data.quality) errors.push('Qualidade do sono');
+        break;
+      case 'nutrition':
+        if (!data.calories) errors.push('Calorias');
+        break;
+      case 'training':
+        if (!data.type) errors.push('Tipo de treino');
+        if (!data.duration) errors.push('Duração');
+        break;
+      case 'physiotherapy':
+        if (!data.sessionType) errors.push('Tipo de sessão');
+        if (!data.duration) errors.push('Duração');
+        break;
+      case 'medical':
+        if (!data.appointmentType) errors.push('Tipo de consulta');
+        break;
+      case 'vitals':
+        if (!data.heartRate && !data.weight && !data.bloodPressure) {
+          errors.push('Pelo menos um dado vital');
+        }
+        break;
+    }
+    
+    return errors;
+  };
+
+  const getDataTypeLabel = (dataType: string): string => {
+    const labels = {
+      'sleep': 'sono',
+      'nutrition': 'nutrição',
+      'training': 'treino',
+      'physiotherapy': 'fisioterapia',
+      'medical': 'consulta médica',
+      'vitals': 'dados vitais'
+    };
+    return labels[dataType as keyof typeof labels] || dataType;
+  };
+
+  const resetFormData = (dataType: string) => {
+    switch (dataType) {
+      case 'sleep':
+        setSleepData({ hours: "", quality: "", bedTime: "", wakeTime: "", interruptions: "", notes: "" });
+        break;
+      case 'nutrition':
+        setNutritionData({ calories: "", protein: "", carbs: "", fats: "", fiber: "", water: "", meals: "", supplements: "", allergies: "", dietaryRestrictions: "", notes: "" });
+        break;
+      case 'training':
+        setTrainingData({ type: "", duration: "", intensity: "", exercises: "", sets: "", reps: "", weight: "", calories: "", heartRateAvg: "", heartRateMax: "", perceivedExertion: "", location: "", equipment: "", weather: "", injuries: "", notes: "" });
+        break;
+      case 'physiotherapy':
+        setPhysiotherapyData({ therapistName: "", sessionType: "", duration: "", exercises: "", painLevel: "", mobility: "", strength: "", recommendations: "", nextSession: "", notes: "" });
+        break;
+      case 'medical':
+        setMedicalData({ doctorName: "", appointmentType: "", symptoms: "", diagnosis: "", medications: "", dosage: "", sideEffects: "", recommendations: "", followUp: "", labResults: "", notes: "", files: [] });
+        break;
+      case 'vitals':
+        setVitalData({ heartRate: "", bloodPressure: "", weight: "", bodyFat: "", muscleMass: "", temperature: "", oxygenSaturation: "", glucose: "", notes: "" });
+        break;
     }
   };
 
@@ -367,9 +454,13 @@ const DataInputModal = ({ trigger }: DataInputModalProps) => {
                   />
                 </div>
                 
-                <Button onClick={() => handleSaveData("sleep", sleepData)} className="w-full">
+                <Button 
+                  onClick={() => handleSaveData("sleep", sleepData)} 
+                  className="w-full"
+                  disabled={loading}
+                >
                   <Save className="w-4 h-4 mr-2" />
-                  Salvar Dados do Sono
+                  {loading ? "Salvando..." : "Salvar Dados do Sono"}
                 </Button>
               </CardContent>
             </Card>
@@ -509,9 +600,13 @@ const DataInputModal = ({ trigger }: DataInputModalProps) => {
                   />
                 </div>
                 
-                <Button onClick={() => handleSaveData("nutrition", nutritionData)} className="w-full">
+                <Button 
+                  onClick={() => handleSaveData("nutrition", nutritionData)} 
+                  className="w-full"
+                  disabled={loading}
+                >
                   <Save className="w-4 h-4 mr-2" />
-                  Salvar Dados Nutricionais
+                  {loading ? "Salvando..." : "Salvar Dados Nutricionais"}
                 </Button>
               </CardContent>
             </Card>
@@ -722,9 +817,13 @@ const DataInputModal = ({ trigger }: DataInputModalProps) => {
                   </div>
                 </div>
                 
-                <Button onClick={() => handleSaveData("training", trainingData)} className="w-full">
+                <Button 
+                  onClick={() => handleSaveData("training", trainingData)} 
+                  className="w-full"
+                  disabled={loading}
+                >
                   <Save className="w-4 h-4 mr-2" />
-                  Salvar Dados do Treino
+                  {loading ? "Salvando..." : "Salvar Dados do Treino"}
                 </Button>
               </CardContent>
             </Card>
@@ -876,9 +975,13 @@ const DataInputModal = ({ trigger }: DataInputModalProps) => {
                   />
                 </div>
                 
-                <Button onClick={() => handleSaveData("physiotherapy", physiotherapyData)} className="w-full">
+                <Button 
+                  onClick={() => handleSaveData("physiotherapy", physiotherapyData)} 
+                  className="w-full"
+                  disabled={loading}
+                >
                   <Save className="w-4 h-4 mr-2" />
-                  Salvar Dados de Fisioterapia
+                  {loading ? "Salvando..." : "Salvar Dados de Fisioterapia"}
                 </Button>
               </CardContent>
             </Card>
@@ -1077,9 +1180,13 @@ const DataInputModal = ({ trigger }: DataInputModalProps) => {
                   />
                 </div>
                 
-                <Button onClick={() => handleSaveData("medical", medicalData)} className="w-full">
+                <Button 
+                  onClick={() => handleSaveData("medical", medicalData)} 
+                  className="w-full"
+                  disabled={loading}
+                >
                   <Save className="w-4 h-4 mr-2" />
-                  Salvar Dados Médicos
+                  {loading ? "Salvando..." : "Salvar Dados Médicos"}
                 </Button>
               </CardContent>
             </Card>
@@ -1201,9 +1308,13 @@ const DataInputModal = ({ trigger }: DataInputModalProps) => {
                   />
                 </div>
                 
-                <Button onClick={() => handleSaveData("vitals", vitalData)} className="w-full">
+                <Button 
+                  onClick={() => handleSaveData("vitals", vitalData)} 
+                  className="w-full"
+                  disabled={loading}
+                >
                   <Save className="w-4 h-4 mr-2" />
-                  Salvar Dados Vitais
+                  {loading ? "Salvando..." : "Salvar Dados Vitais"}
                 </Button>
               </CardContent>
             </Card>
