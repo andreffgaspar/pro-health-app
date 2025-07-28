@@ -399,7 +399,7 @@ const AthleteSettings = () => {
                       </div>
                       
                       {/* Search Results */}
-                      {searchQuery && (
+                      {searchQuery && !selectedProfessional && (
                         <div className="max-h-40 overflow-y-auto border rounded-md bg-background">
                           {searchLoading ? (
                             <div className="p-3 text-center text-muted-foreground">
