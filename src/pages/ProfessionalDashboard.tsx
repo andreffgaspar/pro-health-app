@@ -49,6 +49,7 @@ const ProfessionalDashboard = () => {
   const [pendingInvitations, setPendingInvitations] = useState<PendingInvitation[]>([]);
   const [myAthletes, setMyAthletes] = useState<AthleteData[]>([]);
   const [loading, setLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState("athletes");
 
   useEffect(() => {
     if (user) {
@@ -159,6 +160,11 @@ interface PendingInvitation {
       'psychology': 'Psicólogo'
     };
     return specialties[specialty as keyof typeof specialties] || specialty;
+  };
+
+  const handleChatWithAthlete = (athleteId: string) => {
+    setActiveTab("communication");
+    // The CommunicationCenter will handle opening the conversation
   };
 
   const handleLogout = async () => {
@@ -328,7 +334,7 @@ interface PendingInvitation {
         </div>
 
         {/* Main Content */}
-        <Tabs defaultValue="athletes" className="w-full">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid w-full grid-cols-3 mb-8">
             <TabsTrigger value="athletes" className="gap-2">
               <Users className="w-4 h-4" />
@@ -404,14 +410,18 @@ interface PendingInvitation {
                               </div>
                             </div>
                             <div className="text-right">
-                              <div className="flex gap-2 mt-2">
-                                <Button variant="outline" size="sm">
-                                  <FileText className="w-3 h-3" />
-                                </Button>
-                                <Button variant="outline" size="sm">
-                                  <MessageSquare className="w-3 h-3" />
-                                </Button>
-                              </div>
+                               <div className="flex gap-2 mt-2">
+                                 <Button variant="outline" size="sm">
+                                   <FileText className="w-3 h-3" />
+                                 </Button>
+                                 <Button 
+                                   variant="outline" 
+                                   size="sm"
+                                   onClick={() => handleChatWithAthlete(athlete?.user_id)}
+                                 >
+                                   <MessageSquare className="w-3 h-3" />
+                                 </Button>
+                               </div>
                             </div>
                           </div>
                         );
