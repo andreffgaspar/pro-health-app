@@ -408,7 +408,7 @@ const ProfessionalDashboard = () => {
                 <Users className="w-6 h-6 text-secondary-foreground" />
               </div>
               <div>
-                <h1 className="text-xl font-bold">Olá, Dr. {profile?.full_name || user?.email || "Profissional"}!</h1>
+                <h1 className="text-xl font-bold">Olá, Dr. {profile?.full_name || "Profissional"}!</h1>
                 <p className="text-sm text-muted-foreground">Dashboard Profissional</p>
               </div>
             </div>
