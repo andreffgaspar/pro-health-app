@@ -17,7 +17,8 @@ import {
   XCircle, 
   Clock,
   ArrowLeft,
-  Trash2
+  Trash2,
+  Search
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -27,6 +28,12 @@ import { useNavigate } from 'react-router-dom';
 interface Professional {
   full_name: string;
   user_id: string;
+  user_type: string;
+}
+
+interface SearchedProfessional {
+  user_id: string;
+  full_name: string;
 }
 
 interface Relationship {
@@ -59,10 +66,13 @@ const AthleteSettings = () => {
   const [loading, setLoading] = useState(false);
   
   // Invite form state
-  const [inviteEmail, setInviteEmail] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<SearchedProfessional[]>([]);
+  const [selectedProfessional, setSelectedProfessional] = useState<SearchedProfessional | null>(null);
   const [inviteSpecialty, setInviteSpecialty] = useState('');
   const [inviteMessage, setInviteMessage] = useState('');
   const [showInviteDialog, setShowInviteDialog] = useState(false);
+  const [searchLoading, setSearchLoading] = useState(false);
 
   const specialties = [
     { value: 'nutrition', label: 'Nutricionista' },
@@ -90,7 +100,7 @@ const AthleteSettings = () => {
           status,
           invited_at,
           accepted_at,
-          professional:profiles!athlete_professional_relationships_professional_id_fkey(full_name, user_id)
+          professional:profiles!athlete_professional_relationships_professional_id_fkey(full_name, user_id, user_type)
         `)
         .eq('athlete_id', user?.id);
 
@@ -116,11 +126,48 @@ const AthleteSettings = () => {
     }
   };
 
+  const searchProfessionals = async (query: string) => {
+    if (!query.trim() || query.length < 2) {
+      setSearchResults([]);
+      return;
+    }
+
+    try {
+      setSearchLoading(true);
+      
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('user_id, full_name')
+        .eq('user_type', 'professional')
+        .ilike('full_name', `%${query}%`)
+        .limit(10);
+
+      if (error) throw error;
+      
+      // Filter out professionals already in relationships
+      const existingProfessionalIds = relationships.map(r => r.professional_id);
+      const filteredResults = (data || []).filter(
+        prof => !existingProfessionalIds.includes(prof.user_id)
+      );
+      
+      setSearchResults(filteredResults);
+    } catch (error) {
+      console.error('Error searching professionals:', error);
+      toast({
+        title: "Erro na busca",
+        description: "Não foi possível buscar profissionais.",
+        variant: "destructive"
+      });
+    } finally {
+      setSearchLoading(false);
+    }
+  };
+
   const sendInvitation = async () => {
-    if (!inviteEmail || !inviteSpecialty) {
+    if (!selectedProfessional || !inviteSpecialty) {
       toast({
         title: "Erro",
-        description: "Email e especialidade são obrigatórios.",
+        description: "Selecione um profissional e uma especialidade.",
         variant: "destructive"
       });
       return;
@@ -129,56 +176,50 @@ const AthleteSettings = () => {
     try {
       setLoading(true);
 
-      // Check if professional exists
-      const { data: existingProfessional } = await supabase
-        .from('profiles')
-        .select('user_id, full_name')
-        .ilike('full_name', `%${inviteEmail}%`)
-        .eq('user_type', 'professional')
+      // Check if relationship already exists
+      const { data: existingRelationship } = await supabase
+        .from('athlete_professional_relationships')
+        .select('id')
+        .eq('athlete_id', user?.id)
+        .eq('professional_id', selectedProfessional.user_id)
         .maybeSingle();
 
-      if (existingProfessional) {
-        // Create direct relationship
-        const { error: relationshipError } = await supabase
-          .from('athlete_professional_relationships')
-          .insert([{
-            athlete_id: user?.id,
-            professional_id: existingProfessional.user_id,
-            specialty: inviteSpecialty,
-            status: 'pending'
-          }]);
-
-        if (relationshipError) throw relationshipError;
-      } else {
-        // Create email invitation
-        const { error: invitationError } = await supabase
-          .from('professional_invitations')
-          .insert([{
-            athlete_id: user?.id,
-            email: inviteEmail,
-            specialty: inviteSpecialty,
-            message: inviteMessage || null
-          }]);
-
-        if (invitationError) throw invitationError;
+      if (existingRelationship) {
+        toast({
+          title: "Relacionamento já existe",
+          description: "Você já possui um relacionamento com este profissional.",
+          variant: "destructive"
+        });
+        return;
       }
+
+      // Create direct relationship
+      const { error: relationshipError } = await supabase
+        .from('athlete_professional_relationships')
+        .insert([{
+          athlete_id: user?.id,
+          professional_id: selectedProfessional.user_id,
+          specialty: inviteSpecialty,
+          status: 'pending'
+        }]);
+
+      if (relationshipError) throw relationshipError;
 
       toast({
         title: "Convite enviado!",
-        description: existingProfessional ? 
-          "Notificação enviada ao profissional." : 
-          "Email de convite será enviado."
+        description: "Notificação enviada ao profissional para aceitar o convite."
       });
 
       // Reset form
-      setInviteEmail('');
+      setSearchQuery('');
+      setSearchResults([]);
+      setSelectedProfessional(null);
       setInviteSpecialty('');
       setInviteMessage('');
       setShowInviteDialog(false);
 
       // Refresh data
       fetchRelationships();
-      fetchInvitations();
 
     } catch (error) {
       console.error('Error sending invitation:', error);
@@ -326,22 +367,82 @@ const AthleteSettings = () => {
                   <DialogHeader>
                     <DialogTitle>Convidar Profissional</DialogTitle>
                     <DialogDescription>
-                      Convide um profissional para fazer parte da sua equipe
+                      Busque e convide um profissional cadastrado na plataforma
                     </DialogDescription>
                   </DialogHeader>
                   
                   <div className="space-y-4">
+                    {/* Search Professional */}
                     <div className="space-y-2">
-                      <Label htmlFor="email">Email do Profissional</Label>
-                      <Input
-                        id="email"
-                        type="email"
-                        placeholder="profissional@exemplo.com"
-                        value={inviteEmail}
-                        onChange={(e) => setInviteEmail(e.target.value)}
-                      />
+                      <Label htmlFor="search">Buscar Profissional</Label>
+                      <div className="relative">
+                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                        <Input
+                          id="search"
+                          placeholder="Digite o nome do profissional..."
+                          value={searchQuery}
+                          onChange={(e) => {
+                            setSearchQuery(e.target.value);
+                            searchProfessionals(e.target.value);
+                          }}
+                          className="pl-10"
+                        />
+                      </div>
+                      
+                      {/* Search Results */}
+                      {searchQuery && (
+                        <div className="max-h-40 overflow-y-auto border rounded-md bg-background">
+                          {searchLoading ? (
+                            <div className="p-3 text-center text-muted-foreground">
+                              Buscando...
+                            </div>
+                          ) : searchResults.length > 0 ? (
+                            searchResults.map((prof) => (
+                              <button
+                                key={prof.user_id}
+                                onClick={() => {
+                                  setSelectedProfessional(prof);
+                                  setSearchQuery(prof.full_name);
+                                  setSearchResults([]);
+                                }}
+                                className="w-full text-left p-3 hover:bg-muted border-b last:border-b-0"
+                              >
+                                <div className="font-medium">{prof.full_name}</div>
+                                <div className="text-sm text-muted-foreground">Profissional</div>
+                              </button>
+                            ))
+                          ) : (
+                            <div className="p-3 text-center text-muted-foreground">
+                              Nenhum profissional encontrado
+                            </div>
+                          )}
+                        </div>
+                      )}
+                      
+                      {/* Selected Professional */}
+                      {selectedProfessional && (
+                        <div className="p-3 bg-primary/5 border border-primary/20 rounded-md">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <div className="font-medium">{selectedProfessional.full_name}</div>
+                              <div className="text-sm text-muted-foreground">Profissional selecionado</div>
+                            </div>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                setSelectedProfessional(null);
+                                setSearchQuery('');
+                              }}
+                            >
+                              ✕
+                            </Button>
+                          </div>
+                        </div>
+                      )}
                     </div>
 
+                    {/* Specialty Selection */}
                     <div className="space-y-2">
                       <Label>Especialidade</Label>
                       <Select value={inviteSpecialty} onValueChange={setInviteSpecialty}>
@@ -358,6 +459,7 @@ const AthleteSettings = () => {
                       </Select>
                     </div>
 
+                    {/* Optional Message */}
                     <div className="space-y-2">
                       <Label htmlFor="message">Mensagem (opcional)</Label>
                       <Textarea
@@ -369,17 +471,25 @@ const AthleteSettings = () => {
                       />
                     </div>
 
+                    {/* Action Buttons */}
                     <div className="flex gap-3">
                       <Button
                         onClick={sendInvitation}
-                        disabled={loading}
+                        disabled={loading || !selectedProfessional || !inviteSpecialty}
                         className="flex-1"
                       >
                         {loading ? 'Enviando...' : 'Enviar Convite'}
                       </Button>
                       <Button
                         variant="outline"
-                        onClick={() => setShowInviteDialog(false)}
+                        onClick={() => {
+                          setShowInviteDialog(false);
+                          setSearchQuery('');
+                          setSearchResults([]);
+                          setSelectedProfessional(null);
+                          setInviteSpecialty('');
+                          setInviteMessage('');
+                        }}
                       >
                         Cancelar
                       </Button>

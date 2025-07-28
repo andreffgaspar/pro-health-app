@@ -19,11 +19,16 @@ import {
   Moon,
   Target,
   FileText,
-  MessageSquare
+  MessageSquare,
+  Check,
+  X,
+  Bell
 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { LineChart, Line, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from "recharts";
 import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 // Mock data for athletes
 const athletes = [
@@ -94,10 +99,99 @@ const performanceComparison = [
   { athlete: "Ana", performance: 85, improvement: 5 }
 ];
 
+interface PendingInvitation {
+  id: string;
+  athlete_id: string;
+  specialty: string;
+  status: string;
+  invited_at: string;
+  athlete: {
+    full_name: string;
+    user_id: string;
+  };
+}
+
 const ProfessionalDashboard = () => {
   const navigate = useNavigate();
   const { user, profile, signOut } = useAuth();
+  const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
+  const [pendingInvitations, setPendingInvitations] = useState<PendingInvitation[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (user) {
+      fetchPendingInvitations();
+    }
+  }, [user]);
+
+  const fetchPendingInvitations = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('athlete_professional_relationships')
+        .select(`
+          id,
+          athlete_id,
+          specialty,
+          status,
+          invited_at,
+          athlete:profiles!athlete_professional_relationships_athlete_id_fkey(full_name, user_id)
+        `)
+        .eq('professional_id', user?.id)
+        .eq('status', 'pending')
+        .order('invited_at', { ascending: false });
+
+      if (error) throw error;
+      setPendingInvitations(data || []);
+    } catch (error) {
+      console.error('Error fetching pending invitations:', error);
+    }
+  };
+
+  const handleInvitationResponse = async (invitationId: string, action: 'accept' | 'reject') => {
+    try {
+      setLoading(true);
+      
+      const { error } = await supabase
+        .from('athlete_professional_relationships')
+        .update({
+          status: action === 'accept' ? 'accepted' : 'rejected',
+          accepted_at: action === 'accept' ? new Date().toISOString() : null
+        })
+        .eq('id', invitationId);
+
+      if (error) throw error;
+
+      toast({
+        title: action === 'accept' ? "Convite aceito!" : "Convite rejeitado",
+        description: action === 'accept' ? 
+          "Você agora faz parte da equipe do atleta." : 
+          "O convite foi rejeitado.",
+      });
+
+      fetchPendingInvitations();
+    } catch (error) {
+      console.error('Error responding to invitation:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível processar a resposta.",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getSpecialtyText = (specialty: string) => {
+    const specialties = {
+      'nutrition': 'Nutricionista',
+      'physiotherapy': 'Fisioterapeuta',
+      'medical': 'Médico',
+      'training': 'Treinador',
+      'psychology': 'Psicólogo'
+    };
+    return specialties[specialty as keyof typeof specialties] || specialty;
+  };
 
   const handleLogout = async () => {
     await signOut();
@@ -131,6 +225,12 @@ const ProfessionalDashboard = () => {
             </div>
             
             <div className="flex items-center gap-3">
+              {pendingInvitations.length > 0 && (
+                <Badge variant="destructive" className="gap-1">
+                  <Bell className="w-3 h-3" />
+                  {pendingInvitations.length} convite{pendingInvitations.length > 1 ? 's' : ''}
+                </Badge>
+              )}
               <Badge variant="outline" className="text-secondary border-secondary">
                 Plano Pro
               </Badge>
@@ -146,6 +246,64 @@ const ProfessionalDashboard = () => {
       </header>
 
       <div className="container mx-auto px-6 py-8">
+        {/* Pending Invitations Alert */}
+        {pendingInvitations.length > 0 && (
+          <Card className="mb-8 border-orange-200 bg-orange-50/50">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-orange-700">
+                <Bell className="w-5 h-5" />
+                Convites Pendentes ({pendingInvitations.length})
+              </CardTitle>
+              <CardDescription className="text-orange-600">
+                Você tem convites de atletas aguardando sua resposta
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {pendingInvitations.map((invitation) => (
+                  <div
+                    key={invitation.id}
+                    className="flex items-center justify-between p-4 bg-background border border-orange-200 rounded-lg"
+                  >
+                    <div>
+                      <h4 className="font-semibold">
+                        {(invitation.athlete as any)?.full_name || 'Atleta'}
+                      </h4>
+                      <p className="text-sm text-muted-foreground">
+                        Convite para: {getSpecialtyText(invitation.specialty)}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        Enviado em {new Date(invitation.invited_at).toLocaleDateString()}
+                      </p>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        onClick={() => handleInvitationResponse(invitation.id, 'accept')}
+                        disabled={loading}
+                        className="bg-green-600 hover:bg-green-700"
+                      >
+                        <Check className="w-4 h-4 mr-1" />
+                        Aceitar
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleInvitationResponse(invitation.id, 'reject')}
+                        disabled={loading}
+                        className="border-red-200 text-red-600 hover:bg-red-50"
+                      >
+                        <X className="w-4 h-4 mr-1" />
+                        Rejeitar
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Overview Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
           <Card className="p-6 hover:shadow-performance transition-shadow">
