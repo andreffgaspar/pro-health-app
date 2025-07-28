@@ -185,7 +185,8 @@ export const useAthleteData = () => {
   const processPerformanceData = (data: AthleteDataRecord[]): PerformanceData[] => {
     const performanceData: PerformanceData[] = [];
 
-    for (let i = 6; i >= 0; i--) {
+    // Generate data for the last 30 days to support all period selections
+    for (let i = 29; i >= 0; i--) {
       const date = new Date();
       date.setDate(date.getDate() - i);
       const dateString = date.toDateString();
