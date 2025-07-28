@@ -427,13 +427,19 @@ const DataVisualization = ({ trigger }: DataVisualizationProps) => {
                                   <Button
                                     variant="ghost"
                                     size="sm"
-                                     onClick={() => {
-                                       const attachment = record.data.attachments[0];
-                                       const { data } = supabase.storage
-                                         .from('medical-files')
-                                         .getPublicUrl(attachment);
-                                       window.open(data.publicUrl, '_blank');
-                                     }}
+                                    onClick={async () => {
+                                      const attachment = record.data.attachments[0];
+                                      const { data, error } = await supabase.storage
+                                        .from('medical-files')
+                                        .createSignedUrl(attachment, 60 * 60); // 1 hora de validade
+                                      
+                                      if (error) {
+                                        console.error('Erro ao gerar URL:', error);
+                                        return;
+                                      }
+                                      
+                                      window.open(data.signedUrl, '_blank');
+                                    }}
                                     title="Visualizar arquivo anexado"
                                   >
                                     <FileText className="w-4 h-4" />
