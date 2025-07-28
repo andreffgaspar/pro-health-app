@@ -173,22 +173,6 @@ const AthleterDashboard = () => {
           </Card>
         </div>
 
-        {/* Agenda de Consultas */}
-        <Card className="mb-8">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Calendar className="w-5 h-5 text-primary" />
-              Agenda de Consultas
-            </CardTitle>
-            <CardDescription>
-              Visualize e agende suas consultas com profissionais
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <SessionScheduler userType="athlete" />
-          </CardContent>
-        </Card>
-
         {/* Main Content */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Performance Chart */}
