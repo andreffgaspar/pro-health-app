@@ -474,8 +474,8 @@ const ProfessionalDashboard = () => {
                                     onClick={() => removeAthleteRelationship(relationship.id, athlete?.full_name || 'Atleta')}
                                     className="text-red-600"
                                   >
-                                    <UserMinus className="w-4 h-4 mr-2" />
-                                    Remover da Equipe
+                                     <UserMinus className="w-4 h-4 mr-2" />
+                                     Inativar Atleta
                                   </DropdownMenuItem>
                                 </DropdownMenuContent>
                               </DropdownMenu>
@@ -630,8 +630,8 @@ const ProfessionalDashboard = () => {
                     }}
                     className="text-red-600 border-red-200 hover:bg-red-50"
                   >
-                    <UserMinus className="w-4 h-4 mr-2" />
-                    Remover da Equipe
+                     <UserMinus className="w-4 h-4 mr-2" />
+                     Inativar Atleta
                   </Button>
                 </div>
               </div>
