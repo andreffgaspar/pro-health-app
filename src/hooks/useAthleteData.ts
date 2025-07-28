@@ -81,10 +81,18 @@ export const useAthleteData = () => {
 
   const processData = (data: AthleteDataRecord[]) => {
     // Process today's metrics
-    const today = new Date().toDateString();
-    const todayData = data.filter(record => 
-      new Date(record.recorded_at).toDateString() === today
-    );
+    const today = new Date();
+    const todayString = today.toDateString();
+    console.log('Today is:', todayString);
+    
+    const todayData = data.filter(record => {
+      const recordDate = new Date(record.recorded_at);
+      const recordDateString = recordDate.toDateString();
+      console.log('Record date:', recordDateString, 'Type:', record.data_type, 'Match:', recordDateString === todayString);
+      return recordDateString === todayString;
+    });
+    
+    console.log('Today data found:', todayData.length, 'records');
 
     // Get latest medical data (from any day)
     const medicalTypes = ['medical_exam', 'medication', 'injury', 'treatment'];
@@ -101,14 +109,16 @@ export const useAthleteData = () => {
     } : undefined;
 
     const processedToday: ProcessedMetrics = {
-      sleep: getLatestValue(todayData, 'sleep') || 0,
-      heartRate: getLatestValue(todayData, 'heart_rate') || 0,
+      sleep: getLatestValue(todayData, 'sleep') || getLatestValue(data, 'sleep') || 0, // Fallback to any day if no today data
+      heartRate: getLatestValue(todayData, 'heart_rate') || getLatestValue(data, 'heart_rate') || 0,
       calories: getLatestValue(todayData, 'calories') || 0,
       water: getLatestValue(todayData, 'water') || 0,
       training: getLatestValue(todayData, 'training_duration') || 0,
-      recovery: getLatestValue(todayData, 'recovery_score') || 0,
+      recovery: getLatestValue(todayData, 'recovery_score') || getLatestValue(data, 'recovery_score') || 0,
       lastMedicalData
     };
+    
+    console.log('Processed today metrics:', processedToday);
 
     setTodaysMetrics(processedToday);
 
