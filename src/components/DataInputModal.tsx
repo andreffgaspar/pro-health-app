@@ -1193,20 +1193,20 @@ const DataInputModal = ({ trigger, initialTab = "sleep" }: DataInputModalProps) 
 
                 {/* Extracted Data Section */}
                 {(medicalData.extractedVariables || medicalData.rawText) && (
-                  <div className="space-y-4 bg-green-50 border border-green-200 rounded-lg p-4">
+                  <div className="space-y-4 bg-card border border-border rounded-lg p-4">
                     <div className="flex items-center gap-2">
-                      <AlertCircle className="w-5 h-5 text-green-600" />
-                      <Label className="text-green-800 font-medium">Dados Extraídos Automaticamente</Label>
+                      <AlertCircle className="w-5 h-5 text-primary" />
+                      <Label className="text-foreground font-medium">Dados Extraídos Automaticamente</Label>
                     </div>
                     
                     {medicalData.extractedVariables && (
                       <div className="space-y-2">
-                        <Label htmlFor="extracted-variables">Variáveis do Exame</Label>
+                        <Label htmlFor="extracted-variables" className="text-foreground">Variáveis do Exame</Label>
                         <Textarea
                           id="extracted-variables"
                           value={medicalData.extractedVariables}
                           onChange={(e) => setMedicalData({...medicalData, extractedVariables: e.target.value})}
-                          className="bg-white min-h-[120px]"
+                          className="bg-background text-foreground border-border min-h-[120px]"
                           placeholder="Variáveis e valores extraídos do PDF..."
                         />
                       </div>
@@ -1214,12 +1214,12 @@ const DataInputModal = ({ trigger, initialTab = "sleep" }: DataInputModalProps) 
                     
                     {medicalData.rawText && (
                       <div className="space-y-2">
-                        <Label htmlFor="raw-text">Texto Completo Extraído</Label>
+                        <Label htmlFor="raw-text" className="text-foreground">Texto Completo Extraído</Label>
                         <Textarea
                           id="raw-text"
                           value={medicalData.rawText}
                           onChange={(e) => setMedicalData({...medicalData, rawText: e.target.value})}
-                          className="bg-white min-h-[100px] text-xs"
+                          className="bg-background text-foreground border-border min-h-[100px] text-xs font-mono"
                           placeholder="Texto completo extraído do PDF..."
                         />
                       </div>

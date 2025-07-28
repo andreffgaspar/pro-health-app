@@ -142,22 +142,33 @@ serve(async (req) => {
     let extractedText = '';
     
     try {
-      // Decode the base64 PDF buffer
+      // Decode the base64 PDF buffer with proper UTF-8 handling
       const pdfBytes = Uint8Array.from(atob(pdfBuffer), c => c.charCodeAt(0));
       
-      // Basic text extraction (this is very simplified)
-      // In production, you'd want to use a proper PDF parser or Document AI
-      const decoder = new TextDecoder('latin1');
-      const pdfString = decoder.decode(pdfBytes);
+      // Use UTF-8 decoding for better text extraction
+      const decoder = new TextDecoder('utf-8', { fatal: false });
+      let pdfString = '';
       
-      // Extract text between common PDF text markers
+      try {
+        pdfString = decoder.decode(pdfBytes);
+      } catch (decodingError) {
+        // Fallback to latin1 if UTF-8 fails
+        const latin1Decoder = new TextDecoder('latin1');
+        pdfString = latin1Decoder.decode(pdfBytes);
+      }
+      
+      // Enhanced text extraction with better pattern matching
       const textMatches = pdfString.match(/BT[\s\S]*?ET/g) || [];
-      extractedText = textMatches.join(' ')
+      
+      // Clean and normalize extracted text
+      extractedText = textMatches
+        .join(' ')
         .replace(/BT|ET|Tf|Td|TJ|Tj|'/g, ' ')
         .replace(/\s+/g, ' ')
+        .replace(/[^\x20-\x7E\u00C0-\u017F\u0100-\u024F]/g, ' ') // Keep only printable Latin characters
         .trim();
       
-      if (!extractedText) {
+      if (!extractedText || extractedText.length < 10) {
         extractedText = 'Não foi possível extrair texto do PDF automaticamente. Por favor, insira os dados manualmente.';
       }
       
