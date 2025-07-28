@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { usePdfExtraction } from "@/hooks/usePdfExtraction";
 import { 
   Plus, 
   Moon, 
@@ -21,7 +22,9 @@ import {
   UserMinus,
   Upload,
   FileText,
-  X
+  X,
+  Zap,
+  AlertCircle
 } from "lucide-react";
 
 interface DataInputModalProps {
@@ -35,6 +38,7 @@ const DataInputModal = ({ trigger, initialTab = "sleep" }: DataInputModalProps) 
   const [activeTab, setActiveTab] = useState(initialTab);
   const { toast } = useToast();
   const { user } = useAuth();
+  const { extractDataFromPdf, populateFormWithExtractedData, isExtracting } = usePdfExtraction();
   
   // Update active tab when initialTab prop changes
   useEffect(() => {
@@ -108,6 +112,10 @@ const DataInputModal = ({ trigger, initialTab = "sleep" }: DataInputModalProps) 
     recommendations: "",
     followUp: "",
     labResults: "",
+    laboratory: "",
+    appointmentDate: "",
+    extractedVariables: "",
+    rawText: "",
     notes: "",
     files: [] as File[]
   });
@@ -270,7 +278,7 @@ const DataInputModal = ({ trigger, initialTab = "sleep" }: DataInputModalProps) 
         setPhysiotherapyData({ therapistName: "", sessionType: "", duration: "", exercises: "", painLevel: "", mobility: "", strength: "", recommendations: "", nextSession: "", notes: "" });
         break;
       case 'medical':
-        setMedicalData({ doctorName: "", appointmentType: "", symptoms: "", diagnosis: "", medications: "", dosage: "", sideEffects: "", recommendations: "", followUp: "", labResults: "", notes: "", files: [] });
+        setMedicalData({ doctorName: "", appointmentType: "", symptoms: "", diagnosis: "", medications: "", dosage: "", sideEffects: "", recommendations: "", followUp: "", labResults: "", laboratory: "", appointmentDate: "", extractedVariables: "", rawText: "", notes: "", files: [] });
         break;
       case 'vitals':
         setVitalData({ heartRate: "", bloodPressure: "", weight: "", bodyFat: "", muscleMass: "", temperature: "", oxygenSaturation: "", glucose: "", notes: "" });
@@ -278,7 +286,7 @@ const DataInputModal = ({ trigger, initialTab = "sleep" }: DataInputModalProps) 
     }
   };
 
-  const handleFileUpload = (files: FileList | null) => {
+  const handleFileUpload = async (files: FileList | null) => {
     if (!files) return;
     
     const validFiles = Array.from(files).filter(file => {
@@ -315,10 +323,41 @@ const DataInputModal = ({ trigger, initialTab = "sleep" }: DataInputModalProps) 
       return true;
     });
 
+    // Add files to state
     setMedicalData({
       ...medicalData,
       files: [...medicalData.files, ...validFiles]
     });
+
+    // If there's a PDF file, offer automatic extraction
+    const pdfFile = validFiles.find(file => file.type === 'application/pdf');
+    if (pdfFile) {
+      const shouldExtract = window.confirm(
+        `Detectamos um arquivo PDF (${pdfFile.name}). Deseja extrair automaticamente os dados do exame?`
+      );
+      
+      if (shouldExtract) {
+        await handlePdfExtraction(pdfFile);
+      }
+    }
+  };
+
+  const handlePdfExtraction = async (file: File) => {
+    const result = await extractDataFromPdf(file);
+    
+    if (result.success && result.extractedData) {
+      const extractedFormData = populateFormWithExtractedData(result.extractedData);
+      
+      setMedicalData(prevData => ({
+        ...prevData,
+        ...extractedFormData
+      }));
+      
+      toast({
+        title: "Dados preenchidos automaticamente!",
+        description: "Verifique os campos extraídos e faça ajustes se necessário.",
+      });
+    }
   };
 
   const removeFile = (index: number) => {
@@ -1007,6 +1046,19 @@ const DataInputModal = ({ trigger, initialTab = "sleep" }: DataInputModalProps) 
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
+                {/* Extraction Status */}
+                {isExtracting && (
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+                    <div className="flex items-center gap-2">
+                      <Zap className="w-5 h-5 text-blue-600 animate-pulse" />
+                      <span className="text-blue-800 font-medium">Extraindo dados do PDF...</span>
+                    </div>
+                    <p className="text-blue-600 text-sm mt-1">
+                      Processando arquivo com IA para extrair informações automaticamente.
+                    </p>
+                  </div>
+                )}
+
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="doctor">Nome do Médico</Label>
@@ -1015,6 +1067,26 @@ const DataInputModal = ({ trigger, initialTab = "sleep" }: DataInputModalProps) 
                       placeholder="Dr. Maria Santos"
                       value={medicalData.doctorName}
                       onChange={(e) => setMedicalData({...medicalData, doctorName: e.target.value})}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="laboratory">Laboratório</Label>
+                    <Input
+                      id="laboratory"
+                      placeholder="Lab Central"
+                      value={medicalData.laboratory}
+                      onChange={(e) => setMedicalData({...medicalData, laboratory: e.target.value})}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="appointment-date">Data do Exame</Label>
+                    <Input
+                      id="appointment-date"
+                      type="date"
+                      value={medicalData.appointmentDate}
+                      onChange={(e) => setMedicalData({...medicalData, appointmentDate: e.target.value})}
                     />
                   </div>
 
@@ -1098,12 +1170,13 @@ const DataInputModal = ({ trigger, initialTab = "sleep" }: DataInputModalProps) 
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="lab-results">Resultados de Exames</Label>
+                    <Label htmlFor="lab-results">Resultados de Exames / Laudo</Label>
                     <Textarea
                       id="lab-results"
                       placeholder="Glicemia: 85mg/dL, Colesterol: 180mg/dL..."
                       value={medicalData.labResults}
                       onChange={(e) => setMedicalData({...medicalData, labResults: e.target.value})}
+                      className="min-h-[100px]"
                     />
                   </div>
 
@@ -1118,6 +1191,42 @@ const DataInputModal = ({ trigger, initialTab = "sleep" }: DataInputModalProps) 
                   </div>
                 </div>
 
+                {/* Extracted Data Section */}
+                {(medicalData.extractedVariables || medicalData.rawText) && (
+                  <div className="space-y-4 bg-green-50 border border-green-200 rounded-lg p-4">
+                    <div className="flex items-center gap-2">
+                      <AlertCircle className="w-5 h-5 text-green-600" />
+                      <Label className="text-green-800 font-medium">Dados Extraídos Automaticamente</Label>
+                    </div>
+                    
+                    {medicalData.extractedVariables && (
+                      <div className="space-y-2">
+                        <Label htmlFor="extracted-variables">Variáveis do Exame</Label>
+                        <Textarea
+                          id="extracted-variables"
+                          value={medicalData.extractedVariables}
+                          onChange={(e) => setMedicalData({...medicalData, extractedVariables: e.target.value})}
+                          className="bg-white min-h-[120px]"
+                          placeholder="Variáveis e valores extraídos do PDF..."
+                        />
+                      </div>
+                    )}
+                    
+                    {medicalData.rawText && (
+                      <div className="space-y-2">
+                        <Label htmlFor="raw-text">Texto Completo Extraído</Label>
+                        <Textarea
+                          id="raw-text"
+                          value={medicalData.rawText}
+                          onChange={(e) => setMedicalData({...medicalData, rawText: e.target.value})}
+                          className="bg-white min-h-[100px] text-xs"
+                          placeholder="Texto completo extraído do PDF..."
+                        />
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 {/* File Upload Section */}
                 <div className="space-y-4">
                   <Label>Anexar Arquivos Médicos</Label>
@@ -1127,9 +1236,15 @@ const DataInputModal = ({ trigger, initialTab = "sleep" }: DataInputModalProps) 
                       <p className="text-sm text-muted-foreground mb-2">
                         Clique para anexar ou arraste arquivos aqui
                       </p>
-                      <p className="text-xs text-muted-foreground mb-4">
+                      <p className="text-xs text-muted-foreground mb-2">
                         PDF, JPG, PNG, DOC, DOCX até 10MB
                       </p>
+                      <div className="bg-blue-50 border border-blue-200 rounded p-2 mb-4">
+                        <p className="text-xs text-blue-700 flex items-center gap-1">
+                          <Zap className="w-3 h-3" />
+                          PDFs de exames são automaticamente processados para extrair dados!
+                        </p>
+                      </div>
                       <Input
                         type="file"
                         multiple
@@ -1137,13 +1252,15 @@ const DataInputModal = ({ trigger, initialTab = "sleep" }: DataInputModalProps) 
                         onChange={(e) => handleFileUpload(e.target.files)}
                         className="hidden"
                         id="file-upload"
+                        disabled={isExtracting}
                       />
                       <Button
                         type="button"
                         variant="outline"
                         onClick={() => document.getElementById('file-upload')?.click()}
+                        disabled={isExtracting}
                       >
-                        Selecionar Arquivos
+                        {isExtracting ? "Processando..." : "Selecionar Arquivos"}
                       </Button>
                     </div>
                   </div>
