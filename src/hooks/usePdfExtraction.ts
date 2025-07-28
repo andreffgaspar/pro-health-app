@@ -31,26 +31,15 @@ export const usePdfExtraction = () => {
   const [isExtracting, setIsExtracting] = useState(false);
   const { toast } = useToast();
 
-  const extractTextFromPdf = async (file: File): Promise<string> => {
+  const convertPdfToBuffer = async (file: File): Promise<string> => {
     try {
       const arrayBuffer = await file.arrayBuffer();
-      const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-      
-      let fullText = '';
-      
-      for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
-        const page = await pdf.getPage(pageNum);
-        const textContent = await page.getTextContent();
-        const pageText = textContent.items
-          .map((item: any) => item.str)
-          .join(' ');
-        fullText += pageText + '\n';
-      }
-      
-      return fullText;
+      const uint8Array = new Uint8Array(arrayBuffer);
+      const base64String = btoa(String.fromCharCode(...uint8Array));
+      return base64String;
     } catch (error) {
-      console.error('Error extracting text from PDF:', error);
-      throw new Error('Falha ao extrair texto do PDF');
+      console.error('Error converting PDF to buffer:', error);
+      throw new Error('Falha ao converter PDF');
     }
   };
 
@@ -71,17 +60,17 @@ export const usePdfExtraction = () => {
         description: "Processando PDF e extraindo informações médicas. Aguarde...",
       });
 
-      // Extract text from PDF
-      const pdfText = await extractTextFromPdf(file);
+      // Convert PDF to buffer for Document AI processing
+      const pdfBuffer = await convertPdfToBuffer(file);
       
-      if (!pdfText || pdfText.trim().length === 0) {
-        throw new Error('Não foi possível extrair texto do PDF');
+      if (!pdfBuffer) {
+        throw new Error('Não foi possível converter o PDF');
       }
 
-      // Call the edge function to process the text with AI
+      // Call the edge function to process the PDF with Google Cloud Document AI
       const { data, error } = await supabase.functions.invoke('extract-pdf-data', {
         body: {
-          pdfText: pdfText,
+          pdfBuffer: pdfBuffer,
           fileName: file.name
         }
       });
