@@ -144,7 +144,9 @@ export const useAthleteData = () => {
     if (type === 'sleep' && typeof latestRecord.data === 'object' && latestRecord.data) {
       const sleepHours = latestRecord.data.hours;
       console.log('Sleep data found:', sleepHours, typeof sleepHours);
-      return typeof sleepHours === 'number' ? sleepHours : 0;
+      // Convert string to number if needed
+      const numericValue = typeof sleepHours === 'string' ? parseFloat(sleepHours) : sleepHours;
+      return typeof numericValue === 'number' && !isNaN(numericValue) ? numericValue : 0;
     }
     
     // Handle other data types
