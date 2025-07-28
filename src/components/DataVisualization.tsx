@@ -23,7 +23,8 @@ import {
   Trash2,
   Clock,
   ArrowUpDown,
-  ChevronRight
+  ChevronRight,
+  FileText
 } from "lucide-react";
 import { LineChart, Line, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { useAuth } from "@/hooks/useAuth";
@@ -422,6 +423,22 @@ const DataVisualization = ({ trigger }: DataVisualizationProps) => {
                               </div>
                               
                               <div className="flex items-center gap-2">
+                                {record.data_type === 'medical' && record.data?.attachments && record.data.attachments.length > 0 && (
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                     onClick={() => {
+                                       const attachment = record.data.attachments[0];
+                                       const { data } = supabase.storage
+                                         .from('medical-files')
+                                         .getPublicUrl(attachment);
+                                       window.open(data.publicUrl, '_blank');
+                                     }}
+                                    title="Visualizar arquivo anexado"
+                                  >
+                                    <FileText className="w-4 h-4" />
+                                  </Button>
+                                )}
                                 <Button
                                   variant="ghost"
                                   size="sm"
