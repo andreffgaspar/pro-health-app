@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { 
   Activity, 
   Heart, 
@@ -33,6 +34,8 @@ const AthleterDashboard = () => {
   const { user, profile, signOut } = useAuth();
   const { todaysMetrics, weeklyData, performanceData, loading } = useAthleteData();
   const [showProfileSettings, setShowProfileSettings] = useState(false);
+  const [selectedMetric, setSelectedMetric] = useState("score");
+  const [selectedPeriod, setSelectedPeriod] = useState("7");
   const sleepTriggerRef = useRef<HTMLButtonElement>(null);
   const nutritionTriggerRef = useRef<HTMLButtonElement>(null);
   const trainingTriggerRef = useRef<HTMLButtonElement>(null);
@@ -59,6 +62,22 @@ const AthleterDashboard = () => {
         vitalsTriggerRef.current?.click();
         break;
     }
+  };
+
+  // Function to get metric label
+  const getMetricLabel = (metric: string) => {
+    const labels = {
+      score: "Score de Performance",
+      sleep: "Horas de Sono",
+      training: "Tempo de Treino (min)"
+    };
+    return labels[metric as keyof typeof labels] || "Score de Performance";
+  };
+
+  // Function to filter performance data by period
+  const getFilteredPerformanceData = () => {
+    const days = parseInt(selectedPeriod);
+    return performanceData.slice(-days);
   };
 
   return (
@@ -207,19 +226,45 @@ const AthleterDashboard = () => {
           {/* Performance Chart */}
           <Card className="lg:col-span-2">
             <CardHeader>
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between mb-4">
                 <div>
                   <CardTitle className="flex items-center gap-2">
                     <TrendingUp className="w-5 h-5 text-primary" />
-                    Performance Semanal
+                    Gráfico de Performance
                   </CardTitle>
                   <CardDescription>
-                    Evolução do seu score de performance nos últimos 7 dias
+                    {getMetricLabel(selectedMetric)} nos últimos {selectedPeriod} dias
                   </CardDescription>
                 </div>
-                <Badge variant="outline" className="text-primary border-primary">
-                  Última semana
-                </Badge>
+              </div>
+              <div className="flex gap-4">
+                <div className="flex flex-col gap-2">
+                  <label className="text-sm font-medium">Métrica:</label>
+                  <Select value={selectedMetric} onValueChange={setSelectedMetric}>
+                    <SelectTrigger className="w-[180px]">
+                      <SelectValue placeholder="Selecione a métrica" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="score">Score de Performance</SelectItem>
+                      <SelectItem value="sleep">Horas de Sono</SelectItem>
+                      <SelectItem value="training">Tempo de Treino</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="flex flex-col gap-2">
+                  <label className="text-sm font-medium">Período:</label>
+                  <Select value={selectedPeriod} onValueChange={setSelectedPeriod}>
+                    <SelectTrigger className="w-[120px]">
+                      <SelectValue placeholder="Período" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="3">3 dias</SelectItem>
+                      <SelectItem value="7">7 dias</SelectItem>
+                      <SelectItem value="14">14 dias</SelectItem>
+                      <SelectItem value="30">30 dias</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
             </CardHeader>
             <CardContent>
@@ -230,9 +275,9 @@ const AthleterDashboard = () => {
                     <p className="text-sm text-muted-foreground">Carregando dados...</p>
                   </div>
                 </div>
-              ) : performanceData.length > 0 ? (
+              ) : getFilteredPerformanceData().length > 0 ? (
                 <ResponsiveContainer width="100%" height={300}>
-                  <AreaChart data={performanceData}>
+                  <AreaChart data={getFilteredPerformanceData()}>
                     <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
                     <XAxis dataKey="date" />
                     <YAxis />
@@ -245,7 +290,7 @@ const AthleterDashboard = () => {
                     />
                     <Area 
                       type="monotone" 
-                      dataKey="score" 
+                      dataKey={selectedMetric} 
                       stroke="hsl(var(--primary))" 
                       fill="hsl(var(--primary))" 
                       fillOpacity={0.2}
