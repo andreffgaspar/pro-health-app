@@ -391,6 +391,60 @@ export type Database = {
         }
         Relationships: []
       }
+      sessions: {
+        Row: {
+          athlete_id: string | null
+          created_at: string
+          description: string | null
+          end_time: string
+          id: string
+          location: string | null
+          notes: string | null
+          price: number | null
+          professional_id: string
+          session_date: string
+          session_type: string
+          start_time: string
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          athlete_id?: string | null
+          created_at?: string
+          description?: string | null
+          end_time: string
+          id?: string
+          location?: string | null
+          notes?: string | null
+          price?: number | null
+          professional_id: string
+          session_date: string
+          session_type: string
+          start_time: string
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          athlete_id?: string | null
+          created_at?: string
+          description?: string | null
+          end_time?: string
+          id?: string
+          location?: string | null
+          notes?: string | null
+          price?: number | null
+          professional_id?: string
+          session_date?: string
+          session_type?: string
+          start_time?: string
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

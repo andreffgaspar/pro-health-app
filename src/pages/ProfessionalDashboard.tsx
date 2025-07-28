@@ -35,6 +35,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import CommunicationCenter from "@/components/CommunicationCenter";
+import SessionScheduler from "@/components/SessionScheduler";
 
 interface AthleteData {
   id: string;
@@ -404,10 +405,14 @@ const ProfessionalDashboard = () => {
 
         {/* Main Content */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-3 mb-8">
+          <TabsList className="grid w-full grid-cols-4 mb-8">
             <TabsTrigger value="athletes" className="gap-2">
               <Users className="w-4 h-4" />
               Meus Atletas
+            </TabsTrigger>
+            <TabsTrigger value="sessions" className="gap-2">
+              <Calendar className="w-4 h-4" />
+              Agenda
             </TabsTrigger>
             <TabsTrigger value="communication" className="gap-2">
               <MessageSquare className="w-4 h-4" />
@@ -564,6 +569,10 @@ const ProfessionalDashboard = () => {
                 </CardContent>
               </Card>
             </div>
+          </TabsContent>
+
+          <TabsContent value="sessions">
+            <SessionScheduler userType="professional" />
           </TabsContent>
 
           <TabsContent value="communication">

@@ -1,0 +1,528 @@
+import { useState, useEffect } from "react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Badge } from "@/components/ui/badge";
+import { Calendar } from "@/components/ui/calendar";
+import { 
+  CalendarDays, 
+  Clock, 
+  MapPin, 
+  DollarSign, 
+  Plus,
+  Edit,
+  Trash2,
+  User,
+  CheckCircle,
+  XCircle
+} from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
+
+interface Session {
+  id: string;
+  professional_id: string;
+  athlete_id: string | null;
+  title: string;
+  description: string | null;
+  session_date: string;
+  start_time: string;
+  end_time: string;
+  session_type: string;
+  status: string;
+  location: string | null;
+  notes: string | null;
+  price: number | null;
+  athlete?: {
+    full_name: string;
+  } | null;
+}
+
+interface SessionSchedulerProps {
+  userType: 'professional' | 'athlete';
+}
+
+const SessionScheduler = ({ userType }: SessionSchedulerProps) => {
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const [sessions, setSessions] = useState<Session[]>([]);
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [formData, setFormData] = useState({
+    title: '',
+    description: '',
+    session_date: format(new Date(), 'yyyy-MM-dd'),
+    start_time: '',
+    end_time: '',
+    location: '',
+    price: ''
+  });
+
+  useEffect(() => {
+    if (user) {
+      fetchSessions();
+    }
+  }, [user, selectedDate]);
+
+  const fetchSessions = async () => {
+    try {
+      const dateStr = format(selectedDate, 'yyyy-MM-dd');
+      
+      let query = supabase
+        .from('sessions')
+        .select(`
+          *,
+          athlete:profiles!sessions_athlete_id_fkey(full_name)
+        `)
+        .eq('session_date', dateStr);
+
+      if (userType === 'professional') {
+        query = query.eq('professional_id', user?.id);
+      } else {
+        // For athletes, show available sessions and their own bookings
+        query = query.or(`athlete_id.eq.${user?.id},session_type.eq.available`);
+      }
+
+      const { data, error } = await query.order('start_time');
+
+      if (error) throw error;
+      
+      // Type-safe data handling
+      const typedData: Session[] = (data || []).map((item: any) => ({
+        ...item,
+        athlete: item.athlete
+      }));
+      
+      setSessions(typedData);
+    } catch (error) {
+      console.error('Error fetching sessions:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível carregar as sessões.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleCreateSession = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (userType !== 'professional') return;
+
+    try {
+      setLoading(true);
+
+      const { error } = await supabase
+        .from('sessions')
+        .insert({
+          professional_id: user?.id,
+          title: formData.title,
+          description: formData.description || null,
+          session_date: formData.session_date,
+          start_time: formData.start_time,
+          end_time: formData.end_time,
+          location: formData.location || null,
+          price: formData.price ? parseFloat(formData.price) : null,
+          session_type: 'available',
+          status: 'available'
+        });
+
+      if (error) throw error;
+
+      toast({
+        title: "Sessão criada!",
+        description: "Horário disponibilizado com sucesso."
+      });
+
+      setIsCreateDialogOpen(false);
+      setFormData({
+        title: '',
+        description: '',
+        session_date: format(new Date(), 'yyyy-MM-dd'),
+        start_time: '',
+        end_time: '',
+        location: '',
+        price: ''
+      });
+      fetchSessions();
+    } catch (error) {
+      console.error('Error creating session:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível criar a sessão.",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleBookSession = async (sessionId: string) => {
+    if (userType !== 'athlete') return;
+
+    try {
+      setLoading(true);
+
+      const { error } = await supabase
+        .from('sessions')
+        .update({
+          athlete_id: user?.id,
+          status: 'pending',
+          session_type: 'booked'
+        })
+        .eq('id', sessionId);
+
+      if (error) throw error;
+
+      // Create notification for professional
+      const session = sessions.find(s => s.id === sessionId);
+      if (session) {
+        await supabase
+          .from('notifications')
+          .insert({
+            user_id: session.professional_id,
+            title: 'Nova Solicitação de Agendamento',
+            message: `Um atleta solicitou agendamento para a sessão "${session.title}" em ${format(new Date(session.session_date), 'dd/MM/yyyy', { locale: ptBR })} às ${session.start_time}.`,
+            type: 'info'
+          });
+      }
+
+      toast({
+        title: "Sessão agendada!",
+        description: "Sua solicitação foi enviada ao profissional."
+      });
+
+      fetchSessions();
+    } catch (error) {
+      console.error('Error booking session:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível agendar a sessão.",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSessionAction = async (sessionId: string, action: 'confirm' | 'cancel') => {
+    if (userType !== 'professional') return;
+
+    try {
+      setLoading(true);
+
+      const newStatus = action === 'confirm' ? 'confirmed' : 'cancelled';
+      
+      const { error } = await supabase
+        .from('sessions')
+        .update({ status: newStatus })
+        .eq('id', sessionId);
+
+      if (error) throw error;
+
+      // Create notification for athlete
+      const session = sessions.find(s => s.id === sessionId);
+      if (session && session.athlete_id) {
+        await supabase
+          .from('notifications')
+          .insert({
+            user_id: session.athlete_id,
+            title: action === 'confirm' ? 'Agendamento Confirmado' : 'Agendamento Cancelado',
+            message: action === 'confirm' 
+              ? `Sua sessão "${session.title}" foi confirmada para ${format(new Date(session.session_date), 'dd/MM/yyyy', { locale: ptBR })} às ${session.start_time}.`
+              : `Sua sessão "${session.title}" foi cancelada.`,
+            type: action === 'confirm' ? 'success' : 'warning'
+          });
+      }
+
+      toast({
+        title: action === 'confirm' ? "Sessão confirmada!" : "Sessão cancelada",
+        description: action === 'confirm' 
+          ? "O atleta foi notificado da confirmação." 
+          : "O atleta foi notificado do cancelamento."
+      });
+
+      fetchSessions();
+    } catch (error) {
+      console.error('Error updating session:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível atualizar a sessão.",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getStatusBadge = (status: string, session_type: string) => {
+    if (session_type === 'available' && status === 'available') {
+      return <Badge variant="outline" className="text-green-600 border-green-600">Disponível</Badge>;
+    }
+    if (status === 'pending') {
+      return <Badge variant="outline" className="text-orange-600 border-orange-600">Pendente</Badge>;
+    }
+    if (status === 'confirmed') {
+      return <Badge variant="outline" className="text-blue-600 border-blue-600">Confirmado</Badge>;
+    }
+    if (status === 'cancelled') {
+      return <Badge variant="outline" className="text-red-600 border-red-600">Cancelado</Badge>;
+    }
+    if (status === 'completed') {
+      return <Badge variant="outline" className="text-purple-600 border-purple-600">Concluído</Badge>;
+    }
+    return <Badge variant="outline">{status}</Badge>;
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold">
+            {userType === 'professional' ? 'Gerenciar Agenda' : 'Agendar Sessões'}
+          </h2>
+          <p className="text-muted-foreground">
+            {userType === 'professional' 
+              ? 'Crie horários disponíveis e gerencie agendamentos'
+              : 'Encontre e agende sessões com profissionais'
+            }
+          </p>
+        </div>
+        
+        {userType === 'professional' && (
+          <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+            <DialogTrigger asChild>
+              <Button className="gap-2">
+                <Plus className="w-4 h-4" />
+                Criar Horário
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-md">
+              <DialogHeader>
+                <DialogTitle>Criar Novo Horário</DialogTitle>
+              </DialogHeader>
+              <form onSubmit={handleCreateSession} className="space-y-4">
+                <div>
+                  <Label htmlFor="title">Título da Sessão</Label>
+                  <Input
+                    id="title"
+                    value={formData.title}
+                    onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                    placeholder="Ex: Consulta Nutricional"
+                    required
+                  />
+                </div>
+                
+                <div>
+                  <Label htmlFor="description">Descrição (opcional)</Label>
+                  <Textarea
+                    id="description"
+                    value={formData.description}
+                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                    placeholder="Detalhes sobre a sessão..."
+                  />
+                </div>
+                
+                <div>
+                  <Label htmlFor="session_date">Data</Label>
+                  <Input
+                    id="session_date"
+                    type="date"
+                    value={formData.session_date}
+                    onChange={(e) => setFormData({ ...formData, session_date: e.target.value })}
+                    required
+                  />
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="start_time">Início</Label>
+                    <Input
+                      id="start_time"
+                      type="time"
+                      value={formData.start_time}
+                      onChange={(e) => setFormData({ ...formData, start_time: e.target.value })}
+                      required
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="end_time">Fim</Label>
+                    <Input
+                      id="end_time"
+                      type="time"
+                      value={formData.end_time}
+                      onChange={(e) => setFormData({ ...formData, end_time: e.target.value })}
+                      required
+                    />
+                  </div>
+                </div>
+                
+                <div>
+                  <Label htmlFor="location">Local (opcional)</Label>
+                  <Input
+                    id="location"
+                    value={formData.location}
+                    onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                    placeholder="Ex: Consultório, Online, etc."
+                  />
+                </div>
+                
+                <div>
+                  <Label htmlFor="price">Preço (opcional)</Label>
+                  <Input
+                    id="price"
+                    type="number"
+                    step="0.01"
+                    value={formData.price}
+                    onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+                    placeholder="0.00"
+                  />
+                </div>
+                
+                <Button type="submit" className="w-full" disabled={loading}>
+                  {loading ? 'Criando...' : 'Criar Horário'}
+                </Button>
+              </form>
+            </DialogContent>
+          </Dialog>
+        )}
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        {/* Calendar */}
+        <Card className="lg:col-span-1">
+          <CardHeader>
+            <CardTitle className="text-lg">Calendário</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Calendar
+              mode="single"
+              selected={selectedDate}
+              onSelect={(date) => date && setSelectedDate(date)}
+              locale={ptBR}
+              className="rounded-md"
+            />
+          </CardContent>
+        </Card>
+
+        {/* Sessions List */}
+        <Card className="lg:col-span-3">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <CalendarDays className="w-5 h-5" />
+              Sessões - {format(selectedDate, 'dd/MM/yyyy', { locale: ptBR })}
+            </CardTitle>
+            <CardDescription>
+              {sessions.length} sessão(ões) encontrada(s)
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {sessions.length > 0 ? (
+              <div className="space-y-4">
+                {sessions.map((session) => (
+                  <div
+                    key={session.id}
+                    className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors"
+                  >
+                    <div className="flex-1">
+                      <div className="flex items-center gap-3 mb-2">
+                        <h4 className="font-semibold">{session.title}</h4>
+                        {getStatusBadge(session.status, session.session_type)}
+                      </div>
+                      
+                      <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                        <div className="flex items-center gap-1">
+                          <Clock className="w-4 h-4" />
+                          {session.start_time} - {session.end_time}
+                        </div>
+                        
+                        {session.location && (
+                          <div className="flex items-center gap-1">
+                            <MapPin className="w-4 h-4" />
+                            {session.location}
+                          </div>
+                        )}
+                        
+                        {session.price && (
+                          <div className="flex items-center gap-1">
+                            <DollarSign className="w-4 h-4" />
+                            R$ {session.price.toFixed(2)}
+                          </div>
+                        )}
+                        
+                        {session.athlete_id && session.athlete && (
+                          <div className="flex items-center gap-1">
+                            <User className="w-4 h-4" />
+                            {(session.athlete as any).full_name}
+                          </div>
+                        )}
+                      </div>
+                      
+                      {session.description && (
+                        <p className="text-sm text-muted-foreground mt-2">
+                          {session.description}
+                        </p>
+                      )}
+                    </div>
+                    
+                    <div className="flex gap-2">
+                      {userType === 'athlete' && session.session_type === 'available' && session.status === 'available' && (
+                        <Button
+                          size="sm"
+                          onClick={() => handleBookSession(session.id)}
+                          disabled={loading}
+                        >
+                          Agendar
+                        </Button>
+                      )}
+                      
+                      {userType === 'professional' && session.status === 'pending' && (
+                        <>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleSessionAction(session.id, 'confirm')}
+                            disabled={loading}
+                            className="text-green-600 border-green-600 hover:bg-green-50"
+                          >
+                            <CheckCircle className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleSessionAction(session.id, 'cancel')}
+                            disabled={loading}
+                            className="text-red-600 border-red-600 hover:bg-red-50"
+                          >
+                            <XCircle className="w-4 h-4" />
+                          </Button>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8 text-muted-foreground">
+                <CalendarDays className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                <p>Nenhuma sessão encontrada para esta data</p>
+                {userType === 'professional' && (
+                  <p className="text-sm">Crie novos horários disponíveis</p>
+                )}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+};
+
+export default SessionScheduler;

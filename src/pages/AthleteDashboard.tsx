@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import DataInputModal from "@/components/DataInputModal";
 import CommunicationCenter from "@/components/CommunicationCenter";
+import SessionScheduler from "@/components/SessionScheduler";
 import { Link, useNavigate } from "react-router-dom";
 import { LineChart, Line, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from "recharts";
 import { useAuth } from "@/hooks/useAuth";
@@ -279,10 +280,11 @@ const AthleterDashboard = () => {
           </CardHeader>
           <CardContent>
             <Tabs defaultValue="training" className="w-full">
-              <TabsList className="grid w-full grid-cols-3">
+              <TabsList className="grid w-full grid-cols-4">
                 <TabsTrigger value="training">Treinos</TabsTrigger>
                 <TabsTrigger value="nutrition">Nutrição</TabsTrigger>
                 <TabsTrigger value="hydration">Hidratação</TabsTrigger>
+                <TabsTrigger value="sessions">Sessões</TabsTrigger>
               </TabsList>
               
               <TabsContent value="training" className="mt-6">
@@ -337,6 +339,10 @@ const AthleterDashboard = () => {
                     <Bar dataKey="water" fill="hsl(var(--secondary))" radius={[4, 4, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
+              </TabsContent>
+
+              <TabsContent value="sessions" className="mt-6">
+                <SessionScheduler userType="athlete" />
               </TabsContent>
             </Tabs>
           </CardContent>
