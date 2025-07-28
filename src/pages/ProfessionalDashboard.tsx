@@ -820,27 +820,50 @@ const ProfessionalDashboard = () => {
 
         {/* Quick Actions */}
         <div className="mt-8">
-          <h3 className="text-lg font-semibold mb-4">Ações Rápidas</h3>
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-            <Button variant="outline" className="h-16 flex flex-col gap-1">
-              <Plus className="w-5 h-5" />
-              <span className="text-xs">Novo Atleta</span>
+          <h3 className="text-lg font-semibold mb-6">Ações Rápidas</h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+            <Button 
+              variant="outline" 
+              className="h-20 flex flex-col gap-2 hover-scale animate-fade-in"
+              onClick={() => setShowInviteDialog(true)}
+            >
+              <Plus className="w-6 h-6" />
+              <span className="text-sm font-medium">Novo Atleta</span>
             </Button>
-            <Button variant="outline" className="h-16 flex flex-col gap-1">
-              <FileText className="w-5 h-5" />
-              <span className="text-xs">Criar Relatório</span>
+            <Button 
+              variant="outline" 
+              className="h-20 flex flex-col gap-2 hover-scale animate-fade-in"
+              style={{ animationDelay: "0.1s" }}
+            >
+              <FileText className="w-6 h-6" />
+              <span className="text-sm font-medium">Criar Relatório</span>
             </Button>
-            <Button variant="outline" className="h-16 flex flex-col gap-1">
-              <Calendar className="w-5 h-5" />
-              <span className="text-xs">Agendar Sessão</span>
+            <Button 
+              variant="outline" 
+              className="h-20 flex flex-col gap-2 hover-scale animate-fade-in"
+              onClick={() => setActiveTab("sessions")}
+              style={{ animationDelay: "0.2s" }}
+            >
+              <Calendar className="w-6 h-6" />
+              <span className="text-sm font-medium">Agendar Sessão</span>
             </Button>
-            <Button variant="outline" className="h-16 flex flex-col gap-1">
-              <MessageSquare className="w-5 h-5" />
-              <span className="text-xs">Mensagens</span>
+            <Button 
+              variant="outline" 
+              className="h-20 flex flex-col gap-2 hover-scale animate-fade-in"
+              onClick={() => setActiveTab("communication")}
+              style={{ animationDelay: "0.3s" }}
+            >
+              <MessageSquare className="w-6 h-6" />
+              <span className="text-sm font-medium">Mensagens</span>
             </Button>
-            <Button variant="outline" className="h-16 flex flex-col gap-1">
-              <TrendingUp className="w-5 h-5" />
-              <span className="text-xs">Análises</span>
+            <Button 
+              variant="outline" 
+              className="h-20 flex flex-col gap-2 hover-scale animate-fade-in"
+              onClick={() => setActiveTab("analytics")}
+              style={{ animationDelay: "0.4s" }}
+            >
+              <TrendingUp className="w-6 h-6" />
+              <span className="text-sm font-medium">Análises</span>
             </Button>
           </div>
         </div>
