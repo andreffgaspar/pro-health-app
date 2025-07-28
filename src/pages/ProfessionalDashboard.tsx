@@ -5,6 +5,9 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Separator } from "@/components/ui/separator";
 import { 
   Users, 
   Search,
@@ -20,7 +23,11 @@ import {
   MessageSquare,
   Check,
   X,
-  Bell
+  Bell,
+  MoreVertical,
+  UserMinus,
+  Eye,
+  Edit
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { LineChart, Line, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from "recharts";
@@ -41,6 +48,18 @@ interface AthleteData {
   };
 }
 
+interface PendingInvitation {
+  id: string;
+  athlete_id: string;
+  specialty: string;
+  status: string;
+  invited_at: string;
+  athlete: {
+    full_name: string;
+    user_id: string;
+  };
+}
+
 const ProfessionalDashboard = () => {
   const navigate = useNavigate();
   const { user, profile, signOut } = useAuth();
@@ -50,6 +69,8 @@ const ProfessionalDashboard = () => {
   const [myAthletes, setMyAthletes] = useState<AthleteData[]>([]);
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState("athletes");
+  const [selectedAthlete, setSelectedAthlete] = useState<AthleteData | null>(null);
+  const [showAthleteDetailsDialog, setShowAthleteDetailsDialog] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -104,18 +125,6 @@ const ProfessionalDashboard = () => {
     }
   };
 
-interface PendingInvitation {
-  id: string;
-  athlete_id: string;
-  specialty: string;
-  status: string;
-  invited_at: string;
-  athlete: {
-    full_name: string;
-    user_id: string;
-  };
-}
-
   const handleInvitationResponse = async (invitationId: string, action: 'accept' | 'reject') => {
     try {
       setLoading(true);
@@ -149,6 +158,40 @@ interface PendingInvitation {
     } finally {
       setLoading(false);
     }
+  };
+
+  const removeAthleteRelationship = async (relationshipId: string, athleteName: string) => {
+    try {
+      setLoading(true);
+      
+      const { error } = await supabase
+        .from('athlete_professional_relationships')
+        .delete()
+        .eq('id', relationshipId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Atleta removido",
+        description: `${athleteName} foi removido da sua equipe.`
+      });
+
+      fetchMyAthletes();
+    } catch (error) {
+      console.error('Error removing athlete relationship:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível remover o atleta.",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const viewAthleteDetails = (athlete: AthleteData) => {
+    setSelectedAthlete(athlete);
+    setShowAthleteDetailsDialog(true);
   };
 
   const getSpecialtyText = (specialty: string) => {
@@ -410,18 +453,31 @@ interface PendingInvitation {
                               </div>
                             </div>
                             <div className="text-right">
-                               <div className="flex gap-2 mt-2">
-                                 <Button variant="outline" size="sm">
-                                   <FileText className="w-3 h-3" />
-                                 </Button>
-                                 <Button 
-                                   variant="outline" 
-                                   size="sm"
-                                   onClick={() => handleChatWithAthlete(athlete?.user_id)}
-                                 >
-                                   <MessageSquare className="w-3 h-3" />
-                                 </Button>
-                               </div>
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button variant="ghost" size="sm">
+                                    <MoreVertical className="w-4 h-4" />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                  <DropdownMenuItem onClick={() => viewAthleteDetails(relationship)}>
+                                    <Eye className="w-4 h-4 mr-2" />
+                                    Ver Detalhes
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem onClick={() => handleChatWithAthlete(athlete?.user_id)}>
+                                    <MessageSquare className="w-4 h-4 mr-2" />
+                                    Conversar
+                                  </DropdownMenuItem>
+                                  <Separator />
+                                  <DropdownMenuItem 
+                                    onClick={() => removeAthleteRelationship(relationship.id, athlete?.full_name || 'Atleta')}
+                                    className="text-red-600"
+                                  >
+                                    <UserMinus className="w-4 h-4 mr-2" />
+                                    Remover da Equipe
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
                             </div>
                           </div>
                         );
@@ -437,7 +493,7 @@ interface PendingInvitation {
                 </CardContent>
               </Card>
 
-              {/* Performance Comparison */}
+              {/* Athletes Summary */}
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
@@ -495,6 +551,92 @@ interface PendingInvitation {
             </div>
           </TabsContent>
         </Tabs>
+
+        {/* Athlete Details Dialog */}
+        <Dialog open={showAthleteDetailsDialog} onOpenChange={setShowAthleteDetailsDialog}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>Detalhes do Atleta</DialogTitle>
+            </DialogHeader>
+            {selectedAthlete && (
+              <div className="space-y-6">
+                {/* Basic Info */}
+                <div className="flex items-center gap-4">
+                  <Avatar className="h-16 w-16">
+                    <AvatarFallback className="text-lg">
+                      {(selectedAthlete.athlete as any)?.full_name?.split(' ').map((n: string) => n[0]).join('') || 'A'}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <h3 className="text-xl font-semibold">
+                      {(selectedAthlete.athlete as any)?.full_name || 'Atleta'}
+                    </h3>
+                    <Badge variant="default" className="mt-1">
+                      {getSpecialtyText(selectedAthlete.specialty)}
+                    </Badge>
+                  </div>
+                </div>
+
+                <Separator />
+
+                {/* Relationship Info */}
+                <div className="grid grid-cols-2 gap-4">
+                  <Card className="p-4">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Calendar className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm font-medium">Vinculado em</span>
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      {new Date(selectedAthlete.accepted_at).toLocaleDateString('pt-BR', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric'
+                      })}
+                    </p>
+                  </Card>
+
+                  <Card className="p-4">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Activity className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm font-medium">Status</span>
+                    </div>
+                    <Badge variant="default" className="text-xs">
+                      Ativo
+                    </Badge>
+                  </Card>
+                </div>
+
+                {/* Action Buttons */}
+                <div className="flex gap-3">
+                  <Button
+                    onClick={() => {
+                      setShowAthleteDetailsDialog(false);
+                      handleChatWithAthlete((selectedAthlete.athlete as any)?.user_id);
+                    }}
+                    className="flex-1"
+                  >
+                    <MessageSquare className="w-4 h-4 mr-2" />
+                    Iniciar Conversa
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setShowAthleteDetailsDialog(false);
+                      removeAthleteRelationship(
+                        selectedAthlete.id, 
+                        (selectedAthlete.athlete as any)?.full_name || 'Atleta'
+                      );
+                    }}
+                    className="text-red-600 border-red-200 hover:bg-red-50"
+                  >
+                    <UserMinus className="w-4 h-4 mr-2" />
+                    Remover da Equipe
+                  </Button>
+                </div>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
 
         {/* Quick Actions */}
         <div className="mt-8">
