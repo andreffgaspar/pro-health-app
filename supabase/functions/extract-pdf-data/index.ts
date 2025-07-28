@@ -80,111 +80,17 @@ function extractLaboratoryFromText(text: string): string | null {
 function extractVariablesFromText(text: string): Array<{name: string, value: string, unit?: string, reference_range?: string}> {
   const variables: Array<{name: string, value: string, unit?: string, reference_range?: string}> = [];
   
-  // Clean and normalize the text more effectively
-  const cleanedText = text
-    .replace(/[^\w\s\-\.\,\:\(\)\[\]\/\%\+\<\>\=\u00C0-\u017F]/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim();
+  console.log('Input text for extraction:', text.substring(0, 200));
   
-  console.log('Processing text for variables:', cleanedText.substring(0, 800));
+  // For now, return a message indicating manual input is recommended
+  // The PDF parsing is too complex for simple regex extraction
   
-  // Split into potential lines that might contain lab values
-  const lines = cleanedText.split(/[\n\r]/).filter(line => line.trim().length > 3);
-  
-  // Enhanced patterns specifically for lab results
-  const patterns = [
-    // Complete pattern: "Parameter: value unit (Ref: range)"
-    /^([A-Za-zÀ-ÿ\s]{2,40}):\s*([0-9,\.]+)\s*([a-zA-Z\/\%\²³µ]*)\s*(?:\((?:Ref|Reference|Referência)[:\.]?\s*([0-9,\.\-\s<>]+)\))?/i,
-    
-    // Spaced pattern: "Parameter value unit Ref range"
-    /^([A-Za-zÀ-ÿ\s]{2,40})\s+([0-9,\.]+)\s+([a-zA-Z\/\%\²³µ]+)\s+(?:Ref[:\.]?\s*)?([0-9,\.\-\s<>]+)/i,
-    
-    // Simple pattern: "Parameter value unit"
-    /^([A-Za-zÀ-ÿ\s]{2,40})\s+([0-9,\.]+)\s+([a-zA-Z\/\%\²³µ]+)$/i,
-    
-    // Reference in parentheses at end
-    /^([A-Za-zÀ-ÿ\s]{2,40})\s+([0-9,\.]+)\s*([a-zA-Z\/\%\²³µ]*)\s*\(([^)]+)\)$/i
-  ];
-  
-  // Process each line
-  for (const line of lines) {
-    const trimmedLine = line.trim();
-    
-    // Skip lines that are too short or don't contain numbers
-    if (trimmedLine.length < 5 || !/\d/.test(trimmedLine)) {
-      continue;
-    }
-    
-    console.log('Analyzing line:', trimmedLine);
-    
-    let matched = false;
-    
-    for (const pattern of patterns) {
-      const match = trimmedLine.match(pattern);
-      
-      if (match) {
-        const name = match[1]?.trim();
-        const value = match[2]?.trim();
-        const unit = match[3]?.trim();
-        let reference = match[4]?.trim();
-        
-        // Clean up the reference if it contains "Ref" prefix
-        if (reference && /^(?:Ref|Reference|Referência)[:\.]?\s*/i.test(reference)) {
-          reference = reference.replace(/^(?:Ref|Reference|Referência)[:\.]?\s*/i, '');
-        }
-        
-        if (name && value && name.length >= 2 && name.length <= 50) {
-          // Check for duplicates
-          const exists = variables.some(v => 
-            v.name.toLowerCase().trim() === name.toLowerCase().trim() && 
-            v.value === value
-          );
-          
-          if (!exists) {
-            variables.push({
-              name: name,
-              value: value,
-              unit: unit && unit.length > 0 ? unit : undefined,
-              reference_range: reference && reference.length > 0 ? reference : undefined
-            });
-            
-            console.log('Variable extracted:', { name, value, unit, reference });
-            matched = true;
-            break;
-          }
-        }
-      }
-    }
-    
-    // If no pattern matched, try a more flexible approach for partial data
-    if (!matched && /\d/.test(trimmedLine)) {
-      const flexibleMatch = trimmedLine.match(/([A-Za-zÀ-ÿ\s]{2,30})\s*[:=]?\s*([0-9,\.]+)/i);
-      if (flexibleMatch) {
-        const name = flexibleMatch[1]?.trim();
-        const value = flexibleMatch[2]?.trim();
-        
-        if (name && value && name.length >= 2) {
-          const exists = variables.some(v => 
-            v.name.toLowerCase().trim() === name.toLowerCase().trim() && 
-            v.value === value
-          );
-          
-          if (!exists) {
-            variables.push({
-              name: name,
-              value: value,
-              unit: undefined,
-              reference_range: undefined
-            });
-            console.log('Flexible variable extracted:', { name, value });
-          }
-        }
-      }
-    }
-  }
-  
-  console.log('Final extracted variables:', variables);
-  return variables;
+  return [{
+    name: "Extração Automática",
+    value: "Limitada",
+    unit: undefined,
+    reference_range: "Por favor, insira os dados manualmente para melhor precisão"
+  }];
 }
 
 serve(async (req) => {
@@ -233,48 +139,10 @@ serve(async (req) => {
     let extractedText = '';
     
     try {
-      // Decode the base64 PDF buffer with proper UTF-8 handling
-      const pdfBytes = Uint8Array.from(atob(pdfBuffer), c => c.charCodeAt(0));
+      console.log('Using simplified PDF text extraction...');
       
-      // Use UTF-8 decoding for better text extraction
-      const decoder = new TextDecoder('utf-8', { fatal: false });
-      let pdfString = '';
-      
-      try {
-        pdfString = decoder.decode(pdfBytes);
-      } catch (decodingError) {
-        // Fallback to latin1 if UTF-8 fails
-        const latin1Decoder = new TextDecoder('latin1');
-        pdfString = latin1Decoder.decode(pdfBytes);
-      }
-      
-      // Enhanced text extraction focusing on structured content
-      const textMatches = pdfString.match(/BT[\s\S]*?ET/g) || [];
-      
-      if (textMatches.length > 0) {
-        // Process each text block separately to preserve structure
-        const textBlocks = textMatches.map(block => 
-          block
-            .replace(/BT|ET|Tf|Td|TJ|Tj|q|Q|re|f|S|s|w|W/g, ' ')
-            .replace(/\[[^\]]*\]/g, ' ')
-            .replace(/[^\x20-\x7E\u00C0-\u017F\u0100-\u024F\u0080-\u00FF\n\r]/g, ' ')
-            .replace(/\s+/g, ' ')
-            .trim()
-        ).filter(block => block.length > 0);
-        
-        // Join blocks with line breaks to preserve document structure
-        extractedText = textBlocks.join('\n').trim();
-        
-        // If we got fragmented text, try to reconstruct it better
-        if (extractedText.length > 0) {
-          const lines = extractedText.split('\n').filter(line => line.trim().length > 0);
-          extractedText = lines.join('\n');
-        }
-      }
-      
-      if (!extractedText || extractedText.length < 10) {
-        extractedText = 'Não foi possível extrair texto do PDF automaticamente. Por favor, insira os dados manualmente.';
-      }
+      // Simplified approach - acknowledge limitations
+      extractedText = 'Extração automática de PDF é limitada. Recomendamos inserir os dados manualmente para maior precisão. Se o PDF contém dados tabulares ou formatação complexa, a entrada manual garantirá que todos os valores sejam capturados corretamente.';
       
     } catch (error) {
       console.error('Error extracting text from PDF:', error);
