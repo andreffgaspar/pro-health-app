@@ -166,9 +166,9 @@ const SessionScheduler = ({ userType }: SessionSchedulerProps) => {
         end_time: formData.end_time,
         location: formData.location || null,
         price: formData.price ? parseFloat(formData.price) : null,
-        athlete_id: formData.athlete_id || null,
-        session_type: formData.athlete_id ? 'booked' : 'available',
-        status: formData.athlete_id ? 'confirmed' : 'available'
+        athlete_id: (formData.athlete_id && formData.athlete_id !== 'none') ? formData.athlete_id : null,
+        session_type: (formData.athlete_id && formData.athlete_id !== 'none') ? 'booked' : 'available',
+        status: (formData.athlete_id && formData.athlete_id !== 'none') ? 'confirmed' : 'available'
       };
 
       const { error } = await supabase
@@ -178,7 +178,7 @@ const SessionScheduler = ({ userType }: SessionSchedulerProps) => {
       if (error) throw error;
 
       // Se um atleta foi selecionado, criar notificação para ele
-      if (formData.athlete_id) {
+      if (formData.athlete_id && formData.athlete_id !== 'none') {
         await supabase
           .from('notifications')
           .insert({
@@ -386,7 +386,7 @@ const SessionScheduler = ({ userType }: SessionSchedulerProps) => {
                       <SelectValue placeholder="Selecione um atleta ou deixe disponível" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Horário livre (disponível para qualquer atleta)</SelectItem>
+                      <SelectItem value="none">Horário livre (disponível para qualquer atleta)</SelectItem>
                       {athletes.map((athlete) => (
                         <SelectItem key={athlete.id} value={athlete.id}>
                           {athlete.full_name}
