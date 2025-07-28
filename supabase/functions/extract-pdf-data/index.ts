@@ -80,19 +80,56 @@ function extractLaboratoryFromText(text: string): string | null {
 function extractVariablesFromText(text: string): Array<{name: string, value: string, unit?: string, reference_range?: string}> {
   const variables: Array<{name: string, value: string, unit?: string, reference_range?: string}> = [];
   
-  // Pattern for lab results: "Test Name: 123.45 mg/dL (Reference: 80-120)"
-  const variablePattern = /([A-Za-zÁÃÔÂÎáãôâîêç\s]+):\s*([0-9,\.]+)\s*([a-zA-Z\/\%]*)\s*(?:\((?:Ref|Referência)[:\.]?\s*([0-9,\.\-\s<>]+)\))?/gi;
+  // Clean the text first - remove excessive special characters but keep medical ones
+  const cleanedText = text
+    .replace(/[^\w\s\-\.\,\:\(\)\[\]\/\%\+\<\>\=]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
   
-  let match;
-  while ((match = variablePattern.exec(text)) !== null) {
-    variables.push({
-      name: match[1].trim(),
-      value: match[2].trim(),
-      unit: match[3] ? match[3].trim() : undefined,
-      reference_range: match[4] ? match[4].trim() : undefined
-    });
+  console.log('Cleaned text for extraction:', cleanedText.substring(0, 500));
+  
+  // Enhanced patterns for medical lab results
+  const patterns = [
+    // Pattern 1: "Test Name: 123.45 mg/dL (Reference: 80-120)"
+    /([A-Za-zÀ-ÿ\s]{3,30}):\s*([0-9,\.]+)\s*([a-zA-Z\/\%]*)\s*(?:\((?:Ref|Referência|Reference)[:\.]?\s*([0-9,\.\-\s<>]+)\))?/gi,
+    // Pattern 2: "Test Name   123.45   mg/dL   80-120"
+    /([A-Za-zÀ-ÿ\s]{3,30})\s+([0-9,\.]+)\s+([a-zA-Z\/\%]+)\s+([0-9,\.\-\s<>]+)/gi,
+    // Pattern 3: "GLUCOSE 95 mg/dL"
+    /([A-Za-zÀ-ÿ]{3,20})\s+([0-9,\.]+)\s+([a-zA-Z\/\%]+)/gi,
+    // Pattern 4: Common Brazilian lab format
+    /(Glicose|Colesterol|Triglicérides|HDL|LDL|Creatinina|Ureia|Hemoglobina|Hematócrito|Leucócitos|Plaquetas|VSG|PCR)\s*:?\s*([0-9,\.]+)\s*([a-zA-Z\/\%]*)/gi
+  ];
+  
+  for (const pattern of patterns) {
+    let match;
+    const regex = new RegExp(pattern.source, pattern.flags);
+    
+    while ((match = regex.exec(cleanedText)) !== null) {
+      const name = match[1]?.trim();
+      const value = match[2]?.trim();
+      const unit = match[3]?.trim();
+      const reference = match[4]?.trim();
+      
+      if (name && value && name.length > 2 && name.length < 50) {
+        // Avoid duplicates
+        const exists = variables.some(v => 
+          v.name.toLowerCase() === name.toLowerCase() && 
+          v.value === value
+        );
+        
+        if (!exists) {
+          variables.push({
+            name: name,
+            value: value,
+            unit: unit || undefined,
+            reference_range: reference || undefined
+          });
+        }
+      }
+    }
   }
   
+  console.log('Extracted variables:', variables);
   return variables;
 }
 
@@ -160,16 +197,25 @@ serve(async (req) => {
       // Enhanced text extraction with better pattern matching
       const textMatches = pdfString.match(/BT[\s\S]*?ET/g) || [];
       
-      // Clean and normalize extracted text
+      // Clean and normalize extracted text more aggressively
       extractedText = textMatches
         .join(' ')
-        .replace(/BT|ET|Tf|Td|TJ|Tj|'/g, ' ')
-        .replace(/\s+/g, ' ')
-        .replace(/[^\x20-\x7E\u00C0-\u017F\u0100-\u024F]/g, ' ') // Keep only printable Latin characters
+        .replace(/BT|ET|Tf|Td|TJ|Tj|q|Q|re|f|S|s|w|W|'/g, ' ') // Remove PDF operators
+        .replace(/\[[^\]]*\]/g, ' ') // Remove bracketed content
+        .replace(/\([^\)]*\)/g, ' ') // Temporarily remove parentheses content to clean
+        .replace(/[^\x20-\x7E\u00C0-\u017F\u0100-\u024F\u0080-\u00FF]/g, ' ') // Keep printable characters
+        .replace(/\s+/g, ' ') // Normalize spaces
         .trim();
+      
+      // Try to extract structured data from tables if possible
+      const lines = extractedText.split('\n').filter(line => line.trim().length > 0);
+      const structuredText = lines.join('\n');
       
       if (!extractedText || extractedText.length < 10) {
         extractedText = 'Não foi possível extrair texto do PDF automaticamente. Por favor, insira os dados manualmente.';
+      } else {
+        // Use the structured version for processing
+        extractedText = structuredText;
       }
       
     } catch (error) {
