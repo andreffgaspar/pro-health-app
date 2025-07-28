@@ -18,7 +18,10 @@ import {
   Heart, 
   Save,
   Stethoscope,
-  UserMinus
+  UserMinus,
+  Upload,
+  FileText,
+  X
 } from "lucide-react";
 
 interface DataInputModalProps {
@@ -97,7 +100,8 @@ const DataInputModal = ({ trigger }: DataInputModalProps) => {
     recommendations: "",
     followUp: "",
     labResults: "",
-    notes: ""
+    notes: "",
+    files: [] as File[]
   });
 
   const [vitalData, setVitalData] = useState({
@@ -116,12 +120,42 @@ const DataInputModal = ({ trigger }: DataInputModalProps) => {
     if (!user) return;
 
     try {
+      let uploadedFiles: string[] = [];
+
+      // Handle file uploads for medical data
+      if (dataType === 'medical' && data.files && data.files.length > 0) {
+        const uploadPromises = data.files.map(async (file: File) => {
+          const fileExtension = file.name.split('.').pop();
+          const fileName = `${user.id}/${Date.now()}_${file.name}`;
+          
+          const { data: uploadData, error: uploadError } = await supabase.storage
+            .from('medical-files')
+            .upload(fileName, file);
+
+          if (uploadError) {
+            console.error('Error uploading file:', uploadError);
+            throw uploadError;
+          }
+
+          return uploadData.path;
+        });
+
+        uploadedFiles = await Promise.all(uploadPromises);
+      }
+
+      // Create a copy of the data without the files property for storage
+      const { files, ...dataToSave } = data;
+      const finalData = {
+        ...dataToSave,
+        ...(uploadedFiles.length > 0 && { attachments: uploadedFiles })
+      };
+
       const { error } = await supabase
         .from('athlete_data')
         .insert([{
           athlete_id: user.id,
           data_type: dataType,
-          data: data,
+          data: finalData,
           recorded_at: new Date().toISOString()
         }]);
 
@@ -129,7 +163,7 @@ const DataInputModal = ({ trigger }: DataInputModalProps) => {
 
       toast({
         title: "Dados salvos com sucesso!",
-        description: `Seus dados de ${dataType} foram registrados.`,
+        description: `Seus dados de ${dataType} foram registrados.${uploadedFiles.length > 0 ? ` ${uploadedFiles.length} arquivo(s) anexado(s).` : ''}`,
       });
 
       // Reset form data based on type
@@ -137,7 +171,7 @@ const DataInputModal = ({ trigger }: DataInputModalProps) => {
       else if (dataType === 'nutrition') setNutritionData({ calories: "", protein: "", carbs: "", fats: "", fiber: "", water: "", meals: "", supplements: "", allergies: "", dietaryRestrictions: "", notes: "" });
       else if (dataType === 'training') setTrainingData({ type: "", duration: "", intensity: "", exercises: "", sets: "", reps: "", weight: "", calories: "", heartRateAvg: "", heartRateMax: "", perceivedExertion: "", location: "", equipment: "", weather: "", injuries: "", notes: "" });
       else if (dataType === 'physiotherapy') setPhysiotherapyData({ therapistName: "", sessionType: "", duration: "", exercises: "", painLevel: "", mobility: "", strength: "", recommendations: "", nextSession: "", notes: "" });
-      else if (dataType === 'medical') setMedicalData({ doctorName: "", appointmentType: "", symptoms: "", diagnosis: "", medications: "", dosage: "", sideEffects: "", recommendations: "", followUp: "", labResults: "", notes: "" });
+      else if (dataType === 'medical') setMedicalData({ doctorName: "", appointmentType: "", symptoms: "", diagnosis: "", medications: "", dosage: "", sideEffects: "", recommendations: "", followUp: "", labResults: "", notes: "", files: [] });
       else if (dataType === 'vitals') setVitalData({ heartRate: "", bloodPressure: "", weight: "", bodyFat: "", muscleMass: "", temperature: "", oxygenSaturation: "", glucose: "", notes: "" });
 
     } catch (error) {
@@ -148,6 +182,54 @@ const DataInputModal = ({ trigger }: DataInputModalProps) => {
         variant: "destructive"
       });
     }
+  };
+
+  const handleFileUpload = (files: FileList | null) => {
+    if (!files) return;
+    
+    const validFiles = Array.from(files).filter(file => {
+      // Accept common medical file formats
+      const validTypes = [
+        'application/pdf',
+        'image/jpeg',
+        'image/png',
+        'image/jpg',
+        'application/msword',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+      ];
+      
+      const maxSize = 10 * 1024 * 1024; // 10MB
+      
+      if (!validTypes.includes(file.type)) {
+        toast({
+          title: "Formato não suportado",
+          description: `O arquivo ${file.name} não está em um formato válido.`,
+          variant: "destructive"
+        });
+        return false;
+      }
+      
+      if (file.size > maxSize) {
+        toast({
+          title: "Arquivo muito grande",
+          description: `O arquivo ${file.name} é maior que 10MB.`,
+          variant: "destructive"
+        });
+        return false;
+      }
+      
+      return true;
+    });
+
+    setMedicalData({
+      ...medicalData,
+      files: [...medicalData.files, ...validFiles]
+    });
+  };
+
+  const removeFile = (index: number) => {
+    const newFiles = medicalData.files.filter((_, i) => i !== index);
+    setMedicalData({ ...medicalData, files: newFiles });
   };
 
   const defaultTrigger = (
@@ -924,6 +1006,65 @@ const DataInputModal = ({ trigger }: DataInputModalProps) => {
                       onChange={(e) => setMedicalData({...medicalData, recommendations: e.target.value})}
                     />
                   </div>
+                </div>
+
+                {/* File Upload Section */}
+                <div className="space-y-4">
+                  <Label>Anexar Arquivos Médicos</Label>
+                  <div className="border-2 border-dashed border-border rounded-lg p-6">
+                    <div className="text-center">
+                      <Upload className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
+                      <p className="text-sm text-muted-foreground mb-2">
+                        Clique para anexar ou arraste arquivos aqui
+                      </p>
+                      <p className="text-xs text-muted-foreground mb-4">
+                        PDF, JPG, PNG, DOC, DOCX até 10MB
+                      </p>
+                      <Input
+                        type="file"
+                        multiple
+                        accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+                        onChange={(e) => handleFileUpload(e.target.files)}
+                        className="hidden"
+                        id="file-upload"
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => document.getElementById('file-upload')?.click()}
+                      >
+                        Selecionar Arquivos
+                      </Button>
+                    </div>
+                  </div>
+
+                  {/* File List */}
+                  {medicalData.files.length > 0 && (
+                    <div className="space-y-2">
+                      <Label>Arquivos Selecionados ({medicalData.files.length})</Label>
+                      <div className="space-y-2 max-h-32 overflow-y-auto">
+                        {medicalData.files.map((file, index) => (
+                          <div key={index} className="flex items-center justify-between p-2 bg-muted rounded-lg">
+                            <div className="flex items-center gap-2">
+                              <FileText className="w-4 h-4 text-muted-foreground" />
+                              <span className="text-sm truncate">{file.name}</span>
+                              <span className="text-xs text-muted-foreground">
+                                ({(file.size / 1024 / 1024).toFixed(1)}MB)
+                              </span>
+                            </div>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => removeFile(index)}
+                            >
+                              <X className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 <div className="space-y-2">
