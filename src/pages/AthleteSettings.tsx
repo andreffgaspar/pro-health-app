@@ -135,6 +135,9 @@ const AthleteSettings = () => {
     try {
       setSearchLoading(true);
       
+      console.log('🔍 Searching for:', query);
+      console.log('🏠 Current relationships:', relationships);
+      
       const { data, error } = await supabase
         .from('profiles')
         .select('user_id, full_name')
@@ -142,14 +145,20 @@ const AthleteSettings = () => {
         .ilike('full_name', `%${query}%`)
         .limit(10);
 
+      console.log('📊 Raw search results:', data);
+      console.log('❌ Search error:', error);
+
       if (error) throw error;
       
       // Filter out professionals already in relationships
       const existingProfessionalIds = relationships.map(r => r.professional_id);
+      console.log('🚫 Existing professional IDs to filter:', existingProfessionalIds);
+      
       const filteredResults = (data || []).filter(
         prof => !existingProfessionalIds.includes(prof.user_id)
       );
       
+      console.log('✅ Filtered results:', filteredResults);
       setSearchResults(filteredResults);
     } catch (error) {
       console.error('Error searching professionals:', error);
