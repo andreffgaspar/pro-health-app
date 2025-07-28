@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import DataInputModal from "@/components/DataInputModal";
 import DataVisualization from "@/components/DataVisualization";
+import AthleteProfileSettings from "@/components/AthleteProfileSettings";
 import CommunicationCenter from "@/components/CommunicationCenter";
 import SessionScheduler from "@/components/SessionScheduler";
 import { Link, useNavigate } from "react-router-dom";
@@ -50,6 +51,7 @@ const weeklyData = [
 const AthleterDashboard = () => {
   const navigate = useNavigate();
   const { user, profile, signOut } = useAuth();
+  const [showProfileSettings, setShowProfileSettings] = useState(false);
 
   const handleLogout = async () => {
     await signOut();
@@ -85,7 +87,7 @@ const AthleterDashboard = () => {
               <Button 
                 variant="ghost" 
                 size="icon"
-                onClick={() => navigate('/athlete-settings')}
+                onClick={() => setShowProfileSettings(true)}
               >
                 <Settings className="w-5 h-5" />
               </Button>
@@ -400,6 +402,12 @@ const AthleterDashboard = () => {
             }
           />
         </div>
+
+        {/* Athlete Profile Settings Modal */}
+        <AthleteProfileSettings 
+          open={showProfileSettings} 
+          onOpenChange={setShowProfileSettings} 
+        />
       </div>
     </div>
   );
