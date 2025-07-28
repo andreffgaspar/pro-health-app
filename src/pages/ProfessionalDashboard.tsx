@@ -116,6 +116,7 @@ const ProfessionalDashboard = () => {
         `)
         .eq('professional_id', user?.id)
         .eq('status', 'accepted')
+        .eq('is_active', true)
         .order('accepted_at', { ascending: false });
 
       if (error) throw error;
@@ -166,22 +167,22 @@ const ProfessionalDashboard = () => {
       
       const { error } = await supabase
         .from('athlete_professional_relationships')
-        .delete()
+        .update({ is_active: false })
         .eq('id', relationshipId);
 
       if (error) throw error;
 
       toast({
-        title: "Atleta removido",
-        description: `${athleteName} foi removido da sua equipe.`
+        title: "Atleta marcado como inativo",
+        description: `${athleteName} foi marcado como inativo na sua equipe.`
       });
 
       fetchMyAthletes();
     } catch (error) {
-      console.error('Error removing athlete relationship:', error);
+      console.error('Error deactivating athlete relationship:', error);
       toast({
         title: "Erro",
-        description: "Não foi possível remover o atleta.",
+        description: "Não foi possível marcar o atleta como inativo.",
         variant: "destructive"
       });
     } finally {

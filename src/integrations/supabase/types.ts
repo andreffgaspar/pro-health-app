@@ -56,6 +56,7 @@ export type Database = {
           created_at: string
           id: string
           invited_at: string
+          is_active: boolean
           professional_id: string
           specialty: string
           status: string
@@ -67,6 +68,7 @@ export type Database = {
           created_at?: string
           id?: string
           invited_at?: string
+          is_active?: boolean
           professional_id: string
           specialty: string
           status?: string
@@ -78,6 +80,7 @@ export type Database = {
           created_at?: string
           id?: string
           invited_at?: string
+          is_active?: boolean
           professional_id?: string
           specialty?: string
           status?: string
