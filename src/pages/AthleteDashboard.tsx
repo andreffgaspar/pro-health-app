@@ -26,45 +26,17 @@ import SessionScheduler from "@/components/SessionScheduler";
 import { Link, useNavigate } from "react-router-dom";
 import { LineChart, Line, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from "recharts";
 import { useAuth } from "@/hooks/useAuth";
-
-// Mock data for charts
-const performanceData = [
-  { date: "01/12", score: 75, sleep: 7.5, training: 8 },
-  { date: "02/12", score: 82, sleep: 8.2, training: 9 },
-  { date: "03/12", score: 78, sleep: 7.8, training: 7 },
-  { date: "04/12", score: 85, sleep: 8.5, training: 9 },
-  { date: "05/12", score: 88, sleep: 8.0, training: 8 },
-  { date: "06/12", score: 90, sleep: 8.3, training: 9 },
-  { date: "07/12", score: 86, sleep: 7.9, training: 8 }
-];
-
-const weeklyData = [
-  { day: "Seg", calories: 2100, water: 2.5, training: 90 },
-  { day: "Ter", calories: 2250, water: 3.0, training: 120 },
-  { day: "Qua", calories: 2180, water: 2.8, training: 0 },
-  { day: "Qui", calories: 2300, water: 3.2, training: 105 },
-  { day: "Sex", calories: 2150, water: 2.7, training: 95 },
-  { day: "Sáb", calories: 2400, water: 3.5, training: 150 },
-  { day: "Dom", calories: 2200, water: 2.9, training: 60 }
-];
+import { useAthleteData } from "@/hooks/useAthleteData";
 
 const AthleterDashboard = () => {
   const navigate = useNavigate();
   const { user, profile, signOut } = useAuth();
+  const { todaysMetrics, weeklyData, performanceData, loading } = useAthleteData();
   const [showProfileSettings, setShowProfileSettings] = useState(false);
 
   const handleLogout = async () => {
     await signOut();
     navigate("/");
-  };
-
-  const todaysMetrics = {
-    sleep: 8.2,
-    heartRate: 65,
-    calories: 2250,
-    water: 3.0,
-    training: 120,
-    recovery: 85
   };
 
   return (
@@ -109,7 +81,7 @@ const AthleterDashboard = () => {
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Sono</p>
-                <p className="text-lg font-bold">{todaysMetrics.sleep}h</p>
+                <p className="text-lg font-bold">{todaysMetrics.sleep.toFixed(1)}h</p>
               </div>
             </div>
           </Card>
@@ -145,7 +117,7 @@ const AthleterDashboard = () => {
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Água</p>
-                <p className="text-lg font-bold">{todaysMetrics.water}L</p>
+                <p className="text-lg font-bold">{todaysMetrics.water.toFixed(1)}L</p>
               </div>
             </div>
           </Card>
@@ -196,28 +168,45 @@ const AthleterDashboard = () => {
               </div>
             </CardHeader>
             <CardContent>
-              <ResponsiveContainer width="100%" height={300}>
-                <AreaChart data={performanceData}>
-                  <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
-                  <XAxis dataKey="date" />
-                  <YAxis />
-                  <Tooltip 
-                    contentStyle={{ 
-                      backgroundColor: 'hsl(var(--card))', 
-                      border: '1px solid hsl(var(--border))',
-                      borderRadius: '8px'
-                    }}
-                  />
-                  <Area 
-                    type="monotone" 
-                    dataKey="score" 
-                    stroke="hsl(var(--primary))" 
-                    fill="hsl(var(--primary))" 
-                    fillOpacity={0.2}
-                    strokeWidth={3}
-                  />
-                </AreaChart>
-              </ResponsiveContainer>
+              {loading ? (
+                <div className="h-[300px] flex items-center justify-center">
+                  <div className="text-center">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
+                    <p className="text-sm text-muted-foreground">Carregando dados...</p>
+                  </div>
+                </div>
+              ) : performanceData.length > 0 ? (
+                <ResponsiveContainer width="100%" height={300}>
+                  <AreaChart data={performanceData}>
+                    <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
+                    <XAxis dataKey="date" />
+                    <YAxis />
+                    <Tooltip 
+                      contentStyle={{ 
+                        backgroundColor: 'hsl(var(--card))', 
+                        border: '1px solid hsl(var(--border))',
+                        borderRadius: '8px'
+                      }}
+                    />
+                    <Area 
+                      type="monotone" 
+                      dataKey="score" 
+                      stroke="hsl(var(--primary))" 
+                      fill="hsl(var(--primary))" 
+                      fillOpacity={0.2}
+                      strokeWidth={3}
+                    />
+                  </AreaChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="h-[300px] flex items-center justify-center">
+                  <div className="text-center">
+                    <TrendingUp className="w-16 h-16 text-muted-foreground/30 mx-auto mb-4" />
+                    <p className="text-muted-foreground mb-2">Nenhum dado de performance encontrado</p>
+                    <p className="text-sm text-muted-foreground">Comece registrando seus dados de treino, sono e recuperação</p>
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
 
@@ -236,9 +225,9 @@ const AthleterDashboard = () => {
               <div className="space-y-2">
                 <div className="flex justify-between text-sm">
                   <span>Hidratação</span>
-                  <span>{todaysMetrics.water}/3.5L</span>
+                  <span>{todaysMetrics.water.toFixed(1)}/3.5L</span>
                 </div>
-                <Progress value={(todaysMetrics.water / 3.5) * 100} className="h-2" />
+                <Progress value={Math.min((todaysMetrics.water / 3.5) * 100, 100)} className="h-2" />
               </div>
 
               <div className="space-y-2">
@@ -246,7 +235,7 @@ const AthleterDashboard = () => {
                   <span>Tempo de Treino</span>
                   <span>{todaysMetrics.training}/150min</span>
                 </div>
-                <Progress value={(todaysMetrics.training / 150) * 100} className="h-2" />
+                <Progress value={Math.min((todaysMetrics.training / 150) * 100, 100)} className="h-2" />
               </div>
 
               <div className="space-y-2">
@@ -254,15 +243,15 @@ const AthleterDashboard = () => {
                   <span>Calorias</span>
                   <span>{todaysMetrics.calories}/2400</span>
                 </div>
-                <Progress value={(todaysMetrics.calories / 2400) * 100} className="h-2" />
+                <Progress value={Math.min((todaysMetrics.calories / 2400) * 100, 100)} className="h-2" />
               </div>
 
               <div className="space-y-2">
                 <div className="flex justify-between text-sm">
                   <span>Qualidade do Sono</span>
-                  <span>{todaysMetrics.sleep}/8h</span>
+                  <span>{todaysMetrics.sleep.toFixed(1)}/8h</span>
                 </div>
-                <Progress value={(todaysMetrics.sleep / 8) * 100} className="h-2" />
+                <Progress value={Math.min((todaysMetrics.sleep / 8) * 100, 100)} className="h-2" />
               </div>
 
               <DataInputModal />
@@ -291,57 +280,108 @@ const AthleterDashboard = () => {
               </TabsList>
               
               <TabsContent value="training" className="mt-6">
-                <ResponsiveContainer width="100%" height={250}>
-                  <BarChart data={weeklyData}>
-                    <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
-                    <XAxis dataKey="day" />
-                    <YAxis />
-                    <Tooltip 
-                      contentStyle={{ 
-                        backgroundColor: 'hsl(var(--card))', 
-                        border: '1px solid hsl(var(--border))',
-                        borderRadius: '8px'
-                      }}
-                    />
-                    <Bar dataKey="training" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
+                {loading ? (
+                  <div className="h-[250px] flex items-center justify-center">
+                    <div className="text-center">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
+                      <p className="text-sm text-muted-foreground">Carregando dados...</p>
+                    </div>
+                  </div>
+                ) : weeklyData.some(day => day.training > 0) ? (
+                  <ResponsiveContainer width="100%" height={250}>
+                    <BarChart data={weeklyData}>
+                      <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
+                      <XAxis dataKey="day" />
+                      <YAxis />
+                      <Tooltip 
+                        contentStyle={{ 
+                          backgroundColor: 'hsl(var(--card))', 
+                          border: '1px solid hsl(var(--border))',
+                          borderRadius: '8px'
+                        }}
+                      />
+                      <Bar dataKey="training" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="h-[250px] flex items-center justify-center">
+                    <div className="text-center">
+                      <Clock className="w-16 h-16 text-muted-foreground/30 mx-auto mb-4" />
+                      <p className="text-muted-foreground mb-2">Nenhum dado de treino encontrado</p>
+                      <p className="text-sm text-muted-foreground">Registre seus treinos para visualizar o progresso</p>
+                    </div>
+                  </div>
+                )}
               </TabsContent>
               
               <TabsContent value="nutrition" className="mt-6">
-                <ResponsiveContainer width="100%" height={250}>
-                  <BarChart data={weeklyData}>
-                    <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
-                    <XAxis dataKey="day" />
-                    <YAxis />
-                    <Tooltip 
-                      contentStyle={{ 
-                        backgroundColor: 'hsl(var(--card))', 
-                        border: '1px solid hsl(var(--border))',
-                        borderRadius: '8px'
-                      }}
-                    />
-                    <Bar dataKey="calories" fill="hsl(var(--accent))" radius={[4, 4, 0, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
+                {loading ? (
+                  <div className="h-[250px] flex items-center justify-center">
+                    <div className="text-center">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
+                      <p className="text-sm text-muted-foreground">Carregando dados...</p>
+                    </div>
+                  </div>
+                ) : weeklyData.some(day => day.calories > 0) ? (
+                  <ResponsiveContainer width="100%" height={250}>
+                    <BarChart data={weeklyData}>
+                      <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
+                      <XAxis dataKey="day" />
+                      <YAxis />
+                      <Tooltip 
+                        contentStyle={{ 
+                          backgroundColor: 'hsl(var(--card))', 
+                          border: '1px solid hsl(var(--border))',
+                          borderRadius: '8px'
+                        }}
+                      />
+                      <Bar dataKey="calories" fill="hsl(var(--accent))" radius={[4, 4, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="h-[250px] flex items-center justify-center">
+                    <div className="text-center">
+                      <Utensils className="w-16 h-16 text-muted-foreground/30 mx-auto mb-4" />
+                      <p className="text-muted-foreground mb-2">Nenhum dado de nutrição encontrado</p>
+                      <p className="text-sm text-muted-foreground">Registre suas refeições para acompanhar as calorias</p>
+                    </div>
+                  </div>
+                )}
               </TabsContent>
               
               <TabsContent value="hydration" className="mt-6">
-                <ResponsiveContainer width="100%" height={250}>
-                  <BarChart data={weeklyData}>
-                    <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
-                    <XAxis dataKey="day" />
-                    <YAxis />
-                    <Tooltip 
-                      contentStyle={{ 
-                        backgroundColor: 'hsl(var(--card))', 
-                        border: '1px solid hsl(var(--border))',
-                        borderRadius: '8px'
-                      }}
-                    />
-                    <Bar dataKey="water" fill="hsl(var(--secondary))" radius={[4, 4, 0, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
+                {loading ? (
+                  <div className="h-[250px] flex items-center justify-center">
+                    <div className="text-center">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
+                      <p className="text-sm text-muted-foreground">Carregando dados...</p>
+                    </div>
+                  </div>
+                ) : weeklyData.some(day => day.water > 0) ? (
+                  <ResponsiveContainer width="100%" height={250}>
+                    <BarChart data={weeklyData}>
+                      <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
+                      <XAxis dataKey="day" />
+                      <YAxis />
+                      <Tooltip 
+                        contentStyle={{ 
+                          backgroundColor: 'hsl(var(--card))', 
+                          border: '1px solid hsl(var(--border))',
+                          borderRadius: '8px'
+                        }}
+                      />
+                      <Bar dataKey="water" fill="hsl(var(--secondary))" radius={[4, 4, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="h-[250px] flex items-center justify-center">
+                    <div className="text-center">
+                      <Activity className="w-16 h-16 text-muted-foreground/30 mx-auto mb-4" />
+                      <p className="text-muted-foreground mb-2">Nenhum dado de hidratação encontrado</p>
+                      <p className="text-sm text-muted-foreground">Registre seu consumo de água diário</p>
+                    </div>
+                  </div>
+                )}
               </TabsContent>
 
               <TabsContent value="sessions" className="mt-6">
