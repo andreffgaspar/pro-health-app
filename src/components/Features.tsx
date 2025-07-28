@@ -188,7 +188,7 @@ const Features = () => {
               <Link to="/register">Começar como Atleta</Link>
             </Button>
             <Button variant="performance" size="lg" className="px-8" asChild>
-              <Link to="/register">Sou Profissional</Link>
+              <Link to="/register?tab=professional">Sou Profissional</Link>
             </Button>
           </div>
         </div>
