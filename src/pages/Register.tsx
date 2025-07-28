@@ -7,7 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Activity, Users, ArrowLeft } from "lucide-react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -35,7 +35,9 @@ const professionalSchema = z.object({
 });
 
 const Register = () => {
-  const [activeTab, setActiveTab] = useState<"athlete" | "professional">("athlete");
+  const [searchParams] = useSearchParams();
+  const tabFromUrl = searchParams.get('tab') as "athlete" | "professional" | null;
+  const [activeTab, setActiveTab] = useState<"athlete" | "professional">(tabFromUrl === "professional" ? "professional" : "athlete");
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const { signUp, user, profile } = useAuth();
