@@ -66,6 +66,7 @@ const SessionScheduler = ({ userType }: SessionSchedulerProps) => {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [sessionDates, setSessionDates] = useState<Set<string>>(new Set());
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -80,11 +81,40 @@ const SessionScheduler = ({ userType }: SessionSchedulerProps) => {
   useEffect(() => {
     if (user) {
       fetchSessions();
+      fetchSessionDates();
       if (userType === 'professional') {
         fetchAthletes();
       }
     }
   }, [user, selectedDate]);
+
+  const fetchSessionDates = async () => {
+    try {
+      const startOfMonth = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1);
+      const endOfMonth = new Date(selectedDate.getFullYear(), selectedDate.getMonth() + 1, 0);
+      
+      let query = supabase
+        .from('sessions')
+        .select('session_date')
+        .gte('session_date', format(startOfMonth, 'yyyy-MM-dd'))
+        .lte('session_date', format(endOfMonth, 'yyyy-MM-dd'));
+
+      if (userType === 'professional') {
+        query = query.eq('professional_id', user?.id);
+      } else {
+        query = query.or(`athlete_id.eq.${user?.id},session_type.eq.available`);
+      }
+
+      const { data, error } = await query;
+
+      if (error) throw error;
+      
+      const dates = new Set((data || []).map(item => item.session_date));
+      setSessionDates(dates);
+    } catch (error) {
+      console.error('Error fetching session dates:', error);
+    }
+  };
 
   const fetchAthletes = async () => {
     try {
@@ -481,9 +511,29 @@ const SessionScheduler = ({ userType }: SessionSchedulerProps) => {
             <Calendar
               mode="single"
               selected={selectedDate}
-              onSelect={(date) => date && setSelectedDate(date)}
+              onSelect={(date) => {
+                if (date) {
+                  setSelectedDate(date);
+                  fetchSessionDates();
+                }
+              }}
               locale={ptBR}
               className="w-full"
+              components={{
+                DayContent: ({ date }) => {
+                  const dateStr = format(date, 'yyyy-MM-dd');
+                  const hasSession = sessionDates.has(dateStr);
+                  
+                  return (
+                    <div className="relative flex items-center justify-center w-full h-full">
+                      <span>{date.getDate()}</span>
+                      {hasSession && (
+                        <div className="absolute bottom-0.5 right-0.5 w-1.5 h-1.5 bg-primary rounded-full opacity-80" />
+                      )}
+                    </div>
+                  );
+                }
+              }}
               classNames={{
                 months: "flex w-full flex-col space-y-4",
                 month: "space-y-4 w-full",
