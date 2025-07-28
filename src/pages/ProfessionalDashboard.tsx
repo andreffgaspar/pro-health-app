@@ -6,6 +6,9 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Separator } from "@/components/ui/separator";
 import { 
@@ -61,6 +64,11 @@ interface PendingInvitation {
   };
 }
 
+interface SearchedAthlete {
+  user_id: string;
+  full_name: string;
+}
+
 const ProfessionalDashboard = () => {
   const navigate = useNavigate();
   const { user, profile, signOut } = useAuth();
@@ -72,6 +80,15 @@ const ProfessionalDashboard = () => {
   const [activeTab, setActiveTab] = useState("athletes");
   const [selectedAthlete, setSelectedAthlete] = useState<AthleteData | null>(null);
   const [showAthleteDetailsDialog, setShowAthleteDetailsDialog] = useState(false);
+  
+  // States for athlete invitation
+  const [showInviteDialog, setShowInviteDialog] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<SearchedAthlete[]>([]);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [selectedAthlete2, setSelectedAthlete2] = useState<SearchedAthlete | null>(null);
+  const [inviteSpecialty, setInviteSpecialty] = useState('');
+  const [inviteMessage, setInviteMessage] = useState('');
 
   useEffect(() => {
     if (user) {
@@ -79,6 +96,14 @@ const ProfessionalDashboard = () => {
       fetchMyAthletes();
     }
   }, [user]);
+
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      searchAthletes(searchQuery);
+    }, 300);
+
+    return () => clearTimeout(timeoutId);
+  }, [searchQuery]);
 
   const fetchPendingInvitations = async () => {
     try {
@@ -241,6 +266,122 @@ const ProfessionalDashboard = () => {
     await signOut();
     navigate("/");
   };
+
+  // Search and invite athletes functions
+  const searchAthletes = async (query: string) => {
+    if (!query.trim() || query.length < 2) {
+      setSearchResults([]);
+      return;
+    }
+
+    try {
+      setSearchLoading(true);
+      
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('user_id, full_name')
+        .eq('user_type', 'athlete')
+        .ilike('full_name', `%${query}%`)
+        .limit(10);
+
+      if (error) throw error;
+      
+      // Filter out athletes already in relationships
+      const existingAthleteIds = myAthletes.map(r => r.athlete_id);
+      const filteredResults = (data || []).filter(
+        athlete => !existingAthleteIds.includes(athlete.user_id)
+      );
+      
+      setSearchResults(filteredResults);
+    } catch (error) {
+      console.error('Error searching athletes:', error);
+      toast({
+        title: "Erro na busca",
+        description: "Não foi possível buscar atletas.",
+        variant: "destructive"
+      });
+    } finally {
+      setSearchLoading(false);
+    }
+  };
+
+  const sendInvitation = async () => {
+    if (!selectedAthlete2 || !inviteSpecialty) {
+      toast({
+        title: "Erro",
+        description: "Selecione um atleta e uma especialidade.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      setLoading(true);
+
+      // Check if relationship already exists
+      const { data: existingRelationship } = await supabase
+        .from('athlete_professional_relationships')
+        .select('id')
+        .eq('athlete_id', selectedAthlete2.user_id)
+        .eq('professional_id', user?.id)
+        .maybeSingle();
+
+      if (existingRelationship) {
+        toast({
+          title: "Relacionamento já existe",
+          description: "Você já possui um relacionamento com este atleta.",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      // Create direct relationship
+      const { error: relationshipError } = await supabase
+        .from('athlete_professional_relationships')
+        .insert([{
+          athlete_id: selectedAthlete2.user_id,
+          professional_id: user?.id,
+          specialty: inviteSpecialty,
+          status: 'pending'
+        }]);
+
+      if (relationshipError) throw relationshipError;
+
+      toast({
+        title: "Convite enviado!",
+        description: "Notificação enviada ao atleta para aceitar o convite."
+      });
+
+      // Reset form
+      setSearchQuery('');
+      setSearchResults([]);
+      setSelectedAthlete2(null);
+      setInviteSpecialty('');
+      setInviteMessage('');
+      setShowInviteDialog(false);
+
+      // Refresh data
+      fetchMyAthletes();
+
+    } catch (error) {
+      console.error('Error sending invitation:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível enviar o convite.",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const specialties = [
+    { value: 'nutrition', label: 'Nutricionista' },
+    { value: 'physiotherapy', label: 'Fisioterapeuta' },
+    { value: 'medical', label: 'Médico' },
+    { value: 'training', label: 'Treinador' },
+    { value: 'psychology', label: 'Psicólogo' }
+  ];
 
   const filteredAthletes = myAthletes.filter(relationship =>
     (relationship.athlete as any)?.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -439,7 +580,7 @@ const ProfessionalDashboard = () => {
                         Gerencie e acompanhe seus atletas
                       </CardDescription>
                     </div>
-                    <Button variant="performance" size="sm">
+                    <Button variant="performance" size="sm" onClick={() => setShowInviteDialog(true)}>
                       <Plus className="w-4 h-4 mr-2" />
                       Adicionar Atleta
                     </Button>
@@ -699,6 +840,131 @@ const ProfessionalDashboard = () => {
             </Button>
           </div>
         </div>
+
+        {/* Invite Athlete Dialog */}
+        <Dialog open={showInviteDialog} onOpenChange={setShowInviteDialog}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Convidar Atleta</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              {/* Athlete Search */}
+              <div className="space-y-2">
+                <Label>Buscar Atleta</Label>
+                <Input
+                  placeholder="Digite o nome do atleta..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+                
+                {/* Search Results */}
+                {searchQuery && !selectedAthlete2 && (
+                  <div className="max-h-40 overflow-y-auto border rounded-md bg-background">
+                    {searchLoading ? (
+                      <div className="p-3 text-center text-muted-foreground">
+                        Buscando...
+                      </div>
+                    ) : searchResults.length > 0 ? (
+                      searchResults.map((athlete) => (
+                        <button
+                          key={athlete.user_id}
+                          onClick={() => {
+                            setSelectedAthlete2(athlete);
+                            setSearchQuery(athlete.full_name);
+                            setSearchResults([]);
+                          }}
+                          className="w-full text-left p-3 hover:bg-muted border-b last:border-b-0"
+                        >
+                          <div className="font-medium">{athlete.full_name}</div>
+                          <div className="text-sm text-muted-foreground">Atleta</div>
+                        </button>
+                      ))
+                    ) : (
+                      <div className="p-3 text-center text-muted-foreground">
+                        Nenhum atleta encontrado
+                      </div>
+                    )}
+                  </div>
+                )}
+                
+                {/* Selected Athlete */}
+                {selectedAthlete2 && (
+                  <div className="p-3 bg-primary/5 border border-primary/20 rounded-md">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <div className="font-medium">{selectedAthlete2.full_name}</div>
+                        <div className="text-sm text-muted-foreground">Atleta selecionado</div>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          setSelectedAthlete2(null);
+                          setSearchQuery('');
+                        }}
+                      >
+                        ✕
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Specialty Selection */}
+              <div className="space-y-2">
+                <Label>Especialidade</Label>
+                <Select value={inviteSpecialty} onValueChange={setInviteSpecialty}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione a especialidade" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-background border border-border z-50">
+                    {specialties.map((specialty) => (
+                      <SelectItem key={specialty.value} value={specialty.value}>
+                        {specialty.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Optional Message */}
+              <div className="space-y-2">
+                <Label htmlFor="message">Mensagem (opcional)</Label>
+                <Textarea
+                  id="message"
+                  placeholder="Olá! Gostaria de convidá-lo para fazer parte da sua equipe..."
+                  value={inviteMessage}
+                  onChange={(e) => setInviteMessage(e.target.value)}
+                  rows={3}
+                />
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex gap-3">
+                <Button
+                  onClick={sendInvitation}
+                  disabled={loading || !selectedAthlete2 || !inviteSpecialty}
+                  className="flex-1"
+                >
+                  {loading ? 'Enviando...' : 'Enviar Convite'}
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setShowInviteDialog(false);
+                    setSearchQuery('');
+                    setSearchResults([]);
+                    setSelectedAthlete2(null);
+                    setInviteSpecialty('');
+                    setInviteMessage('');
+                  }}
+                >
+                  Cancelar
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );
