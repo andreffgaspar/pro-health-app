@@ -40,7 +40,8 @@ const AthleterDashboard = () => {
 
   const handleLogout = async () => {
     await signOut();
-    navigate("/");
+    // Force a hard navigation to clear any cached state
+    window.location.href = "/";
   };
 
   const openModalWithTab = (tab: string) => {

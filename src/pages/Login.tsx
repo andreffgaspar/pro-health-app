@@ -20,20 +20,21 @@ const Login = () => {
   const [activeTab, setActiveTab] = useState<"athlete" | "professional">("athlete");
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
-  const { signIn, user, profile } = useAuth();
+  const { signIn, user, profile, loading } = useAuth();
 
   const form = useForm({
-    resolver: zodResolver(loginSchema)
+    resolver: zodResolver(loginSchema),
+    defaultValues: {
+      email: "",
+      password: ""
+    }
   });
 
   // Redirect if already logged in
   useEffect(() => {
     if (user && profile) {
-      if (profile.user_type === 'athlete') {
-        navigate('/athlete-dashboard');
-      } else if (profile.user_type === 'professional') {
-        navigate('/professional-dashboard');
-      }
+      const redirectTo = profile.user_type === 'athlete' ? '/athlete-dashboard' : '/professional-dashboard';
+      navigate(redirectTo, { replace: true });
     }
   }, [user, profile, navigate]);
 
@@ -43,11 +44,24 @@ const Login = () => {
     const { error } = await signIn(data.email, data.password);
     
     if (!error) {
-      // Navigation will be handled by the useEffect above
+      // Clear form after successful login
+      form.reset();
     }
     
     setIsLoading(false);
   };
+
+  // Don't render login form if user is already authenticated and we're still loading profile
+  if (user && loading) {
+    return (
+      <div className="min-h-screen bg-gradient-subtle flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+          <p>Carregando...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-subtle flex items-center justify-center p-6">
