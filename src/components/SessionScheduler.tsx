@@ -525,10 +525,10 @@ const SessionScheduler = ({ userType }: SessionSchedulerProps) => {
                   const hasSession = sessionDates.has(dateStr);
                   
                   return (
-                    <div className="relative flex items-center justify-center w-full h-full">
+                    <div className="relative flex flex-col items-center justify-center w-full h-full">
                       <span>{date.getDate()}</span>
                       {hasSession && (
-                        <div className="absolute bottom-0.5 right-0.5 w-1.5 h-1.5 bg-primary rounded-full opacity-80" />
+                        <div className="w-1.5 h-1.5 bg-primary rounded-full opacity-80 mt-0.5" />
                       )}
                     </div>
                   );
