@@ -96,6 +96,21 @@ const AthleterDashboard = () => {
       <div className="container mx-auto px-6 py-8">
         {/* Quick Metrics */}
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 mb-8">
+          {/* Medical Data Highlight Card */}
+          {todaysMetrics.lastMedicalData && (
+            <Card className="md:col-span-2 p-4 bg-gradient-to-r from-medical-bg to-medical-bg/50 border-medical-border">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-medical-accent/10 rounded-lg flex items-center justify-center">
+                  <Activity className="w-5 h-5 text-medical-accent" />
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Último Dado Médico</p>
+                  <p className="text-lg font-bold text-medical-accent">{todaysMetrics.lastMedicalData.type}</p>
+                  <p className="text-xs text-muted-foreground">{todaysMetrics.lastMedicalData.date}</p>
+                </div>
+              </div>
+            </Card>
+          )}
           <Card 
             className="p-4 hover:shadow-card-sport transition-shadow cursor-pointer" 
             onClick={() => openModalWithTab("sleep")}

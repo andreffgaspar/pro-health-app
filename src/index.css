@@ -34,6 +34,11 @@ All colors MUST be HSL.
     --accent: 45 93% 47%;
     --accent-foreground: 240 10% 3.9%;
 
+    /* Medical data colors */
+    --medical-bg: 295 20% 15%;
+    --medical-border: 295 30% 25%;
+    --medical-accent: 295 85% 65%;
+
     --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 98%;
 
@@ -84,6 +89,11 @@ All colors MUST be HSL.
     --muted-foreground: 215 15% 55%;
     --accent: 45 93% 47%;
     --accent-foreground: 0 0% 100%;
+    
+    /* Medical data colors - light mode */
+    --medical-bg: 295 85% 97%;
+    --medical-border: 295 60% 85%;
+    --medical-accent: 295 85% 35%;
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
     --border: 215 15% 88%;

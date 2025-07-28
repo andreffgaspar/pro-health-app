@@ -17,6 +17,11 @@ interface ProcessedMetrics {
   water: number;
   training: number;
   recovery: number;
+  lastMedicalData?: {
+    type: string;
+    date: string;
+    description: string;
+  };
 }
 
 interface WeeklyData {
@@ -43,7 +48,8 @@ export const useAthleteData = () => {
     calories: 0,
     water: 0,
     training: 0,
-    recovery: 0
+    recovery: 0,
+    lastMedicalData: undefined
   });
   const [weeklyData, setWeeklyData] = useState<WeeklyData[]>([]);
   const [performanceData, setPerformanceData] = useState<PerformanceData[]>([]);
@@ -80,13 +86,28 @@ export const useAthleteData = () => {
       new Date(record.recorded_at).toDateString() === today
     );
 
+    // Get latest medical data (from any day)
+    const medicalTypes = ['medical_exam', 'medication', 'injury', 'treatment'];
+    const medicalData = data.filter(record => 
+      medicalTypes.includes(record.data_type)
+    ).sort((a, b) => new Date(b.recorded_at).getTime() - new Date(a.recorded_at).getTime());
+
+    const lastMedicalData = medicalData.length > 0 ? {
+      type: medicalData[0].data_type,
+      date: new Date(medicalData[0].recorded_at).toLocaleDateString('pt-BR'),
+      description: typeof medicalData[0].data === 'object' 
+        ? medicalData[0].data.description || medicalData[0].data.name || 'Registro médico'
+        : 'Registro médico'
+    } : undefined;
+
     const processedToday: ProcessedMetrics = {
       sleep: getLatestValue(todayData, 'sleep') || 0,
       heartRate: getLatestValue(todayData, 'heart_rate') || 0,
       calories: getLatestValue(todayData, 'calories') || 0,
       water: getLatestValue(todayData, 'water') || 0,
       training: getLatestValue(todayData, 'training_duration') || 0,
-      recovery: getLatestValue(todayData, 'recovery_score') || 0
+      recovery: getLatestValue(todayData, 'recovery_score') || 0,
+      lastMedicalData
     };
 
     setTodaysMetrics(processedToday);
@@ -108,6 +129,12 @@ export const useAthleteData = () => {
     if (records.length === 0) return 0;
     
     const latestRecord = records[0];
+    
+    // Handle different data structures based on type
+    if (type === 'sleep' && typeof latestRecord.data === 'object') {
+      return latestRecord.data.hours || 0;
+    }
+    
     return typeof latestRecord.data === 'object' ? latestRecord.data.value || 0 : latestRecord.data || 0;
   };
 

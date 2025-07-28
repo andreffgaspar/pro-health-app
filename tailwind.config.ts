@@ -45,6 +45,9 @@ export default {
 					DEFAULT: 'hsl(var(--accent))',
 					foreground: 'hsl(var(--accent-foreground))'
 				},
+				'medical-bg': 'hsl(var(--medical-bg))',
+				'medical-border': 'hsl(var(--medical-border))',
+				'medical-accent': 'hsl(var(--medical-accent))',
 				popover: {
 					DEFAULT: 'hsl(var(--popover))',
 					foreground: 'hsl(var(--popover-foreground))'
