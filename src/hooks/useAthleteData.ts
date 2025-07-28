@@ -131,11 +131,18 @@ export const useAthleteData = () => {
     const latestRecord = records[0];
     
     // Handle different data structures based on type
-    if (type === 'sleep' && typeof latestRecord.data === 'object') {
-      return latestRecord.data.hours || 0;
+    if (type === 'sleep' && typeof latestRecord.data === 'object' && latestRecord.data) {
+      const sleepHours = latestRecord.data.hours;
+      console.log('Sleep data found:', sleepHours, typeof sleepHours);
+      return typeof sleepHours === 'number' ? sleepHours : 0;
     }
     
-    return typeof latestRecord.data === 'object' ? latestRecord.data.value || 0 : latestRecord.data || 0;
+    // Handle other data types
+    const value = typeof latestRecord.data === 'object' && latestRecord.data 
+      ? latestRecord.data.value || 0 
+      : latestRecord.data || 0;
+    
+    return typeof value === 'number' ? value : 0;
   };
 
   const processWeeklyData = (data: AthleteDataRecord[]): WeeklyData[] => {
