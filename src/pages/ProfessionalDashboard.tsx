@@ -29,81 +29,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import CommunicationCenter from "@/components/CommunicationCenter";
 
-// Mock data for athletes
-const athletes = [
-  {
-    id: 1,
-    name: "João Silva",
-    sport: "Futebol",
-    level: "Profissional",
-    lastUpdate: "2 horas",
-    status: "Ativo",
-    performance: 88,
-    avatar: "",
-    alerts: 1,
-    nextSession: "Hoje, 16:00"
-  },
-  {
-    id: 2,
-    name: "Maria Santos",
-    sport: "Atletismo",
-    level: "Competitivo",
-    lastUpdate: "5 horas",
-    status: "Ativo",
-    performance: 92,
-    avatar: "",
-    alerts: 0,
-    nextSession: "Amanhã, 14:00"
-  },
-  {
-    id: 3,
-    name: "Carlos Oliveira",
-    sport: "Natação",
-    level: "Intermediário",
-    lastUpdate: "1 dia",
-    status: "Inativo",
-    performance: 76,
-    avatar: "",
-    alerts: 2,
-    nextSession: "Sexta, 09:00"
-  },
-  {
-    id: 4,
-    name: "Ana Costa",
-    sport: "Crossfit",
-    level: "Avançado",
-    lastUpdate: "3 horas",
-    status: "Ativo",
-    performance: 85,
-    avatar: "",
-    alerts: 0,
-    nextSession: "Hoje, 18:30"
-  }
-];
-
-// Mock chart data
-const overviewData = [
-  { month: "Jul", athletes: 12, sessions: 48, performance: 82 },
-  { month: "Ago", athletes: 15, sessions: 62, performance: 85 },
-  { month: "Set", athletes: 18, sessions: 75, performance: 88 },
-  { month: "Out", athletes: 22, sessions: 89, performance: 87 },
-  { month: "Nov", athletes: 25, sessions: 98, performance: 90 },
-  { month: "Dez", athletes: 28, sessions: 112, performance: 89 }
-];
-
-const performanceComparison = [
-  { athlete: "João", performance: 88, improvement: 8 },
-  { athlete: "Maria", performance: 92, improvement: 12 },
-  { athlete: "Carlos", performance: 76, improvement: -3 },
-  { athlete: "Ana", performance: 85, improvement: 5 }
-];
-
-interface PendingInvitation {
+interface AthleteData {
   id: string;
   athlete_id: string;
   specialty: string;
   status: string;
-  invited_at: string;
+  accepted_at: string;
   athlete: {
     full_name: string;
     user_id: string;
@@ -116,11 +47,13 @@ const ProfessionalDashboard = () => {
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
   const [pendingInvitations, setPendingInvitations] = useState<PendingInvitation[]>([]);
+  const [myAthletes, setMyAthletes] = useState<AthleteData[]>([]);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (user) {
       fetchPendingInvitations();
+      fetchMyAthletes();
     }
   }, [user]);
 
@@ -147,6 +80,41 @@ const ProfessionalDashboard = () => {
     }
   };
 
+  const fetchMyAthletes = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('athlete_professional_relationships')
+        .select(`
+          id,
+          athlete_id,
+          specialty,
+          status,
+          accepted_at,
+          athlete:profiles!athlete_professional_relationships_athlete_id_fkey(full_name, user_id)
+        `)
+        .eq('professional_id', user?.id)
+        .eq('status', 'accepted')
+        .order('accepted_at', { ascending: false });
+
+      if (error) throw error;
+      setMyAthletes(data || []);
+    } catch (error) {
+      console.error('Error fetching my athletes:', error);
+    }
+  };
+
+interface PendingInvitation {
+  id: string;
+  athlete_id: string;
+  specialty: string;
+  status: string;
+  invited_at: string;
+  athlete: {
+    full_name: string;
+    user_id: string;
+  };
+}
+
   const handleInvitationResponse = async (invitationId: string, action: 'accept' | 'reject') => {
     try {
       setLoading(true);
@@ -169,6 +137,7 @@ const ProfessionalDashboard = () => {
       });
 
       fetchPendingInvitations();
+      fetchMyAthletes();
     } catch (error) {
       console.error('Error responding to invitation:', error);
       toast({
@@ -197,15 +166,15 @@ const ProfessionalDashboard = () => {
     navigate("/");
   };
 
-  const filteredAthletes = athletes.filter(athlete =>
-    athlete.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    athlete.sport.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredAthletes = myAthletes.filter(relationship =>
+    (relationship.athlete as any)?.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    getSpecialtyText(relationship.specialty).toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const totalAthletes = athletes.length;
-  const activeAthletes = athletes.filter(a => a.status === "Ativo").length;
-  const totalAlerts = athletes.reduce((sum, a) => sum + a.alerts, 0);
-  const avgPerformance = Math.round(athletes.reduce((sum, a) => sum + a.performance, 0) / athletes.length);
+  const totalAthletes = myAthletes.length;
+  const activeAthletes = myAthletes.length; // All accepted relationships are considered active
+  const totalAlerts = 0; // Can be calculated based on real data later
+  const avgPerformance = 85; // Can be calculated based on real data later
 
   return (
     <div className="min-h-screen bg-gradient-subtle">
@@ -407,57 +376,53 @@ const ProfessionalDashboard = () => {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
-                    {filteredAthletes.map((athlete) => (
-                      <div
-                        key={athlete.id}
-                        className="flex items-center justify-between p-4 border border-border rounded-lg hover:bg-muted/50 transition-colors"
-                      >
-                        <div className="flex items-center gap-4">
-                          <Avatar>
-                            <AvatarImage src={athlete.avatar} />
-                            <AvatarFallback>
-                              {athlete.name.split(' ').map(n => n[0]).join('')}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div>
-                            <div className="flex items-center gap-2">
-                              <h4 className="font-semibold">{athlete.name}</h4>
-                              {athlete.alerts > 0 && (
-                                <Badge variant="destructive" className="text-xs">
-                                  {athlete.alerts} alerta{athlete.alerts > 1 ? 's' : ''}
-                                </Badge>
-                              )}
+                    {filteredAthletes.length > 0 ? (
+                      filteredAthletes.map((relationship) => {
+                        const athlete = relationship.athlete as any;
+                        return (
+                          <div
+                            key={relationship.id}
+                            className="flex items-center justify-between p-4 border border-border rounded-lg hover:bg-muted/50 transition-colors"
+                          >
+                            <div className="flex items-center gap-4">
+                              <Avatar>
+                                <AvatarFallback>
+                                  {athlete?.full_name?.split(' ').map((n: string) => n[0]).join('') || 'A'}
+                                </AvatarFallback>
+                              </Avatar>
+                              <div>
+                                <div className="flex items-center gap-2">
+                                  <h4 className="font-semibold">{athlete?.full_name || 'Atleta'}</h4>
+                                  <Badge variant="default" className="text-xs">
+                                    {getSpecialtyText(relationship.specialty)}
+                                  </Badge>
+                                </div>
+                                <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                                  <span>Status: Ativo</span>
+                                  <span>Vinculado em {new Date(relationship.accepted_at).toLocaleDateString()}</span>
+                                </div>
+                              </div>
                             </div>
-                            <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                              <span>{athlete.sport}</span>
-                              <span>{athlete.level}</span>
-                              <Badge variant={athlete.status === "Ativo" ? "default" : "secondary"} className="text-xs">
-                                {athlete.status}
-                              </Badge>
+                            <div className="text-right">
+                              <div className="flex gap-2 mt-2">
+                                <Button variant="outline" size="sm">
+                                  <FileText className="w-3 h-3" />
+                                </Button>
+                                <Button variant="outline" size="sm">
+                                  <MessageSquare className="w-3 h-3" />
+                                </Button>
+                              </div>
                             </div>
-                            <p className="text-xs text-muted-foreground mt-1">
-                              Próxima sessão: {athlete.nextSession}
-                            </p>
                           </div>
-                        </div>
-                        <div className="text-right">
-                          <div className="text-lg font-bold text-primary">
-                            {athlete.performance}%
-                          </div>
-                          <p className="text-xs text-muted-foreground">
-                            Atualizado há {athlete.lastUpdate}
-                          </p>
-                          <div className="flex gap-2 mt-2">
-                            <Button variant="outline" size="sm">
-                              <FileText className="w-3 h-3" />
-                            </Button>
-                            <Button variant="outline" size="sm">
-                              <MessageSquare className="w-3 h-3" />
-                            </Button>
-                          </div>
-                        </div>
+                        );
+                      })
+                    ) : (
+                      <div className="text-center py-8 text-muted-foreground">
+                        <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                        <p>Nenhum atleta vinculado ainda</p>
+                        <p className="text-sm">Aguarde convites de atletas ou promova seus serviços</p>
                       </div>
-                    ))}
+                    )}
                   </div>
                 </CardContent>
               </Card>
@@ -467,28 +432,43 @@ const ProfessionalDashboard = () => {
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <Target className="w-5 h-5 text-accent" />
-                    Performance dos Atletas
+                    Resumo dos Atletas
                   </CardTitle>
                   <CardDescription>
-                    Comparativo de performance atual
+                    Lista dos atletas vinculados
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <ResponsiveContainer width="100%" height={280}>
-                    <BarChart data={performanceComparison} layout="horizontal">
-                      <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
-                      <XAxis type="number" />
-                      <YAxis dataKey="athlete" type="category" width={60} />
-                      <Tooltip 
-                        contentStyle={{ 
-                          backgroundColor: 'hsl(var(--card))', 
-                          border: '1px solid hsl(var(--border))',
-                          borderRadius: '8px'
-                        }}
-                      />
-                      <Bar dataKey="performance" fill="hsl(var(--secondary))" radius={[0, 4, 4, 0]} />
-                    </BarChart>
-                  </ResponsiveContainer>
+                  {myAthletes.length > 0 ? (
+                    <div className="space-y-4">
+                      {myAthletes.slice(0, 5).map((relationship) => {
+                        const athlete = relationship.athlete as any;
+                        return (
+                          <div key={relationship.id} className="flex items-center justify-between p-3 border rounded-lg">
+                            <div className="flex items-center gap-3">
+                              <Avatar className="h-8 w-8">
+                                <AvatarFallback>
+                                  {athlete?.full_name?.charAt(0) || 'A'}
+                                </AvatarFallback>
+                              </Avatar>
+                              <div>
+                                <p className="font-medium text-sm">{athlete?.full_name || 'Atleta'}</p>
+                                <p className="text-xs text-muted-foreground">{getSpecialtyText(relationship.specialty)}</p>
+                              </div>
+                            </div>
+                            <Badge variant="outline" className="text-xs">
+                              Ativo
+                            </Badge>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <Target className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                      <p className="text-sm">Nenhum atleta para análise</p>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             </div>
