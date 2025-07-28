@@ -26,7 +26,14 @@ import {
   Activity,
   Target,
   Trophy,
-  Heart
+  Heart,
+  Users,
+  Search,
+  UserPlus,
+  CheckCircle,
+  Clock,
+  XCircle,
+  X
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
@@ -63,6 +70,39 @@ interface AthleteNotificationSettings {
   goal_updates: boolean;
   weekly_reports: boolean;
   marketing_emails: boolean;
+}
+
+interface Professional {
+  id: string;
+  full_name: string;
+  user_type: string;
+}
+
+interface SearchedProfessional {
+  user_id: string;
+  full_name: string;
+  user_type: string;
+}
+
+interface Relationship {
+  id: string;
+  professional_id: string;
+  status: string;
+  specialty: string;
+  invited_at: string;
+  accepted_at?: string;
+  professional: Professional;
+}
+
+interface Invitation {
+  id: string;
+  athlete_id: string;
+  email: string;
+  specialty: string;
+  status: string;
+  message?: string;
+  created_at: string;
+  expires_at: string;
 }
 
 const AthleteProfileSettings = ({ open, onOpenChange }: AthleteProfileSettingsProps) => {
@@ -107,6 +147,16 @@ const AthleteProfileSettings = ({ open, onOpenChange }: AthleteProfileSettingsPr
     confirmPassword: ""
   });
 
+  // Professional linking state
+  const [relationships, setRelationships] = useState<Relationship[]>([]);
+  const [invitations, setInvitations] = useState<Invitation[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<SearchedProfessional[]>([]);
+  const [showInviteModal, setShowInviteModal] = useState(false);
+  const [selectedProfessional, setSelectedProfessional] = useState<SearchedProfessional | null>(null);
+  const [inviteSpecialty, setInviteSpecialty] = useState("");
+  const [inviteMessage, setInviteMessage] = useState("");
+
   useEffect(() => {
     if (profile && user) {
       setProfileData(prev => ({
@@ -116,6 +166,13 @@ const AthleteProfileSettings = ({ open, onOpenChange }: AthleteProfileSettingsPr
       }));
     }
   }, [profile, user]);
+
+  useEffect(() => {
+    if (user && activeTab === "professionals") {
+      fetchRelationships();
+      fetchInvitations();
+    }
+  }, [user, activeTab]);
 
   const handleSaveProfile = async () => {
     try {
@@ -188,6 +245,160 @@ const AthleteProfileSettings = ({ open, onOpenChange }: AthleteProfileSettingsPr
     }
   };
 
+  const fetchRelationships = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('athlete_professional_relationships')
+        .select(`
+          *,
+          professional:profiles!athlete_professional_relationships_professional_id_fkey(
+            id,
+            user_id,
+            full_name,
+            user_type
+          )
+        `)
+        .eq('athlete_id', user?.id);
+
+      if (error) throw error;
+      setRelationships(data || []);
+    } catch (error) {
+      console.error('Error fetching relationships:', error);
+    }
+  };
+
+  const fetchInvitations = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('professional_invitations')
+        .select('*')
+        .eq('athlete_id', user?.id);
+
+      if (error) throw error;
+      setInvitations(data || []);
+    } catch (error) {
+      console.error('Error fetching invitations:', error);
+    }
+  };
+
+  const searchProfessionals = async (query: string) => {
+    if (!query.trim()) {
+      setSearchResults([]);
+      return;
+    }
+
+    try {
+      const existingProfessionalIds = relationships.map(rel => rel.professional_id);
+      
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('user_id, full_name, user_type')
+        .eq('user_type', 'professional')
+        .ilike('full_name', `%${query}%`)
+        .not('user_id', 'in', `(${existingProfessionalIds.join(',')})`)
+        .limit(10);
+
+      if (error) throw error;
+      setSearchResults(data || []);
+    } catch (error) {
+      console.error('Error searching professionals:', error);
+    }
+  };
+
+  const sendInvitation = async () => {
+    if (!selectedProfessional || !inviteSpecialty) return;
+
+    try {
+      setLoading(true);
+      
+      const { error } = await supabase
+        .from('athlete_professional_relationships')
+        .insert({
+          athlete_id: user?.id,
+          professional_id: selectedProfessional.user_id,
+          specialty: inviteSpecialty,
+          status: 'pending'
+        });
+
+      if (error) throw error;
+
+      toast({
+        title: "Convite enviado!",
+        description: "O profissional foi convidado para sua equipe.",
+      });
+
+      setShowInviteModal(false);
+      setSelectedProfessional(null);
+      setInviteSpecialty("");
+      setInviteMessage("");
+      fetchRelationships();
+    } catch (error) {
+      console.error('Error sending invitation:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível enviar o convite.",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const removeRelationship = async (relationshipId: string) => {
+    try {
+      const { error } = await supabase
+        .from('athlete_professional_relationships')
+        .delete()
+        .eq('id', relationshipId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Profissional removido",
+        description: "O profissional foi removido da sua equipe.",
+      });
+
+      fetchRelationships();
+    } catch (error) {
+      console.error('Error removing relationship:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível remover o profissional.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'accepted': return 'text-green-600';
+      case 'pending': return 'text-yellow-600';
+      case 'rejected': return 'text-red-600';
+      default: return 'text-gray-600';
+    }
+  };
+
+  const getStatusText = (status: string) => {
+    switch (status) {
+      case 'accepted': return 'Aceito';
+      case 'pending': return 'Pendente';
+      case 'rejected': return 'Rejeitado';
+      default: return status;
+    }
+  };
+
+  const getSpecialtyText = (specialty: string) => {
+    const specialties: { [key: string]: string } = {
+      'personal_trainer': 'Personal Trainer',
+      'physiotherapist': 'Fisioterapeuta',
+      'nutritionist': 'Nutricionista',
+      'psychologist': 'Psicólogo',
+      'doctor': 'Médico',
+      'coach': 'Treinador'
+    };
+    return specialties[specialty] || specialty;
+  };
+
   const sports = [
     { value: 'futebol', label: 'Futebol' },
     { value: 'basquete', label: 'Basquete' },
@@ -221,9 +432,10 @@ const AthleteProfileSettings = ({ open, onOpenChange }: AthleteProfileSettingsPr
         </DialogHeader>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="profile">Perfil</TabsTrigger>
             <TabsTrigger value="sports">Esporte</TabsTrigger>
+            <TabsTrigger value="professionals">Profissionais</TabsTrigger>
             <TabsTrigger value="notifications">Notificações</TabsTrigger>
             <TabsTrigger value="security">Segurança</TabsTrigger>
           </TabsList>
@@ -473,6 +685,183 @@ const AthleteProfileSettings = ({ open, onOpenChange }: AthleteProfileSettingsPr
                     {loading ? "Salvando..." : "Salvar Informações Esportivas"}
                   </Button>
                 </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="professionals" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Users className="w-5 h-5" />
+                  Minha Equipe de Profissionais
+                </CardTitle>
+                <CardDescription>
+                  Gerencie os profissionais que acompanham seu desenvolvimento esportivo
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {/* Search and Add Professional */}
+                <div className="space-y-4">
+                  <div className="flex gap-2">
+                    <div className="relative flex-1">
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+                      <Input
+                        placeholder="Buscar profissionais..."
+                        value={searchQuery}
+                        onChange={(e) => {
+                          setSearchQuery(e.target.value);
+                          searchProfessionals(e.target.value);
+                        }}
+                        className="pl-10"
+                      />
+                    </div>
+                    <Button
+                      variant="outline"
+                      onClick={() => setShowInviteModal(true)}
+                    >
+                      <UserPlus className="w-4 h-4 mr-2" />
+                      Convidar
+                    </Button>
+                  </div>
+
+                  {/* Search Results */}
+                  {searchResults.length > 0 && (
+                    <div className="border rounded-lg p-4 space-y-2">
+                      <h4 className="font-medium text-sm">Resultados da busca:</h4>
+                      {searchResults.map((professional) => (
+                        <div key={professional.user_id} className="flex items-center justify-between p-2 border rounded">
+                          <div>
+                            <p className="font-medium">{professional.full_name}</p>
+                            <p className="text-sm text-muted-foreground">Profissional</p>
+                          </div>
+                          <Button
+                            size="sm"
+                            onClick={() => {
+                              setSelectedProfessional(professional);
+                              setShowInviteModal(true);
+                            }}
+                          >
+                            <UserPlus className="w-4 h-4 mr-1" />
+                            Convidar
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                <Separator />
+
+                {/* Current Team */}
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold">Equipe Atual</h3>
+                  {relationships.length === 0 ? (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <Users className="w-12 h-12 mx-auto mb-4 text-muted-foreground/50" />
+                      <p>Você ainda não tem profissionais em sua equipe.</p>
+                      <p className="text-sm">Use a busca acima para encontrar e convidar profissionais.</p>
+                    </div>
+                  ) : (
+                    <div className="grid gap-4">
+                      {relationships.map((relationship) => (
+                        <div key={relationship.id} className="flex items-center justify-between p-4 border rounded-lg">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                              <User className="w-5 h-5 text-primary" />
+                            </div>
+                            <div>
+                              <p className="font-medium">{relationship.professional.full_name}</p>
+                              <p className="text-sm text-muted-foreground">
+                                {getSpecialtyText(relationship.specialty)}
+                              </p>
+                              <p className="text-xs text-muted-foreground">
+                                Convidado em {new Date(relationship.invited_at).toLocaleDateString('pt-BR')}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-1">
+                              {relationship.status === 'accepted' && <CheckCircle className="w-4 h-4 text-green-600" />}
+                              {relationship.status === 'pending' && <Clock className="w-4 h-4 text-yellow-600" />}
+                              {relationship.status === 'rejected' && <XCircle className="w-4 h-4 text-red-600" />}
+                              <span className={`text-sm ${getStatusColor(relationship.status)}`}>
+                                {getStatusText(relationship.status)}
+                              </span>
+                            </div>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => removeRelationship(relationship.id)}
+                              className="text-red-600 hover:text-red-700"
+                            >
+                              <X className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Invite Modal */}
+                {showInviteModal && (
+                  <Dialog open={showInviteModal} onOpenChange={setShowInviteModal}>
+                    <DialogContent className="sm:max-w-md">
+                      <DialogHeader>
+                        <DialogTitle>Convidar Profissional</DialogTitle>
+                      </DialogHeader>
+                      <div className="space-y-4">
+                        {selectedProfessional && (
+                          <div className="p-3 bg-muted rounded-lg">
+                            <p className="font-medium">{selectedProfessional.full_name}</p>
+                            <p className="text-sm text-muted-foreground">Profissional</p>
+                          </div>
+                        )}
+                        
+                        <div className="space-y-2">
+                          <Label htmlFor="specialty">Especialidade</Label>
+                          <Select value={inviteSpecialty} onValueChange={setInviteSpecialty}>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Selecione a especialidade" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="personal_trainer">Personal Trainer</SelectItem>
+                              <SelectItem value="physiotherapist">Fisioterapeuta</SelectItem>
+                              <SelectItem value="nutritionist">Nutricionista</SelectItem>
+                              <SelectItem value="psychologist">Psicólogo</SelectItem>
+                              <SelectItem value="doctor">Médico</SelectItem>
+                              <SelectItem value="coach">Treinador</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label htmlFor="message">Mensagem (opcional)</Label>
+                          <Textarea
+                            id="message"
+                            value={inviteMessage}
+                            onChange={(e) => setInviteMessage(e.target.value)}
+                            placeholder="Adicione uma mensagem personalizada..."
+                            rows={3}
+                          />
+                        </div>
+
+                        <div className="flex justify-end gap-2">
+                          <Button variant="outline" onClick={() => setShowInviteModal(false)}>
+                            Cancelar
+                          </Button>
+                          <Button 
+                            onClick={sendInvitation}
+                            disabled={!inviteSpecialty || loading}
+                          >
+                            {loading ? "Enviando..." : "Enviar Convite"}
+                          </Button>
+                        </div>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
