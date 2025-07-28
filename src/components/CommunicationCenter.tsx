@@ -111,13 +111,24 @@ const CommunicationCenter = () => {
 
   const fetchProfessionals = async () => {
     try {
+      // Fetch professionals that have relationships with this athlete
       const { data, error } = await supabase
-        .from('profiles')
-        .select('user_id, full_name')
-        .eq('user_type', 'professional');
+        .from('athlete_professional_relationships')
+        .select(`
+          professional_id,
+          professional:profiles!athlete_professional_relationships_professional_id_fkey(user_id, full_name)
+        `)
+        .eq('athlete_id', user?.id)
+        .eq('status', 'accepted');
 
       if (error) throw error;
-      setProfessionals(data || []);
+      
+      const professionalsList = data?.map(rel => ({
+        user_id: (rel.professional as any)?.user_id,
+        full_name: (rel.professional as any)?.full_name
+      })).filter(professional => professional.user_id) || [];
+      
+      setProfessionals(professionalsList);
     } catch (error) {
       console.error('Error fetching professionals:', error);
     }
