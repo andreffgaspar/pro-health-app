@@ -43,6 +43,9 @@ interface Session {
   athlete?: {
     full_name: string;
   } | null;
+  professional?: {
+    full_name: string;
+  } | null;
 }
 
 interface AthleteOption {
@@ -117,7 +120,8 @@ const SessionScheduler = ({ userType }: SessionSchedulerProps) => {
         .from('sessions')
         .select(`
           *,
-          athlete:profiles!sessions_athlete_id_fkey(full_name)
+          athlete:profiles!sessions_athlete_id_fkey(full_name),
+          professional:profiles!sessions_professional_id_fkey(full_name)
         `)
         .eq('session_date', dateStr);
 
@@ -135,7 +139,8 @@ const SessionScheduler = ({ userType }: SessionSchedulerProps) => {
       // Type-safe data handling
       const typedData: Session[] = (data || []).map((item: any) => ({
         ...item,
-        athlete: item.athlete
+        athlete: item.athlete,
+        professional: item.professional
       }));
       
       setSessions(typedData);
@@ -551,12 +556,18 @@ const SessionScheduler = ({ userType }: SessionSchedulerProps) => {
                           </div>
                         )}
                         
-                        {session.athlete_id && session.athlete && (
+                        {/* Show professional name for athletes, athlete name for professionals */}
+                        {userType === 'athlete' && session.professional ? (
                           <div className="flex items-center gap-1">
                             <User className="w-4 h-4" />
-                            {(session.athlete as any).full_name}
+                            {session.professional.full_name}
                           </div>
-                        )}
+                        ) : userType === 'professional' && session.athlete_id && session.athlete ? (
+                          <div className="flex items-center gap-1">
+                            <User className="w-4 h-4" />
+                            {session.athlete.full_name}
+                          </div>
+                        ) : null}
                       </div>
                       
                       {session.description && (
