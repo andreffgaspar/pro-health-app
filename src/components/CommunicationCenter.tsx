@@ -4,7 +4,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Send, MessageCircle, Users } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Send, MessageCircle, Users, Plus, UsersIcon } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
@@ -20,6 +24,22 @@ interface Athlete {
 }
 
 interface Message {
+  id: string;
+  content: string;
+  sender_id: string;
+  created_at: string;
+  sender_name: string;
+}
+
+interface GroupConversation {
+  id: string;
+  name: string;
+  description: string | null;
+  participants_count: number;
+  last_message_at: string;
+}
+
+interface GroupMessage {
   id: string;
   content: string;
   sender_id: string;
@@ -43,10 +63,17 @@ const CommunicationCenter = () => {
   const [professionals, setProfessionals] = useState<Professional[]>([]);
   const [athletes, setAthletes] = useState<Athlete[]>([]);
   const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [groupConversations, setGroupConversations] = useState<GroupConversation[]>([]);
   const [selectedConversation, setSelectedConversation] = useState<string | null>(null);
+  const [selectedGroupConversation, setSelectedGroupConversation] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
+  const [groupMessages, setGroupMessages] = useState<GroupMessage[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showCreateGroupDialog, setShowCreateGroupDialog] = useState(false);
+  const [newGroupName, setNewGroupName] = useState('');
+  const [newGroupDescription, setNewGroupDescription] = useState('');
+  const [selectedProfessionals, setSelectedProfessionals] = useState<string[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const isAthlete = profile?.user_type === 'athlete';
@@ -60,18 +87,23 @@ const CommunicationCenter = () => {
         fetchAthletes();
       }
       fetchConversations();
+      fetchGroupConversations();
     }
   }, [user, profile]);
 
   useEffect(() => {
     if (selectedConversation) {
       fetchMessages(selectedConversation);
+      setSelectedGroupConversation(null);
+    } else if (selectedGroupConversation) {
+      fetchGroupMessages(selectedGroupConversation);
+      setSelectedConversation(null);
     }
-  }, [selectedConversation]);
+  }, [selectedConversation, selectedGroupConversation]);
 
   useEffect(() => {
     scrollToBottom();
-  }, [messages]);
+  }, [messages, groupMessages]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -160,6 +192,65 @@ const CommunicationCenter = () => {
     }
   };
 
+  const fetchGroupConversations = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('group_conversations')
+        .select(`
+          id,
+          name,
+          description,
+          updated_at,
+          participants:group_participants(count)
+        `)
+        .order('updated_at', { ascending: false });
+
+      if (error) throw error;
+      
+      const formattedGroups = data?.map(group => ({
+        id: group.id,
+        name: group.name,
+        description: group.description,
+        participants_count: (group.participants as any)[0]?.count || 0,
+        last_message_at: group.updated_at
+      })) || [];
+
+      setGroupConversations(formattedGroups);
+    } catch (error) {
+      console.error('Error fetching group conversations:', error);
+    }
+  };
+
+  const fetchGroupMessages = async (groupId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('group_messages')
+        .select(`
+          id,
+          content,
+          sender_id,
+          created_at,
+          sender:profiles!group_messages_sender_id_fkey(full_name)
+        `)
+        .eq('group_id', groupId)
+        .order('created_at', { ascending: true });
+
+      if (error) throw error;
+      
+      const formattedMessages = data?.map(msg => ({
+        id: msg.id,
+        content: msg.content,
+        sender_id: msg.sender_id,
+        created_at: msg.created_at,
+        sender_name: (msg.sender as any)?.full_name || 'Usuário'
+      })) || [];
+
+      setGroupMessages(formattedMessages);
+    } catch (error) {
+      console.error('Error fetching group messages:', error);
+    }
+  };
+
   const fetchMessages = async (conversationId: string) => {
     try {
       const { data, error } = await supabase
@@ -243,27 +334,51 @@ const CommunicationCenter = () => {
   };
 
   const sendMessage = async () => {
-    if (!newMessage.trim() || !selectedConversation || !user) return;
+    if (!newMessage.trim() || !user) return;
 
     try {
-      const { error } = await supabase
-        .from('messages')
-        .insert([{
-          conversation_id: selectedConversation,
-          sender_id: user.id,
-          content: newMessage.trim()
-        }]);
+      if (selectedConversation) {
+        // Send to regular conversation
+        const { error } = await supabase
+          .from('messages')
+          .insert([{
+            conversation_id: selectedConversation,
+            sender_id: user.id,
+            content: newMessage.trim()
+          }]);
 
-      if (error) throw error;
+        if (error) throw error;
 
-      setNewMessage('');
-      await fetchMessages(selectedConversation);
-      
-      // Update conversation timestamp
-      await supabase
-        .from('conversations')
-        .update({ updated_at: new Date().toISOString() })
-        .eq('id', selectedConversation);
+        setNewMessage('');
+        await fetchMessages(selectedConversation);
+        
+        // Update conversation timestamp
+        await supabase
+          .from('conversations')
+          .update({ updated_at: new Date().toISOString() })
+          .eq('id', selectedConversation);
+
+      } else if (selectedGroupConversation) {
+        // Send to group conversation
+        const { error } = await supabase
+          .from('group_messages')
+          .insert([{
+            group_id: selectedGroupConversation,
+            sender_id: user.id,
+            content: newMessage.trim()
+          }]);
+
+        if (error) throw error;
+
+        setNewMessage('');
+        await fetchGroupMessages(selectedGroupConversation);
+        
+        // Update group timestamp
+        await supabase
+          .from('group_conversations')
+          .update({ updated_at: new Date().toISOString() })
+          .eq('id', selectedGroupConversation);
+      }
 
     } catch (error) {
       console.error('Error sending message:', error);
@@ -279,6 +394,67 @@ const CommunicationCenter = () => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       sendMessage();
+    }
+  };
+
+  const createGroupConversation = async () => {
+    if (!newGroupName.trim() || selectedProfessionals.length === 0) return;
+
+    try {
+      setLoading(true);
+
+      // Create the group
+      const { data: groupData, error: groupError } = await supabase
+        .from('group_conversations')
+        .insert([{
+          name: newGroupName.trim(),
+          description: newGroupDescription.trim() || null,
+          created_by: user?.id
+        }])
+        .select()
+        .single();
+
+      if (groupError) throw groupError;
+
+      // Add the creator as admin
+      const participants = [
+        { group_id: groupData.id, user_id: user?.id, role: 'admin' },
+        ...selectedProfessionals.map(profId => ({
+          group_id: groupData.id,
+          user_id: profId,
+          role: 'member'
+        }))
+      ];
+
+      const { error: participantsError } = await supabase
+        .from('group_participants')
+        .insert(participants);
+
+      if (participantsError) throw participantsError;
+
+      // Reset form
+      setNewGroupName('');
+      setNewGroupDescription('');
+      setSelectedProfessionals([]);
+      setShowCreateGroupDialog(false);
+
+      // Refresh groups
+      await fetchGroupConversations();
+
+      toast({
+        title: "Grupo criado!",
+        description: "O grupo de conversa foi criado com sucesso."
+      });
+
+    } catch (error) {
+      console.error('Error creating group:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível criar o grupo.",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -326,11 +502,113 @@ const CommunicationCenter = () => {
       {/* Conversations List */}
       <Card>
         <CardHeader>
-          <CardTitle>Conversas</CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle>Conversas</CardTitle>
+            {isAthlete && (
+              <Dialog open={showCreateGroupDialog} onOpenChange={setShowCreateGroupDialog}>
+                <DialogTrigger asChild>
+                  <Button variant="outline" size="sm">
+                    <Plus className="h-4 w-4 mr-1" />
+                    Grupo
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Criar Grupo de Conversa</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <div>
+                      <Label htmlFor="groupName">Nome do Grupo</Label>
+                      <Input
+                        id="groupName"
+                        value={newGroupName}
+                        onChange={(e) => setNewGroupName(e.target.value)}
+                        placeholder="Ex: Equipe Médica"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="groupDescription">Descrição (opcional)</Label>
+                      <Textarea
+                        id="groupDescription"
+                        value={newGroupDescription}
+                        onChange={(e) => setNewGroupDescription(e.target.value)}
+                        placeholder="Descreva o propósito do grupo..."
+                      />
+                    </div>
+                    <div>
+                      <Label>Selecionar Profissionais</Label>
+                      <div className="space-y-2 max-h-40 overflow-y-auto">
+                        {professionals.map((professional) => (
+                          <div key={professional.user_id} className="flex items-center space-x-2">
+                            <Checkbox
+                              id={professional.user_id}
+                              checked={selectedProfessionals.includes(professional.user_id)}
+                              onCheckedChange={(checked) => {
+                                if (checked) {
+                                  setSelectedProfessionals([...selectedProfessionals, professional.user_id]);
+                                } else {
+                                  setSelectedProfessionals(selectedProfessionals.filter(id => id !== professional.user_id));
+                                }
+                              }}
+                            />
+                            <Label htmlFor={professional.user_id} className="flex items-center gap-2 cursor-pointer">
+                              <Avatar className="h-6 w-6">
+                                <AvatarFallback className="text-xs">
+                                  {professional.full_name?.charAt(0) || 'P'}
+                                </AvatarFallback>
+                              </Avatar>
+                              {professional.full_name || 'Profissional'}
+                            </Label>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        onClick={createGroupConversation}
+                        disabled={loading || !newGroupName.trim() || selectedProfessionals.length === 0}
+                        className="flex-1"
+                      >
+                        {loading ? 'Criando...' : 'Criar Grupo'}
+                      </Button>
+                      <Button
+                        variant="outline"
+                        onClick={() => setShowCreateGroupDialog(false)}
+                      >
+                        Cancelar
+                      </Button>
+                    </div>
+                  </div>
+                </DialogContent>
+              </Dialog>
+            )}
+          </div>
         </CardHeader>
         <CardContent>
           <ScrollArea className="h-[500px]">
             <div className="space-y-2">
+              {/* Group Conversations */}
+              {groupConversations.map((group) => (
+                <div
+                  key={group.id}
+                  className={`p-3 rounded-lg border cursor-pointer transition-colors ${
+                    selectedGroupConversation === group.id
+                      ? 'bg-primary text-primary-foreground'
+                      : 'hover:bg-accent'
+                  }`}
+                  onClick={() => setSelectedGroupConversation(group.id)}
+                >
+                  <div className="flex items-center gap-2">
+                    <UsersIcon className="h-4 w-4" />
+                    <div className="font-medium text-sm">{group.name}</div>
+                  </div>
+                  <div className="text-xs text-muted-foreground mt-1">
+                    {group.participants_count} participantes • {new Date(group.last_message_at).toLocaleDateString()}
+                  </div>
+                </div>
+              ))}
+              
+              {/* Individual Conversations */}
               {conversations.map((conversation) => (
                 <div
                   key={conversation.id}
@@ -360,16 +638,18 @@ const CommunicationCenter = () => {
           <CardTitle>
             {selectedConversation 
               ? conversations.find(c => c.id === selectedConversation)?.other_party_name
+              : selectedGroupConversation
+              ? groupConversations.find(g => g.id === selectedGroupConversation)?.name
               : 'Selecione uma conversa'
             }
           </CardTitle>
         </CardHeader>
         <CardContent className="flex flex-col h-[500px]">
-          {selectedConversation ? (
+          {(selectedConversation || selectedGroupConversation) ? (
             <>
               <ScrollArea className="flex-1 mb-4">
                 <div className="space-y-4">
-                  {messages.map((message) => (
+                  {(selectedConversation ? messages : groupMessages).map((message) => (
                     <div
                       key={message.id}
                       className={`flex ${
