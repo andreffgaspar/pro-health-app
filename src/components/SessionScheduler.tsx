@@ -3,6 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
@@ -44,6 +45,12 @@ interface Session {
   } | null;
 }
 
+interface AthleteOption {
+  id: string;
+  full_name: string;
+  user_id: string;
+}
+
 interface SessionSchedulerProps {
   userType: 'professional' | 'athlete';
 }
@@ -52,6 +59,7 @@ const SessionScheduler = ({ userType }: SessionSchedulerProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
   const [sessions, setSessions] = useState<Session[]>([]);
+  const [athletes, setAthletes] = useState<AthleteOption[]>([]);
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -62,14 +70,44 @@ const SessionScheduler = ({ userType }: SessionSchedulerProps) => {
     start_time: '',
     end_time: '',
     location: '',
-    price: ''
+    price: '',
+    athlete_id: ''
   });
 
   useEffect(() => {
     if (user) {
       fetchSessions();
+      if (userType === 'professional') {
+        fetchAthletes();
+      }
     }
   }, [user, selectedDate]);
+
+  const fetchAthletes = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('athlete_professional_relationships')
+        .select(`
+          athlete_id,
+          athlete:profiles!athlete_professional_relationships_athlete_id_fkey(full_name, user_id)
+        `)
+        .eq('professional_id', user?.id)
+        .eq('status', 'accepted')
+        .eq('is_active', true);
+
+      if (error) throw error;
+
+      const athleteOptions: AthleteOption[] = (data || []).map((item: any) => ({
+        id: item.athlete_id,
+        full_name: item.athlete.full_name,
+        user_id: item.athlete.user_id
+      }));
+
+      setAthletes(athleteOptions);
+    } catch (error) {
+      console.error('Error fetching athletes:', error);
+    }
+  };
 
   const fetchSessions = async () => {
     try {
@@ -119,26 +157,43 @@ const SessionScheduler = ({ userType }: SessionSchedulerProps) => {
     try {
       setLoading(true);
 
+      const sessionData = {
+        professional_id: user?.id,
+        title: formData.title,
+        description: formData.description || null,
+        session_date: formData.session_date,
+        start_time: formData.start_time,
+        end_time: formData.end_time,
+        location: formData.location || null,
+        price: formData.price ? parseFloat(formData.price) : null,
+        athlete_id: formData.athlete_id || null,
+        session_type: formData.athlete_id ? 'booked' : 'available',
+        status: formData.athlete_id ? 'confirmed' : 'available'
+      };
+
       const { error } = await supabase
         .from('sessions')
-        .insert({
-          professional_id: user?.id,
-          title: formData.title,
-          description: formData.description || null,
-          session_date: formData.session_date,
-          start_time: formData.start_time,
-          end_time: formData.end_time,
-          location: formData.location || null,
-          price: formData.price ? parseFloat(formData.price) : null,
-          session_type: 'available',
-          status: 'available'
-        });
+        .insert(sessionData);
 
       if (error) throw error;
 
+      // Se um atleta foi selecionado, criar notificação para ele
+      if (formData.athlete_id) {
+        await supabase
+          .from('notifications')
+          .insert({
+            user_id: formData.athlete_id,
+            title: 'Nova Sessão Agendada',
+            message: `Uma nova sessão "${formData.title}" foi agendada para você em ${format(new Date(formData.session_date), 'dd/MM/yyyy', { locale: ptBR })} às ${formData.start_time}.`,
+            type: 'success'
+          });
+      }
+
       toast({
         title: "Sessão criada!",
-        description: "Horário disponibilizado com sucesso."
+        description: formData.athlete_id 
+          ? "Sessão agendada com sucesso e atleta notificado."
+          : "Horário disponibilizado com sucesso."
       });
 
       setIsCreateDialogOpen(false);
@@ -149,7 +204,8 @@ const SessionScheduler = ({ userType }: SessionSchedulerProps) => {
         start_time: '',
         end_time: '',
         location: '',
-        price: ''
+        price: '',
+        athlete_id: ''
       });
       fetchSessions();
     } catch (error) {
@@ -318,6 +374,26 @@ const SessionScheduler = ({ userType }: SessionSchedulerProps) => {
                     placeholder="Ex: Consulta Nutricional"
                     required
                   />
+                </div>
+                
+                <div>
+                  <Label htmlFor="athlete">Atleta (opcional)</Label>
+                  <Select 
+                    value={formData.athlete_id} 
+                    onValueChange={(value) => setFormData({ ...formData, athlete_id: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione um atleta ou deixe disponível" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">Horário livre (disponível para qualquer atleta)</SelectItem>
+                      {athletes.map((athlete) => (
+                        <SelectItem key={athlete.id} value={athlete.id}>
+                          {athlete.full_name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
                 
                 <div>
