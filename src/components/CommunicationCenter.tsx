@@ -14,6 +14,11 @@ interface Professional {
   full_name: string | null;
 }
 
+interface Athlete {
+  user_id: string;
+  full_name: string | null;
+}
+
 interface Message {
   id: string;
   content: string;
@@ -24,8 +29,10 @@ interface Message {
 
 interface Conversation {
   id: string;
+  athlete_id: string;
   professional_id: string;
-  professional_name: string;
+  other_party_id: string;
+  other_party_name: string;
   title: string | null;
   updated_at: string;
 }
@@ -34,6 +41,7 @@ const CommunicationCenter = () => {
   const { user, profile } = useAuth();
   const { toast } = useToast();
   const [professionals, setProfessionals] = useState<Professional[]>([]);
+  const [athletes, setAthletes] = useState<Athlete[]>([]);
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [selectedConversation, setSelectedConversation] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -41,9 +49,16 @@ const CommunicationCenter = () => {
   const [loading, setLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
+  const isAthlete = profile?.user_type === 'athlete';
+  const isProfessional = profile?.user_type === 'professional';
+
   useEffect(() => {
-    if (user && profile?.user_type === 'athlete') {
-      fetchProfessionals();
+    if (user && (isAthlete || isProfessional)) {
+      if (isAthlete) {
+        fetchProfessionals();
+      } else {
+        fetchAthletes();
+      }
       fetchConversations();
     }
   }, [user, profile]);
@@ -76,28 +91,68 @@ const CommunicationCenter = () => {
     }
   };
 
+  const fetchAthletes = async () => {
+    try {
+      // Fetch athletes that have relationships with this professional
+      const { data, error } = await supabase
+        .from('athlete_professional_relationships')
+        .select(`
+          athlete_id,
+          athlete:profiles!athlete_professional_relationships_athlete_id_fkey(user_id, full_name)
+        `)
+        .eq('professional_id', user?.id)
+        .eq('status', 'accepted');
+
+      if (error) throw error;
+      
+      const athletesList = data?.map(rel => ({
+        user_id: (rel.athlete as any)?.user_id,
+        full_name: (rel.athlete as any)?.full_name
+      })).filter(athlete => athlete.user_id) || [];
+      
+      setAthletes(athletesList);
+    } catch (error) {
+      console.error('Error fetching athletes:', error);
+    }
+  };
+
   const fetchConversations = async () => {
     try {
       const { data, error } = await supabase
         .from('conversations')
         .select(`
           id,
+          athlete_id,
           professional_id,
           title,
           updated_at,
+          athlete:profiles!conversations_athlete_id_fkey(full_name),
           professional:profiles!conversations_professional_id_fkey(full_name)
         `)
-        .eq('athlete_id', user?.id);
+        .or(
+          isAthlete 
+            ? `athlete_id.eq.${user?.id}` 
+            : `professional_id.eq.${user?.id}`
+        );
 
       if (error) throw error;
       
-      const formattedConversations = data?.map(conv => ({
-        id: conv.id,
-        professional_id: conv.professional_id,
-        professional_name: (conv.professional as any)?.full_name || 'Profissional',
-        title: conv.title,
-        updated_at: conv.updated_at
-      })) || [];
+      const formattedConversations = data?.map(conv => {
+        const otherPartyId = isAthlete ? conv.professional_id : conv.athlete_id;
+        const otherPartyName = isAthlete 
+          ? (conv.professional as any)?.full_name 
+          : (conv.athlete as any)?.full_name;
+        
+        return {
+          id: conv.id,
+          athlete_id: conv.athlete_id,
+          professional_id: conv.professional_id,
+          other_party_id: otherPartyId,
+          other_party_name: otherPartyName || (isAthlete ? 'Profissional' : 'Atleta'),
+          title: conv.title,
+          updated_at: conv.updated_at
+        };
+      }) || [];
 
       setConversations(formattedConversations);
     } catch (error) {
@@ -135,7 +190,7 @@ const CommunicationCenter = () => {
     }
   };
 
-  const startConversation = async (professionalId: string) => {
+  const startConversation = async (otherPartyId: string) => {
     try {
       setLoading(true);
       
@@ -143,8 +198,8 @@ const CommunicationCenter = () => {
       const { data: existingConv } = await supabase
         .from('conversations')
         .select('id')
-        .eq('athlete_id', user?.id)
-        .eq('professional_id', professionalId)
+        .eq('athlete_id', isAthlete ? user?.id : otherPartyId)
+        .eq('professional_id', isAthlete ? otherPartyId : user?.id)
         .single();
 
       if (existingConv) {
@@ -153,12 +208,15 @@ const CommunicationCenter = () => {
       }
 
       // Create new conversation
+      const otherPartyList = isAthlete ? professionals : athletes;
+      const otherParty = otherPartyList.find(p => p.user_id === otherPartyId);
+      
       const { data, error } = await supabase
         .from('conversations')
         .insert([{
-          athlete_id: user?.id,
-          professional_id: professionalId,
-          title: `Conversa com ${professionals.find(p => p.user_id === professionalId)?.full_name}`
+          athlete_id: isAthlete ? user?.id : otherPartyId,
+          professional_id: isAthlete ? otherPartyId : user?.id,
+          title: `Conversa com ${otherParty?.full_name}`
         }])
         .select()
         .single();
@@ -170,7 +228,7 @@ const CommunicationCenter = () => {
       
       toast({
         title: "Conversa iniciada",
-        description: "Você pode começar a conversar com o profissional."
+        description: `Você pode começar a conversar com ${isAthlete ? 'o profissional' : 'o atleta'}.`
       });
     } catch (error) {
       console.error('Error starting conversation:', error);
@@ -224,37 +282,37 @@ const CommunicationCenter = () => {
     }
   };
 
-  if (profile?.user_type !== 'athlete') {
+  if (!isAthlete && !isProfessional) {
     return null;
   }
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-6 h-[600px]">
-      {/* Professionals List */}
+      {/* Contacts List */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Users className="h-5 w-5" />
-            Profissionais
+            {isAthlete ? 'Profissionais' : 'Atletas'}
           </CardTitle>
         </CardHeader>
         <CardContent>
           <ScrollArea className="h-[200px]">
             <div className="space-y-2">
-              {professionals.map((professional) => (
+              {(isAthlete ? professionals : athletes).map((contact) => (
                 <div
-                  key={professional.user_id}
+                  key={contact.user_id}
                   className="flex items-center justify-between p-2 rounded-lg border hover:bg-accent cursor-pointer"
-                  onClick={() => startConversation(professional.user_id)}
+                  onClick={() => startConversation(contact.user_id)}
                 >
                   <div className="flex items-center gap-2">
                     <Avatar className="h-8 w-8">
                       <AvatarFallback>
-                        {professional.full_name?.charAt(0).toUpperCase() || 'P'}
+                        {contact.full_name?.charAt(0).toUpperCase() || (isAthlete ? 'P' : 'A')}
                       </AvatarFallback>
                     </Avatar>
                     <span className="text-sm font-medium">
-                      {professional.full_name || 'Profissional'}
+                      {contact.full_name || (isAthlete ? 'Profissional' : 'Atleta')}
                     </span>
                   </div>
                   <MessageCircle className="h-4 w-4 text-muted-foreground" />
@@ -284,7 +342,7 @@ const CommunicationCenter = () => {
                   onClick={() => setSelectedConversation(conversation.id)}
                 >
                   <div className="font-medium text-sm">
-                    {conversation.professional_name}
+                    {conversation.other_party_name}
                   </div>
                   <div className="text-xs text-muted-foreground mt-1">
                     {new Date(conversation.updated_at).toLocaleDateString()}
@@ -301,7 +359,7 @@ const CommunicationCenter = () => {
         <CardHeader>
           <CardTitle>
             {selectedConversation 
-              ? conversations.find(c => c.id === selectedConversation)?.professional_name
+              ? conversations.find(c => c.id === selectedConversation)?.other_party_name
               : 'Selecione uma conversa'
             }
           </CardTitle>

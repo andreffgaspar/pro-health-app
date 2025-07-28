@@ -15,8 +15,6 @@ import {
   Calendar,
   AlertCircle,
   Activity,
-  Heart,
-  Moon,
   Target,
   FileText,
   MessageSquare,
@@ -24,11 +22,12 @@ import {
   X,
   Bell
 } from "lucide-react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { LineChart, Line, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from "recharts";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import CommunicationCenter from "@/components/CommunicationCenter";
 
 // Mock data for athletes
 const athletes = [
@@ -360,241 +359,178 @@ const ProfessionalDashboard = () => {
         </div>
 
         {/* Main Content */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Athletes List */}
-          <Card className="lg:col-span-2">
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
+        <Tabs defaultValue="athletes" className="w-full">
+          <TabsList className="grid w-full grid-cols-3 mb-8">
+            <TabsTrigger value="athletes" className="gap-2">
+              <Users className="w-4 h-4" />
+              Meus Atletas
+            </TabsTrigger>
+            <TabsTrigger value="communication" className="gap-2">
+              <MessageSquare className="w-4 h-4" />
+              Comunicação
+            </TabsTrigger>
+            <TabsTrigger value="analytics" className="gap-2">
+              <TrendingUp className="w-4 h-4" />
+              Análises
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="athletes">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+              {/* Athletes List */}
+              <Card className="lg:col-span-2">
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle className="flex items-center gap-2">
+                        <Users className="w-5 h-5 text-secondary" />
+                        Meus Atletas
+                      </CardTitle>
+                      <CardDescription>
+                        Gerencie e acompanhe seus atletas
+                      </CardDescription>
+                    </div>
+                    <Button variant="performance" size="sm">
+                      <Plus className="w-4 h-4 mr-2" />
+                      Adicionar Atleta
+                    </Button>
+                  </div>
+                  <div className="relative">
+                    <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Buscar atletas..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="pl-10"
+                    />
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {filteredAthletes.map((athlete) => (
+                      <div
+                        key={athlete.id}
+                        className="flex items-center justify-between p-4 border border-border rounded-lg hover:bg-muted/50 transition-colors"
+                      >
+                        <div className="flex items-center gap-4">
+                          <Avatar>
+                            <AvatarImage src={athlete.avatar} />
+                            <AvatarFallback>
+                              {athlete.name.split(' ').map(n => n[0]).join('')}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <h4 className="font-semibold">{athlete.name}</h4>
+                              {athlete.alerts > 0 && (
+                                <Badge variant="destructive" className="text-xs">
+                                  {athlete.alerts} alerta{athlete.alerts > 1 ? 's' : ''}
+                                </Badge>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                              <span>{athlete.sport}</span>
+                              <span>{athlete.level}</span>
+                              <Badge variant={athlete.status === "Ativo" ? "default" : "secondary"} className="text-xs">
+                                {athlete.status}
+                              </Badge>
+                            </div>
+                            <p className="text-xs text-muted-foreground mt-1">
+                              Próxima sessão: {athlete.nextSession}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-lg font-bold text-primary">
+                            {athlete.performance}%
+                          </div>
+                          <p className="text-xs text-muted-foreground">
+                            Atualizado há {athlete.lastUpdate}
+                          </p>
+                          <div className="flex gap-2 mt-2">
+                            <Button variant="outline" size="sm">
+                              <FileText className="w-3 h-3" />
+                            </Button>
+                            <Button variant="outline" size="sm">
+                              <MessageSquare className="w-3 h-3" />
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Performance Comparison */}
+              <Card>
+                <CardHeader>
                   <CardTitle className="flex items-center gap-2">
-                    <Users className="w-5 h-5 text-secondary" />
-                    Meus Atletas
+                    <Target className="w-5 h-5 text-accent" />
+                    Performance dos Atletas
                   </CardTitle>
                   <CardDescription>
-                    Gerencie e acompanhe seus atletas
+                    Comparativo de performance atual
                   </CardDescription>
-                </div>
-                <Button variant="performance" size="sm">
-                  <Plus className="w-4 h-4 mr-2" />
-                  Adicionar Atleta
-                </Button>
-              </div>
-              <div className="relative">
-                <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Buscar atletas..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {filteredAthletes.map((athlete) => (
-                  <div
-                    key={athlete.id}
-                    className="flex items-center justify-between p-4 border border-border rounded-lg hover:bg-muted/50 transition-colors"
-                  >
-                    <div className="flex items-center gap-4">
-                      <Avatar>
-                        <AvatarImage src={athlete.avatar} />
-                        <AvatarFallback>
-                          {athlete.name.split(' ').map(n => n[0]).join('')}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <h4 className="font-semibold">{athlete.name}</h4>
-                          {athlete.alerts > 0 && (
-                            <Badge variant="destructive" className="text-xs">
-                              {athlete.alerts} alerta{athlete.alerts > 1 ? 's' : ''}
-                            </Badge>
-                          )}
-                        </div>
-                        <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                          <span>{athlete.sport}</span>
-                          <span>{athlete.level}</span>
-                          <Badge variant={athlete.status === "Ativo" ? "default" : "secondary"} className="text-xs">
-                            {athlete.status}
-                          </Badge>
-                        </div>
-                        <p className="text-xs text-muted-foreground mt-1">
-                          Próxima sessão: {athlete.nextSession}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <div className="text-lg font-bold text-primary">
-                        {athlete.performance}%
-                      </div>
-                      <p className="text-xs text-muted-foreground">
-                        Atualizado há {athlete.lastUpdate}
-                      </p>
-                      <div className="flex gap-2 mt-2">
-                        <Button variant="outline" size="sm">
-                          <FileText className="w-3 h-3" />
-                        </Button>
-                        <Button variant="outline" size="sm">
-                          <MessageSquare className="w-3 h-3" />
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+                </CardHeader>
+                <CardContent>
+                  <ResponsiveContainer width="100%" height={280}>
+                    <BarChart data={performanceComparison} layout="horizontal">
+                      <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
+                      <XAxis type="number" />
+                      <YAxis dataKey="athlete" type="category" width={60} />
+                      <Tooltip 
+                        contentStyle={{ 
+                          backgroundColor: 'hsl(var(--card))', 
+                          border: '1px solid hsl(var(--border))',
+                          borderRadius: '8px'
+                        }}
+                      />
+                      <Bar dataKey="performance" fill="hsl(var(--secondary))" radius={[0, 4, 4, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
 
-          {/* Performance Comparison */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Target className="w-5 h-5 text-accent" />
-                Comparativo de Performance
-              </CardTitle>
-              <CardDescription>
-                Performance atual dos atletas
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <ResponsiveContainer width="100%" height={280}>
-                <BarChart data={performanceComparison} layout="horizontal">
-                  <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
-                  <XAxis type="number" />
-                  <YAxis dataKey="athlete" type="category" width={60} />
-                  <Tooltip 
-                    contentStyle={{ 
-                      backgroundColor: 'hsl(var(--card))', 
-                      border: '1px solid hsl(var(--border))',
-                      borderRadius: '8px'
-                    }}
-                  />
-                  <Bar dataKey="performance" fill="hsl(var(--secondary))" radius={[0, 4, 4, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
-        </div>
+          <TabsContent value="communication">
+            <CommunicationCenter />
+          </TabsContent>
 
-        {/* Analytics Overview */}
-        <Card className="mt-8">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Calendar className="w-5 h-5 text-primary" />
-              Visão Geral - Últimos 6 Meses
-            </CardTitle>
-            <CardDescription>
-              Evolução do seu trabalho e dos atletas
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Tabs defaultValue="athletes" className="w-full">
-              <TabsList className="grid w-full grid-cols-3">
-                <TabsTrigger value="athletes">Crescimento de Atletas</TabsTrigger>
-                <TabsTrigger value="sessions">Sessões Realizadas</TabsTrigger>
-                <TabsTrigger value="performance">Performance Geral</TabsTrigger>
-              </TabsList>
-              
-              <TabsContent value="athletes" className="mt-6">
-                <ResponsiveContainer width="100%" height={300}>
-                  <AreaChart data={overviewData}>
-                    <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
-                    <XAxis dataKey="month" />
-                    <YAxis />
-                    <Tooltip 
-                      contentStyle={{ 
-                        backgroundColor: 'hsl(var(--card))', 
-                        border: '1px solid hsl(var(--border))',
-                        borderRadius: '8px'
-                      }}
-                    />
-                    <Area 
-                      type="monotone" 
-                      dataKey="athletes" 
-                      stroke="hsl(var(--secondary))" 
-                      fill="hsl(var(--secondary))" 
-                      fillOpacity={0.2}
-                      strokeWidth={3}
-                    />
-                  </AreaChart>
-                </ResponsiveContainer>
-              </TabsContent>
-              
-              <TabsContent value="sessions" className="mt-6">
-                <ResponsiveContainer width="100%" height={300}>
-                  <AreaChart data={overviewData}>
-                    <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
-                    <XAxis dataKey="month" />
-                    <YAxis />
-                    <Tooltip 
-                      contentStyle={{ 
-                        backgroundColor: 'hsl(var(--card))', 
-                        border: '1px solid hsl(var(--border))',
-                        borderRadius: '8px'
-                      }}
-                    />
-                    <Area 
-                      type="monotone" 
-                      dataKey="sessions" 
-                      stroke="hsl(var(--accent))" 
-                      fill="hsl(var(--accent))" 
-                      fillOpacity={0.2}
-                      strokeWidth={3}
-                    />
-                  </AreaChart>
-                </ResponsiveContainer>
-              </TabsContent>
-              
-              <TabsContent value="performance" className="mt-6">
-                <ResponsiveContainer width="100%" height={300}>
-                  <LineChart data={overviewData}>
-                    <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
-                    <XAxis dataKey="month" />
-                    <YAxis domain={[70, 95]} />
-                    <Tooltip 
-                      contentStyle={{ 
-                        backgroundColor: 'hsl(var(--card))', 
-                        border: '1px solid hsl(var(--border))',
-                        borderRadius: '8px'
-                      }}
-                    />
-                    <Line 
-                      type="monotone" 
-                      dataKey="performance" 
-                      stroke="hsl(var(--primary))" 
-                      strokeWidth={3}
-                      dot={{ fill: 'hsl(var(--primary))', strokeWidth: 2, r: 4 }}
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
-              </TabsContent>
-            </Tabs>
-          </CardContent>
-        </Card>
+          <TabsContent value="analytics">
+            <div className="text-center py-8">
+              <TrendingUp className="h-12 w-12 mx-auto mb-4 opacity-50" />
+              <p className="text-muted-foreground">Análises avançadas em desenvolvimento</p>
+            </div>
+          </TabsContent>
+        </Tabs>
 
         {/* Quick Actions */}
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mt-8">
-          <Button variant="outline" className="h-16 flex flex-col gap-1">
-            <Plus className="w-5 h-5" />
-            <span className="text-xs">Novo Atleta</span>
-          </Button>
-          <Button variant="outline" className="h-16 flex flex-col gap-1">
-            <FileText className="w-5 h-5" />
-            <span className="text-xs">Criar Relatório</span>
-          </Button>
-          <Button variant="outline" className="h-16 flex flex-col gap-1">
-            <Calendar className="w-5 h-5" />
-            <span className="text-xs">Agendar Sessão</span>
-          </Button>
-          <Button variant="outline" className="h-16 flex flex-col gap-1">
-            <MessageSquare className="w-5 h-5" />
-            <span className="text-xs">Mensagens</span>
-          </Button>
-          <Button variant="outline" className="h-16 flex flex-col gap-1">
-            <TrendingUp className="w-5 h-5" />
-            <span className="text-xs">Análises</span>
-          </Button>
+        <div className="mt-8">
+          <h3 className="text-lg font-semibold mb-4">Ações Rápidas</h3>
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+            <Button variant="outline" className="h-16 flex flex-col gap-1">
+              <Plus className="w-5 h-5" />
+              <span className="text-xs">Novo Atleta</span>
+            </Button>
+            <Button variant="outline" className="h-16 flex flex-col gap-1">
+              <FileText className="w-5 h-5" />
+              <span className="text-xs">Criar Relatório</span>
+            </Button>
+            <Button variant="outline" className="h-16 flex flex-col gap-1">
+              <Calendar className="w-5 h-5" />
+              <span className="text-xs">Agendar Sessão</span>
+            </Button>
+            <Button variant="outline" className="h-16 flex flex-col gap-1">
+              <MessageSquare className="w-5 h-5" />
+              <span className="text-xs">Mensagens</span>
+            </Button>
+            <Button variant="outline" className="h-16 flex flex-col gap-1">
+              <TrendingUp className="w-5 h-5" />
+              <span className="text-xs">Análises</span>
+            </Button>
+          </div>
         </div>
       </div>
     </div>
