@@ -35,7 +35,17 @@ export const usePdfExtraction = () => {
     try {
       const arrayBuffer = await file.arrayBuffer();
       const uint8Array = new Uint8Array(arrayBuffer);
-      const base64String = btoa(String.fromCharCode(...uint8Array));
+      
+      // Process large files in chunks to avoid call stack overflow
+      let binaryString = '';
+      const chunkSize = 0x8000; // 32KB chunks
+      
+      for (let i = 0; i < uint8Array.length; i += chunkSize) {
+        const chunk = uint8Array.subarray(i, i + chunkSize);
+        binaryString += String.fromCharCode(...chunk);
+      }
+      
+      const base64String = btoa(binaryString);
       return base64String;
     } catch (error) {
       console.error('Error converting PDF to buffer:', error);
