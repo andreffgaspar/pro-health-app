@@ -165,12 +165,37 @@ const ProfessionalDashboard = () => {
     try {
       setLoading(true);
       
-      const { error } = await supabase
+      // Get the relationship details first to get athlete_id
+      const { data: relationship, error: fetchError } = await supabase
+        .from('athlete_professional_relationships')
+        .select('athlete_id, specialty')
+        .eq('id', relationshipId)
+        .single();
+
+      if (fetchError) throw fetchError;
+
+      // Update relationship to inactive
+      const { error: updateError } = await supabase
         .from('athlete_professional_relationships')
         .update({ is_active: false })
         .eq('id', relationshipId);
 
-      if (error) throw error;
+      if (updateError) throw updateError;
+
+      // Create notification for the athlete
+      const { error: notificationError } = await supabase
+        .from('notifications')
+        .insert({
+          user_id: relationship.athlete_id,
+          title: 'Vínculo Profissional Inativado',
+          message: `Seu vínculo com o profissional ${profile?.full_name || 'profissional'} (${getSpecialtyText(relationship.specialty)}) foi inativado.`,
+          type: 'warning'
+        });
+
+      if (notificationError) {
+        console.error('Error creating notification:', notificationError);
+        // Don't throw here - the main action succeeded
+      }
 
       toast({
         title: "Atleta marcado como inativo",
