@@ -40,6 +40,7 @@ import { useToast } from "@/hooks/use-toast";
 import CommunicationCenter from "@/components/CommunicationCenter";
 import SessionScheduler from "@/components/SessionScheduler";
 import ProfileSettings from "@/components/ProfileSettings";
+import AthleteEnvironmentView from "@/components/AthleteEnvironmentView";
 
 interface AthleteData {
   id: string;
@@ -48,10 +49,31 @@ interface AthleteData {
   status: string;
   accepted_at: string;
   athlete: {
-    full_name: string;
     user_id: string;
+    full_name: string;
+    email?: string;
   };
 }
+
+interface AthleteEnvironmentModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  athleteId: string;
+  athleteName: string;
+}
+
+const AthleteEnvironmentModal = ({ isOpen, onClose, athleteId, athleteName }: AthleteEnvironmentModalProps) => {
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="max-w-7xl max-h-[90vh] overflow-y-auto p-0">
+        <DialogHeader className="p-6 pb-0">
+          <DialogTitle>Ambiente do Atleta - {athleteName}</DialogTitle>
+        </DialogHeader>
+        <AthleteEnvironmentView athleteId={athleteId} athleteName={athleteName} />
+      </DialogContent>
+    </Dialog>
+  );
+};
 
 interface PendingInvitation {
   id: string;
@@ -93,6 +115,10 @@ const ProfessionalDashboard = () => {
   
   // Profile settings state
   const [showProfileSettings, setShowProfileSettings] = useState(false);
+
+  // Athlete environment modal state
+  const [showAthleteEnvironment, setShowAthleteEnvironment] = useState(false);
+  const [selectedAthleteForEnvironment, setSelectedAthleteForEnvironment] = useState<{ id: string; name: string } | null>(null);
 
   useEffect(() => {
     if (user) {
@@ -380,6 +406,11 @@ const ProfessionalDashboard = () => {
     }
   };
 
+  const openAthleteEnvironment = (athleteId: string, athleteName: string) => {
+    setSelectedAthleteForEnvironment({ id: athleteId, name: athleteName });
+    setShowAthleteEnvironment(true);
+  };
+
   const specialties = [
     { value: 'nutrition', label: 'Nutricionista' },
     { value: 'physiotherapy', label: 'Fisioterapeuta' },
@@ -608,7 +639,8 @@ const ProfessionalDashboard = () => {
                         return (
                           <div
                             key={relationship.id}
-                            className="flex items-center justify-between p-4 border border-border rounded-lg hover:bg-muted/50 transition-colors"
+                            className="flex items-center justify-between p-4 border border-border rounded-lg hover:bg-muted/50 transition-colors cursor-pointer"
+                            onClick={() => openAthleteEnvironment(athlete?.user_id, athlete?.full_name || 'Atleta')}
                           >
                             <div className="flex items-center gap-4">
                               <Avatar>
@@ -990,6 +1022,19 @@ const ProfessionalDashboard = () => {
           open={showProfileSettings} 
           onOpenChange={setShowProfileSettings} 
         />
+
+        {/* Athlete Environment Modal */}
+        {selectedAthleteForEnvironment && (
+          <AthleteEnvironmentModal
+            isOpen={showAthleteEnvironment}
+            onClose={() => {
+              setShowAthleteEnvironment(false);
+              setSelectedAthleteForEnvironment(null);
+            }}
+            athleteId={selectedAthleteForEnvironment.id}
+            athleteName={selectedAthleteForEnvironment.name}
+          />
+        )}
       </div>
     </div>
   );
