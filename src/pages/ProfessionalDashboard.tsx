@@ -39,6 +39,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import CommunicationCenter from "@/components/CommunicationCenter";
 import SessionScheduler from "@/components/SessionScheduler";
+import ProfileSettings from "@/components/ProfileSettings";
 
 interface AthleteData {
   id: string;
@@ -89,6 +90,9 @@ const ProfessionalDashboard = () => {
   const [selectedAthlete2, setSelectedAthlete2] = useState<SearchedAthlete | null>(null);
   const [inviteSpecialty, setInviteSpecialty] = useState('');
   const [inviteMessage, setInviteMessage] = useState('');
+  
+  // Profile settings state
+  const [showProfileSettings, setShowProfileSettings] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -419,7 +423,7 @@ const ProfessionalDashboard = () => {
               <Badge variant="outline" className="text-secondary border-secondary">
                 Plano Pro
               </Badge>
-              <Button variant="ghost" size="icon">
+              <Button variant="ghost" size="icon" onClick={() => setShowProfileSettings(true)}>
                 <Settings className="w-5 h-5" />
               </Button>
               <Button variant="ghost" size="icon" onClick={handleLogout}>
@@ -965,6 +969,12 @@ const ProfessionalDashboard = () => {
             </div>
           </DialogContent>
         </Dialog>
+
+        {/* Profile Settings Dialog */}
+        <ProfileSettings 
+          open={showProfileSettings} 
+          onOpenChange={setShowProfileSettings} 
+        />
       </div>
     </div>
   );
