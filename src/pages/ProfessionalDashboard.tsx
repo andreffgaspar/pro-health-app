@@ -32,7 +32,7 @@ import {
   Eye,
   Edit
 } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+
 import { LineChart, Line, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from "recharts";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
@@ -93,7 +93,6 @@ interface SearchedAthlete {
 }
 
 const ProfessionalDashboard = () => {
-  const navigate = useNavigate();
   const { user, profile, signOut } = useAuth();
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
