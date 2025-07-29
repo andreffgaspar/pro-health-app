@@ -30,6 +30,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import MedicalRecordModal from "./MedicalRecordModal";
+import TrainingModal from "./TrainingModal";
+import NutritionModal from "./NutritionModal";
+import PhysiotherapyModal from "./PhysiotherapyModal";
 
 interface Session {
   id: string;
@@ -74,6 +78,10 @@ const SessionScheduler = ({ userType }: SessionSchedulerProps) => {
   const [isManageDialogOpen, setIsManageDialogOpen] = useState(false);
   const [selectedSession, setSelectedSession] = useState<Session | null>(null);
   const [isEditMode, setIsEditMode] = useState(false);
+  const [isMedicalModalOpen, setIsMedicalModalOpen] = useState(false);
+  const [isTrainingModalOpen, setIsTrainingModalOpen] = useState(false);
+  const [isNutritionModalOpen, setIsNutritionModalOpen] = useState(false);
+  const [isPhysiotherapyModalOpen, setIsPhysiotherapyModalOpen] = useState(false);
   const [editFormData, setEditFormData] = useState({
     title: '',
     description: '',
@@ -400,6 +408,26 @@ const SessionScheduler = ({ userType }: SessionSchedulerProps) => {
 
   const handleSessionClick = (session: Session) => {
     setSelectedSession(session);
+    
+    // Verifica se é uma sessão confirmada e abre o modal específico do tipo
+    if (session.status === 'confirmed' && session.appointment_type) {
+      switch (session.appointment_type) {
+        case 'consulta-medica':
+          setIsMedicalModalOpen(true);
+          return;
+        case 'treinamento':
+          setIsTrainingModalOpen(true);
+          return;
+        case 'consulta-nutricao':
+          setIsNutritionModalOpen(true);
+          return;
+        case 'fisioterapia':
+          setIsPhysiotherapyModalOpen(true);
+          return;
+      }
+    }
+    
+    // Para outras situações, abre o modal de gerenciamento normal
     setEditFormData({
       title: session.title,
       description: session.description || '',
@@ -1083,6 +1111,31 @@ const SessionScheduler = ({ userType }: SessionSchedulerProps) => {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Modais específicos por tipo de sessão */}
+      <MedicalRecordModal 
+        isOpen={isMedicalModalOpen}
+        onOpenChange={setIsMedicalModalOpen}
+        session={selectedSession}
+      />
+      
+      <TrainingModal 
+        isOpen={isTrainingModalOpen}
+        onOpenChange={setIsTrainingModalOpen}
+        session={selectedSession}
+      />
+      
+      <NutritionModal 
+        isOpen={isNutritionModalOpen}
+        onOpenChange={setIsNutritionModalOpen}
+        session={selectedSession}
+      />
+      
+      <PhysiotherapyModal 
+        isOpen={isPhysiotherapyModalOpen}
+        onOpenChange={setIsPhysiotherapyModalOpen}
+        session={selectedSession}
+      />
     </div>
   );
 };
