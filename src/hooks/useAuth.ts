@@ -152,16 +152,7 @@ export const useAuth = () => {
 
   const signOut = async () => {
     try {
-      // Clear local state immediately
-      setUser(null);
-      setSession(null);
-      setProfile(null);
-      setLoading(false);
-
       const { error } = await supabase.auth.signOut();
-      
-      // Force clear any remaining auth data from localStorage
-      localStorage.removeItem('sb-jfayvtcwdhfkvtuhuubp-auth-token');
       
       if (error) {
         toast({
@@ -172,6 +163,7 @@ export const useAuth = () => {
         return { error };
       }
 
+      // The onAuthStateChange will handle clearing the state
       toast({
         title: "Logout realizado",
         description: "Até logo!"

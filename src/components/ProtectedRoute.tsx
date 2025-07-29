@@ -14,18 +14,18 @@ export const ProtectedRoute = ({ children, requiredUserType }: ProtectedRoutePro
   useEffect(() => {
     if (!loading) {
       if (!user) {
-        navigate('/login');
+        navigate('/login', { replace: true });
         return;
       }
 
       if (requiredUserType && profile?.user_type !== requiredUserType) {
         // Redirect to appropriate dashboard based on user type
         if (profile?.user_type === 'athlete') {
-          navigate('/athlete-dashboard');
+          navigate('/athlete-dashboard', { replace: true });
         } else if (profile?.user_type === 'professional') {
-          navigate('/professional-dashboard');
+          navigate('/professional-dashboard', { replace: true });
         } else {
-          navigate('/login');
+          navigate('/login', { replace: true });
         }
       }
     }
