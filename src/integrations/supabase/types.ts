@@ -393,6 +393,7 @@ export type Database = {
       }
       sessions: {
         Row: {
+          appointment_type: string | null
           athlete_id: string | null
           created_at: string
           description: string | null
@@ -410,6 +411,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          appointment_type?: string | null
           athlete_id?: string | null
           created_at?: string
           description?: string | null
@@ -427,6 +429,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          appointment_type?: string | null
           athlete_id?: string | null
           created_at?: string
           description?: string | null

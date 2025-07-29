@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { Calendar } from "@/components/ui/calendar";
@@ -224,7 +224,8 @@ const SessionScheduler = ({ userType }: SessionSchedulerProps) => {
         price: formData.price ? parseFloat(formData.price) : null,
         athlete_id: (formData.athlete_id && formData.athlete_id !== 'none') ? formData.athlete_id : null,
         session_type: (formData.athlete_id && formData.athlete_id !== 'none') ? 'booked' : 'available',
-        status: (formData.athlete_id && formData.athlete_id !== 'none') ? 'confirmed' : 'available'
+        status: (formData.athlete_id && formData.athlete_id !== 'none') ? 'confirmed' : 'available',
+        appointment_type: formData.appointment_type || null
       };
 
       const { error } = await supabase
@@ -408,7 +409,7 @@ const SessionScheduler = ({ userType }: SessionSchedulerProps) => {
       location: session.location || '',
       price: session.price ? session.price.toString() : '',
       athlete_id: session.athlete_id || '',
-      appointment_type: ''
+      appointment_type: session.appointment_type || ''
     });
     setIsEditMode(false);
     setIsManageDialogOpen(true);
@@ -431,6 +432,7 @@ const SessionScheduler = ({ userType }: SessionSchedulerProps) => {
         location: editFormData.location || null,
         price: editFormData.price ? parseFloat(editFormData.price) : null,
         athlete_id: (editFormData.athlete_id && editFormData.athlete_id !== 'none') ? editFormData.athlete_id : null,
+        appointment_type: editFormData.appointment_type || null
       };
 
       const { error } = await supabase
@@ -500,6 +502,9 @@ const SessionScheduler = ({ userType }: SessionSchedulerProps) => {
             <DialogContent className="max-w-2xl max-h-[90vh]">
               <DialogHeader>
                 <DialogTitle>Criar Novo Horário</DialogTitle>
+                <DialogDescription>
+                  Crie um novo horário disponível ou agende uma sessão com um atleta específico.
+                </DialogDescription>
               </DialogHeader>
               <ScrollArea className="max-h-[75vh] pr-4">
                 <form onSubmit={handleCreateSession} className="space-y-4">
@@ -762,7 +767,10 @@ const SessionScheduler = ({ userType }: SessionSchedulerProps) => {
                       {userType === 'athlete' && session.session_type === 'available' && session.status === 'available' && (
                         <Button
                           size="sm"
-                          onClick={() => handleBookSession(session.id)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleBookSession(session.id);
+                          }}
                           disabled={loading}
                         >
                           Agendar
@@ -774,7 +782,10 @@ const SessionScheduler = ({ userType }: SessionSchedulerProps) => {
                           <Button
                             size="sm"
                             variant="outline"
-                            onClick={() => handleSessionAction(session.id, 'confirm')}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleSessionAction(session.id, 'confirm');
+                            }}
                             disabled={loading}
                             className="text-green-600 border-green-600 hover:bg-green-50"
                           >
@@ -783,7 +794,10 @@ const SessionScheduler = ({ userType }: SessionSchedulerProps) => {
                           <Button
                             size="sm"
                             variant="outline"
-                            onClick={() => handleSessionAction(session.id, 'cancel')}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleSessionAction(session.id, 'cancel');
+                            }}
                             disabled={loading}
                             className="text-red-600 border-red-600 hover:bg-red-50"
                           >
@@ -830,6 +844,9 @@ const SessionScheduler = ({ userType }: SessionSchedulerProps) => {
                 </Button>
               )}
             </DialogTitle>
+            <DialogDescription>
+              {isEditMode ? 'Edite os detalhes da sessão conforme necessário.' : 'Visualize os detalhes da sessão e gerencie o agendamento.'}
+            </DialogDescription>
           </DialogHeader>
           
           {selectedSession && (
@@ -968,7 +985,10 @@ const SessionScheduler = ({ userType }: SessionSchedulerProps) => {
               ) : (
                 <div className="space-y-4">
                   <div className="p-4 border rounded-lg bg-muted/20">
-                    <h3 className="font-semibold text-lg">{selectedSession.title}</h3>
+                    <div className="flex items-center gap-2 mb-2">
+                      {getAppointmentIcon(selectedSession.appointment_type)}
+                      <h3 className="font-semibold text-lg">{selectedSession.title}</h3>
+                    </div>
                     <div className="flex items-center gap-4 text-sm text-muted-foreground mt-2">
                       <div className="flex items-center gap-1">
                         <Clock className="w-4 h-4" />
