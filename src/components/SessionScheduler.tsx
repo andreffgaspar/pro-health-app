@@ -392,7 +392,7 @@ const SessionScheduler = ({ userType }: SessionSchedulerProps) => {
                 Criar Horário
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-md">
+            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>Criar Novo Horário</DialogTitle>
               </DialogHeader>
