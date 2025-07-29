@@ -90,9 +90,22 @@ const PhysiotherapyModal = ({ isOpen, onOpenChange, session, onEditSchedule }: P
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl max-h-[90vh]">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Heart className="w-5 h-5 text-red-500" />
-            Atendimento Fisioterapêutico - {session?.title}
+          <DialogTitle className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Heart className="w-5 h-5 text-red-500" />
+              Atendimento Fisioterapêutico - {session?.title}
+            </div>
+            {onEditSchedule && (
+              <Button 
+                variant="ghost" 
+                size="sm"
+                onClick={() => onEditSchedule(session)}
+                className="text-muted-foreground hover:text-foreground"
+              >
+                <Calendar className="w-4 h-4 mr-2" />
+                Editar Agendamento
+              </Button>
+            )}
           </DialogTitle>
           <DialogDescription>
             Realize a avaliação fisioterapêutica e registre os tratamentos aplicados.
@@ -451,16 +464,6 @@ const PhysiotherapyModal = ({ isOpen, onOpenChange, session, onEditSchedule }: P
                 <Save className="w-4 h-4 mr-2" />
                 Salvar Atendimento
               </Button>
-              {onEditSchedule && (
-                <Button 
-                  variant="outline" 
-                  onClick={() => onEditSchedule(session)}
-                  className="flex-1"
-                >
-                  <Calendar className="w-4 h-4 mr-2" />
-                  Editar Agendamento
-                </Button>
-              )}
               <Button variant="outline" onClick={() => onOpenChange(false)} className="flex-1">
                 Cancelar
               </Button>

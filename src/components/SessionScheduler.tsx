@@ -117,6 +117,23 @@ const SessionScheduler = ({ userType }: SessionSchedulerProps) => {
     }
   }, [user, selectedDate]);
 
+  // Preenche os dados do formulário quando entra em modo de edição
+  useEffect(() => {
+    if (isEditMode && selectedSession && isCreateDialogOpen) {
+      setEditFormData({
+        title: selectedSession.title,
+        description: selectedSession.description || '',
+        session_date: selectedSession.session_date,
+        start_time: selectedSession.start_time,
+        end_time: selectedSession.end_time,
+        location: selectedSession.location || '',
+        price: selectedSession.price ? selectedSession.price.toString() : '',
+        athlete_id: selectedSession.athlete_id || '',
+        appointment_type: selectedSession.appointment_type || ''
+      });
+    }
+  }, [isEditMode, selectedSession, isCreateDialogOpen]);
+
   const fetchSessionDates = async () => {
     try {
       const startOfMonth = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1);

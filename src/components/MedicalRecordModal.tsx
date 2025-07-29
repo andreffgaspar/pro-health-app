@@ -46,9 +46,22 @@ const MedicalRecordModal = ({ isOpen, onOpenChange, session, onEditSchedule }: M
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl max-h-[90vh]">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Stethoscope className="w-5 h-5 text-blue-500" />
-            Prontuário Médico - {session?.title}
+          <DialogTitle className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Stethoscope className="w-5 h-5 text-blue-500" />
+              Prontuário Médico - {session?.title}
+            </div>
+            {onEditSchedule && (
+              <Button 
+                variant="ghost" 
+                size="sm"
+                onClick={() => onEditSchedule(session)}
+                className="text-muted-foreground hover:text-foreground"
+              >
+                <Calendar className="w-4 h-4 mr-2" />
+                Editar Agendamento
+              </Button>
+            )}
           </DialogTitle>
           <DialogDescription>
             Registre os dados da consulta médica e atualize o prontuário do paciente.
@@ -237,16 +250,6 @@ const MedicalRecordModal = ({ isOpen, onOpenChange, session, onEditSchedule }: M
                 <Save className="w-4 h-4 mr-2" />
                 Salvar Prontuário
               </Button>
-              {onEditSchedule && (
-                <Button 
-                  variant="outline" 
-                  onClick={() => onEditSchedule(session)}
-                  className="flex-1"
-                >
-                  <Calendar className="w-4 h-4 mr-2" />
-                  Editar Agendamento
-                </Button>
-              )}
               <Button variant="outline" onClick={() => onOpenChange(false)} className="flex-1">
                 Cancelar
               </Button>
