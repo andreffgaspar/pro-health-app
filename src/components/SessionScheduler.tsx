@@ -66,6 +66,8 @@ const SessionScheduler = ({ userType }: SessionSchedulerProps) => {
   const [athletes, setAthletes] = useState<AthleteOption[]>([]);
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [isManageDialogOpen, setIsManageDialogOpen] = useState(false);
+  const [selectedSession, setSelectedSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(false);
   const [sessionDates, setSessionDates] = useState<Set<string>>(new Set());
   const [formData, setFormData] = useState({
@@ -356,6 +358,16 @@ const SessionScheduler = ({ userType }: SessionSchedulerProps) => {
     }
   };
 
+  const formatTime = (time: string) => {
+    const [hours, minutes] = time.split(':');
+    return `${hours}h${minutes}`;
+  };
+
+  const handleSessionClick = (session: Session) => {
+    setSelectedSession(session);
+    setIsManageDialogOpen(true);
+  };
+
   const getStatusBadge = (status: string, session_type: string) => {
     if (session_type === 'available' && status === 'available') {
       return <Badge variant="outline" className="text-green-600 border-green-600">Disponível</Badge>;
@@ -601,7 +613,8 @@ const SessionScheduler = ({ userType }: SessionSchedulerProps) => {
                 {sessions.map((session) => (
                   <div
                     key={session.id}
-                    className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors"
+                    className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors cursor-pointer"
+                    onClick={() => handleSessionClick(session)}
                   >
                     <div className="flex-1">
                       <div className="flex items-center gap-3 mb-2">
@@ -612,7 +625,7 @@ const SessionScheduler = ({ userType }: SessionSchedulerProps) => {
                       <div className="flex items-center gap-4 text-sm text-muted-foreground">
                         <div className="flex items-center gap-1">
                           <Clock className="w-4 h-4" />
-                          {session.start_time} - {session.end_time}
+                          {formatTime(session.start_time)} - {formatTime(session.end_time)}
                         </div>
                         
                         {session.location && (
@@ -699,6 +712,109 @@ const SessionScheduler = ({ userType }: SessionSchedulerProps) => {
           </CardContent>
         </Card>
       </div>
+
+      {/* Modal de gerenciamento de sessão */}
+      <Dialog open={isManageDialogOpen} onOpenChange={setIsManageDialogOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Gerenciar Agendamento</DialogTitle>
+          </DialogHeader>
+          {selectedSession && (
+            <div className="space-y-4">
+              <div className="p-4 border rounded-lg bg-muted/20">
+                <h3 className="font-semibold text-lg">{selectedSession.title}</h3>
+                <div className="flex items-center gap-4 text-sm text-muted-foreground mt-2">
+                  <div className="flex items-center gap-1">
+                    <Clock className="w-4 h-4" />
+                    {formatTime(selectedSession.start_time)} - {formatTime(selectedSession.end_time)}
+                  </div>
+                  {selectedSession.location && (
+                    <div className="flex items-center gap-1">
+                      <MapPin className="w-4 h-4" />
+                      {selectedSession.location}
+                    </div>
+                  )}
+                  {selectedSession.price && (
+                    <div className="flex items-center gap-1">
+                      <DollarSign className="w-4 h-4" />
+                      R$ {selectedSession.price.toFixed(2)}
+                    </div>
+                  )}
+                </div>
+                {selectedSession.description && (
+                  <p className="text-sm text-muted-foreground mt-2">
+                    {selectedSession.description}
+                  </p>
+                )}
+                <div className="mt-3">
+                  {getStatusBadge(selectedSession.status, selectedSession.session_type)}
+                </div>
+              </div>
+
+              {userType === 'professional' && selectedSession.status === 'pending' && (
+                <div className="flex gap-2">
+                  <Button
+                    className="flex-1"
+                    onClick={() => {
+                      handleSessionAction(selectedSession.id, 'confirm');
+                      setIsManageDialogOpen(false);
+                    }}
+                    disabled={loading}
+                  >
+                    <CheckCircle className="w-4 h-4 mr-2" />
+                    Confirmar
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="flex-1"
+                    onClick={() => {
+                      handleSessionAction(selectedSession.id, 'cancel');
+                      setIsManageDialogOpen(false);
+                    }}
+                    disabled={loading}
+                  >
+                    <XCircle className="w-4 h-4 mr-2" />
+                    Cancelar
+                  </Button>
+                </div>
+              )}
+
+              {userType === 'athlete' && selectedSession.session_type === 'available' && selectedSession.status === 'available' && (
+                <Button
+                  className="w-full"
+                  onClick={() => {
+                    handleBookSession(selectedSession.id);
+                    setIsManageDialogOpen(false);
+                  }}
+                  disabled={loading}
+                >
+                  Agendar Sessão
+                </Button>
+              )}
+
+              {selectedSession.athlete_id && selectedSession.athlete && (
+                <div className="p-3 bg-muted/20 rounded-lg">
+                  <div className="flex items-center gap-2">
+                    <User className="w-4 h-4" />
+                    <span className="font-medium">Atleta:</span>
+                    <span>{selectedSession.athlete.full_name}</span>
+                  </div>
+                </div>
+              )}
+
+              {userType === 'athlete' && selectedSession.professional && (
+                <div className="p-3 bg-muted/20 rounded-lg">
+                  <div className="flex items-center gap-2">
+                    <User className="w-4 h-4" />
+                    <span className="font-medium">Profissional:</span>
+                    <span>{selectedSession.professional.full_name}</span>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
