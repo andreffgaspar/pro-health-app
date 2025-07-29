@@ -19,7 +19,11 @@ import {
   Trash2,
   User,
   CheckCircle,
-  XCircle
+  XCircle,
+  Stethoscope,
+  Apple,
+  Dumbbell,
+  Heart
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
@@ -37,6 +41,7 @@ interface Session {
   start_time: string;
   end_time: string;
   session_type: string;
+  appointment_type?: string;
   status: string;
   location: string | null;
   notes: string | null;
@@ -375,6 +380,23 @@ const SessionScheduler = ({ userType }: SessionSchedulerProps) => {
     return `${hours}h${minutes}`;
   };
 
+  const getAppointmentIcon = (appointmentType?: string) => {
+    const iconProps = { className: "w-5 h-5" };
+    
+    switch (appointmentType) {
+      case 'consulta-medica':
+        return <Stethoscope {...iconProps} className="w-5 h-5 text-blue-500" />;
+      case 'consulta-nutricao':
+        return <Apple {...iconProps} className="w-5 h-5 text-green-500" />;
+      case 'treinamento':
+        return <Dumbbell {...iconProps} className="w-5 h-5 text-orange-500" />;
+      case 'fisioterapia':
+        return <Heart {...iconProps} className="w-5 h-5 text-red-500" />;
+      default:
+        return <CalendarDays {...iconProps} className="w-5 h-5 text-muted-foreground" />;
+    }
+  };
+
   const handleSessionClick = (session: Session) => {
     setSelectedSession(session);
     setEditFormData({
@@ -688,7 +710,10 @@ const SessionScheduler = ({ userType }: SessionSchedulerProps) => {
                   >
                     <div className="flex-1">
                       <div className="flex items-center gap-3 mb-2">
-                        <h4 className="font-semibold">{session.title}</h4>
+                        <div className="flex items-center gap-2">
+                          {getAppointmentIcon(session.appointment_type)}
+                          <h4 className="font-semibold">{session.title}</h4>
+                        </div>
                         {getStatusBadge(session.status, session.session_type)}
                       </div>
                       
