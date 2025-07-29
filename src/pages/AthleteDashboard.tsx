@@ -24,7 +24,6 @@ import DataVisualization from "@/components/DataVisualization";
 import AthleteProfileSettings from "@/components/AthleteProfileSettings";
 import CommunicationCenter from "@/components/CommunicationCenter";
 import SessionScheduler from "@/components/SessionScheduler";
-import AthleteBookingModal from "@/components/AthleteBookingModal";
 import { Link, useNavigate } from "react-router-dom";
 import { LineChart, Line, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from "recharts";
 import { useAuth } from "@/hooks/useAuth";
@@ -98,7 +97,6 @@ const AthleterDashboard = () => {
             </div>
             
             <div className="flex items-center gap-3">
-              <AthleteBookingModal />
               <Button 
                 variant="ghost" 
                 size="icon"

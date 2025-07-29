@@ -34,6 +34,7 @@ import MedicalRecordModal from "./MedicalRecordModal";
 import TrainingModal from "./TrainingModal";
 import NutritionModal from "./NutritionModal";
 import PhysiotherapyModal from "./PhysiotherapyModal";
+import AthleteBookingModal from "./AthleteBookingModal";
 
 interface Session {
   id: string;
@@ -742,13 +743,18 @@ const SessionScheduler = ({ userType }: SessionSchedulerProps) => {
         {/* Sessions List */}
         <Card className="lg:col-span-3">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <CalendarDays className="w-5 h-5" />
-              Sessões - {format(selectedDate, 'dd/MM/yyyy', { locale: ptBR })}
-            </CardTitle>
-            <CardDescription>
-              {sessions.length} sessão(ões) encontrada(s)
-            </CardDescription>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="flex items-center gap-2">
+                  <CalendarDays className="w-5 h-5" />
+                  Sessões - {format(selectedDate, 'dd/MM/yyyy', { locale: ptBR })}
+                </CardTitle>
+                <CardDescription>
+                  {sessions.length} sessão(ões) encontrada(s)
+                </CardDescription>
+              </div>
+              {userType === 'athlete' && <AthleteBookingModal />}
+            </div>
           </CardHeader>
           <CardContent>
             {sessions.length > 0 ? (
