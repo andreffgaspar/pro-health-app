@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { Calendar } from "@/components/ui/calendar";
 import { 
@@ -392,130 +393,132 @@ const SessionScheduler = ({ userType }: SessionSchedulerProps) => {
                 Criar Horário
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogContent className="max-w-2xl max-h-[90vh]">
               <DialogHeader>
                 <DialogTitle>Criar Novo Horário</DialogTitle>
               </DialogHeader>
-              <form onSubmit={handleCreateSession} className="space-y-4">
-                <div>
-                  <Label htmlFor="appointment_type">Tipo de Agendamento</Label>
-                  <Select 
-                    value={formData.appointment_type} 
-                    onValueChange={(value) => setFormData({ ...formData, appointment_type: value })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione o tipo de agendamento" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="consulta-medica">Consulta Médica</SelectItem>
-                      <SelectItem value="consulta-nutricao">Consulta de Nutrição</SelectItem>
-                      <SelectItem value="treinamento">Treinamento</SelectItem>
-                      <SelectItem value="fisioterapia">Atendimento da Fisioterapia</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+              <ScrollArea className="max-h-[75vh] pr-4">
+                <form onSubmit={handleCreateSession} className="space-y-4">
+                  <div>
+                    <Label htmlFor="appointment_type">Tipo de Agendamento</Label>
+                    <Select 
+                      value={formData.appointment_type} 
+                      onValueChange={(value) => setFormData({ ...formData, appointment_type: value })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione o tipo de agendamento" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="consulta-medica">Consulta Médica</SelectItem>
+                        <SelectItem value="consulta-nutricao">Consulta de Nutrição</SelectItem>
+                        <SelectItem value="treinamento">Treinamento</SelectItem>
+                        <SelectItem value="fisioterapia">Atendimento da Fisioterapia</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
 
-                <div>
-                  <Label htmlFor="title">Título da Sessão</Label>
-                  <Input
-                    id="title"
-                    value={formData.title}
-                    onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                    placeholder="Ex: Consulta Nutricional"
-                    required
-                  />
-                </div>
-                
-                <div>
-                  <Label htmlFor="athlete">Atleta (opcional)</Label>
-                  <Select 
-                    value={formData.athlete_id} 
-                    onValueChange={(value) => setFormData({ ...formData, athlete_id: value })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione um atleta ou deixe disponível" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">Horário livre (disponível para qualquer atleta)</SelectItem>
-                      {athletes.map((athlete) => (
-                        <SelectItem key={athlete.id} value={athlete.id}>
-                          {athlete.full_name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                
-                <div>
-                  <Label htmlFor="description">Descrição (opcional)</Label>
-                  <Textarea
-                    id="description"
-                    value={formData.description}
-                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                    placeholder="Detalhes sobre a sessão..."
-                  />
-                </div>
-                
-                <div>
-                  <Label htmlFor="session_date">Data</Label>
-                  <Input
-                    id="session_date"
-                    type="date"
-                    value={formData.session_date}
-                    onChange={(e) => setFormData({ ...formData, session_date: e.target.value })}
-                    required
-                  />
-                </div>
-                
-                <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="start_time">Início</Label>
+                    <Label htmlFor="title">Título da Sessão</Label>
                     <Input
-                      id="start_time"
-                      type="time"
-                      value={formData.start_time}
-                      onChange={(e) => setFormData({ ...formData, start_time: e.target.value })}
+                      id="title"
+                      value={formData.title}
+                      onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                      placeholder="Ex: Consulta Nutricional"
                       required
                     />
                   </div>
+                  
                   <div>
-                    <Label htmlFor="end_time">Fim</Label>
+                    <Label htmlFor="athlete">Atleta (opcional)</Label>
+                    <Select 
+                      value={formData.athlete_id} 
+                      onValueChange={(value) => setFormData({ ...formData, athlete_id: value })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione um atleta ou deixe disponível" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">Horário livre (disponível para qualquer atleta)</SelectItem>
+                        {athletes.map((athlete) => (
+                          <SelectItem key={athlete.id} value={athlete.id}>
+                            {athlete.full_name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="description">Descrição (opcional)</Label>
+                    <Textarea
+                      id="description"
+                      value={formData.description}
+                      onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                      placeholder="Detalhes sobre a sessão..."
+                    />
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="session_date">Data</Label>
                     <Input
-                      id="end_time"
-                      type="time"
-                      value={formData.end_time}
-                      onChange={(e) => setFormData({ ...formData, end_time: e.target.value })}
+                      id="session_date"
+                      type="date"
+                      value={formData.session_date}
+                      onChange={(e) => setFormData({ ...formData, session_date: e.target.value })}
                       required
                     />
                   </div>
-                </div>
-                
-                <div>
-                  <Label htmlFor="location">Local (opcional)</Label>
-                  <Input
-                    id="location"
-                    value={formData.location}
-                    onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                    placeholder="Ex: Consultório, Online, etc."
-                  />
-                </div>
-                
-                <div>
-                  <Label htmlFor="price">Preço (opcional)</Label>
-                  <Input
-                    id="price"
-                    type="number"
-                    step="0.01"
-                    value={formData.price}
-                    onChange={(e) => setFormData({ ...formData, price: e.target.value })}
-                    placeholder="0.00"
-                  />
-                </div>
-                
-                <Button type="submit" className="w-full" disabled={loading}>
-                  {loading ? 'Criando...' : 'Criar Horário'}
-                </Button>
-              </form>
+                  
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="start_time">Início</Label>
+                      <Input
+                        id="start_time"
+                        type="time"
+                        value={formData.start_time}
+                        onChange={(e) => setFormData({ ...formData, start_time: e.target.value })}
+                        required
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="end_time">Fim</Label>
+                      <Input
+                        id="end_time"
+                        type="time"
+                        value={formData.end_time}
+                        onChange={(e) => setFormData({ ...formData, end_time: e.target.value })}
+                        required
+                      />
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="location">Local (opcional)</Label>
+                    <Input
+                      id="location"
+                      value={formData.location}
+                      onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                      placeholder="Ex: Consultório, Online, etc."
+                    />
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="price">Preço (opcional)</Label>
+                    <Input
+                      id="price"
+                      type="number"
+                      step="0.01"
+                      value={formData.price}
+                      onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+                      placeholder="0.00"
+                    />
+                  </div>
+                  
+                  <Button type="submit" className="w-full" disabled={loading}>
+                    {loading ? 'Criando...' : 'Criar Horário'}
+                  </Button>
+                </form>
+              </ScrollArea>
             </DialogContent>
           </Dialog>
         </div>
