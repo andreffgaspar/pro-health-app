@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
-import { Dumbbell, Plus, Trash2, Save } from "lucide-react";
+import { Dumbbell, Plus, Trash2, Save, Calendar } from "lucide-react";
 
 interface Exercise {
   id: string;
@@ -24,9 +24,10 @@ interface TrainingModalProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
   session: any;
+  onEditSchedule?: (session: any) => void;
 }
 
-const TrainingModal = ({ isOpen, onOpenChange, session }: TrainingModalProps) => {
+const TrainingModal = ({ isOpen, onOpenChange, session, onEditSchedule }: TrainingModalProps) => {
   const [exercises, setExercises] = useState<Exercise[]>([]);
   const [trainingData, setTrainingData] = useState({
     objective: '',
@@ -269,6 +270,16 @@ const TrainingModal = ({ isOpen, onOpenChange, session }: TrainingModalProps) =>
                 <Save className="w-4 h-4 mr-2" />
                 Salvar Treino
               </Button>
+              {onEditSchedule && (
+                <Button 
+                  variant="outline" 
+                  onClick={() => onEditSchedule(session)}
+                  className="flex-1"
+                >
+                  <Calendar className="w-4 h-4 mr-2" />
+                  Editar Agendamento
+                </Button>
+              )}
               <Button variant="outline" onClick={() => onOpenChange(false)} className="flex-1">
                 Cancelar
               </Button>

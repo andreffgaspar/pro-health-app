@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
-import { Heart, Plus, Trash2, Save } from "lucide-react";
+import { Heart, Plus, Trash2, Save, Calendar } from "lucide-react";
 
 interface Treatment {
   id: string;
@@ -23,9 +23,10 @@ interface PhysiotherapyModalProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
   session: any;
+  onEditSchedule?: (session: any) => void;
 }
 
-const PhysiotherapyModal = ({ isOpen, onOpenChange, session }: PhysiotherapyModalProps) => {
+const PhysiotherapyModal = ({ isOpen, onOpenChange, session, onEditSchedule }: PhysiotherapyModalProps) => {
   const [treatments, setTreatments] = useState<Treatment[]>([]);
   const [physiotherapyData, setPhysiotherapyData] = useState({
     // Avaliação
@@ -450,6 +451,16 @@ const PhysiotherapyModal = ({ isOpen, onOpenChange, session }: PhysiotherapyModa
                 <Save className="w-4 h-4 mr-2" />
                 Salvar Atendimento
               </Button>
+              {onEditSchedule && (
+                <Button 
+                  variant="outline" 
+                  onClick={() => onEditSchedule(session)}
+                  className="flex-1"
+                >
+                  <Calendar className="w-4 h-4 mr-2" />
+                  Editar Agendamento
+                </Button>
+              )}
               <Button variant="outline" onClick={() => onOpenChange(false)} className="flex-1">
                 Cancelar
               </Button>

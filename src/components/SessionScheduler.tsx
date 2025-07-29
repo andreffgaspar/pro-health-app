@@ -1117,24 +1117,48 @@ const SessionScheduler = ({ userType }: SessionSchedulerProps) => {
         isOpen={isMedicalModalOpen}
         onOpenChange={setIsMedicalModalOpen}
         session={selectedSession}
+        onEditSchedule={(session) => {
+          setSelectedSession(session);
+          setIsEditMode(true);
+          setIsCreateDialogOpen(true);
+          setIsMedicalModalOpen(false);
+        }}
       />
       
       <TrainingModal 
         isOpen={isTrainingModalOpen}
         onOpenChange={setIsTrainingModalOpen}
         session={selectedSession}
+        onEditSchedule={(session) => {
+          setSelectedSession(session);
+          setIsEditMode(true);
+          setIsCreateDialogOpen(true);
+          setIsTrainingModalOpen(false);
+        }}
       />
       
       <NutritionModal 
         isOpen={isNutritionModalOpen}
         onOpenChange={setIsNutritionModalOpen}
         session={selectedSession}
+        onEditSchedule={(session) => {
+          setSelectedSession(session);
+          setIsEditMode(true);
+          setIsCreateDialogOpen(true);
+          setIsNutritionModalOpen(false);
+        }}
       />
       
       <PhysiotherapyModal 
         isOpen={isPhysiotherapyModalOpen}
         onOpenChange={setIsPhysiotherapyModalOpen}
         session={selectedSession}
+        onEditSchedule={(session) => {
+          setSelectedSession(session);
+          setIsEditMode(true);
+          setIsCreateDialogOpen(true);
+          setIsPhysiotherapyModalOpen(false);
+        }}
       />
     </div>
   );

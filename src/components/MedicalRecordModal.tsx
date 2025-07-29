@@ -7,15 +7,16 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
-import { Stethoscope, Save } from "lucide-react";
+import { Stethoscope, Save, Calendar } from "lucide-react";
 
 interface MedicalRecordModalProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
   session: any;
+  onEditSchedule?: (session: any) => void;
 }
 
-const MedicalRecordModal = ({ isOpen, onOpenChange, session }: MedicalRecordModalProps) => {
+const MedicalRecordModal = ({ isOpen, onOpenChange, session, onEditSchedule }: MedicalRecordModalProps) => {
   const [medicalData, setMedicalData] = useState({
     chiefComplaint: '',
     historyOfPresentIllness: '',
@@ -236,6 +237,16 @@ const MedicalRecordModal = ({ isOpen, onOpenChange, session }: MedicalRecordModa
                 <Save className="w-4 h-4 mr-2" />
                 Salvar Prontuário
               </Button>
+              {onEditSchedule && (
+                <Button 
+                  variant="outline" 
+                  onClick={() => onEditSchedule(session)}
+                  className="flex-1"
+                >
+                  <Calendar className="w-4 h-4 mr-2" />
+                  Editar Agendamento
+                </Button>
+              )}
               <Button variant="outline" onClick={() => onOpenChange(false)} className="flex-1">
                 Cancelar
               </Button>

@@ -7,15 +7,16 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
-import { Apple, Save } from "lucide-react";
+import { Apple, Save, Calendar } from "lucide-react";
 
 interface NutritionModalProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
   session: any;
+  onEditSchedule?: (session: any) => void;
 }
 
-const NutritionModal = ({ isOpen, onOpenChange, session }: NutritionModalProps) => {
+const NutritionModal = ({ isOpen, onOpenChange, session, onEditSchedule }: NutritionModalProps) => {
   const [nutritionData, setNutritionData] = useState({
     // Anamnese
     currentWeight: '',
@@ -360,6 +361,16 @@ const NutritionModal = ({ isOpen, onOpenChange, session }: NutritionModalProps) 
                 <Save className="w-4 h-4 mr-2" />
                 Salvar Consulta
               </Button>
+              {onEditSchedule && (
+                <Button 
+                  variant="outline" 
+                  onClick={() => onEditSchedule(session)}
+                  className="flex-1"
+                >
+                  <Calendar className="w-4 h-4 mr-2" />
+                  Editar Agendamento
+                </Button>
+              )}
               <Button variant="outline" onClick={() => onOpenChange(false)} className="flex-1">
                 Cancelar
               </Button>
