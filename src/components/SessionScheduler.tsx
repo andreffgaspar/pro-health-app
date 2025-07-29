@@ -68,6 +68,18 @@ const SessionScheduler = ({ userType }: SessionSchedulerProps) => {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isManageDialogOpen, setIsManageDialogOpen] = useState(false);
   const [selectedSession, setSelectedSession] = useState<Session | null>(null);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [editFormData, setEditFormData] = useState({
+    title: '',
+    description: '',
+    session_date: '',
+    start_time: '',
+    end_time: '',
+    location: '',
+    price: '',
+    athlete_id: '',
+    appointment_type: ''
+  });
   const [loading, setLoading] = useState(false);
   const [sessionDates, setSessionDates] = useState<Set<string>>(new Set());
   const [formData, setFormData] = useState({
@@ -365,7 +377,65 @@ const SessionScheduler = ({ userType }: SessionSchedulerProps) => {
 
   const handleSessionClick = (session: Session) => {
     setSelectedSession(session);
+    setEditFormData({
+      title: session.title,
+      description: session.description || '',
+      session_date: session.session_date,
+      start_time: session.start_time,
+      end_time: session.end_time,
+      location: session.location || '',
+      price: session.price ? session.price.toString() : '',
+      athlete_id: session.athlete_id || '',
+      appointment_type: ''
+    });
+    setIsEditMode(false);
     setIsManageDialogOpen(true);
+  };
+
+  const handleUpdateSession = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!selectedSession || userType !== 'professional') return;
+
+    try {
+      setLoading(true);
+
+      const updateData = {
+        title: editFormData.title,
+        description: editFormData.description || null,
+        session_date: editFormData.session_date,
+        start_time: editFormData.start_time,
+        end_time: editFormData.end_time,
+        location: editFormData.location || null,
+        price: editFormData.price ? parseFloat(editFormData.price) : null,
+        athlete_id: (editFormData.athlete_id && editFormData.athlete_id !== 'none') ? editFormData.athlete_id : null,
+      };
+
+      const { error } = await supabase
+        .from('sessions')
+        .update(updateData)
+        .eq('id', selectedSession.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Sessão atualizada!",
+        description: "As alterações foram salvas com sucesso."
+      });
+
+      setIsEditMode(false);
+      setIsManageDialogOpen(false);
+      fetchSessions();
+    } catch (error) {
+      console.error('Error updating session:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível atualizar a sessão.",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   const getStatusBadge = (status: string, session_type: string) => {
@@ -714,104 +784,257 @@ const SessionScheduler = ({ userType }: SessionSchedulerProps) => {
       </div>
 
       {/* Modal de gerenciamento de sessão */}
-      <Dialog open={isManageDialogOpen} onOpenChange={setIsManageDialogOpen}>
-        <DialogContent className="max-w-lg">
+      <Dialog open={isManageDialogOpen} onOpenChange={(open) => {
+        setIsManageDialogOpen(open);
+        if (!open) {
+          setIsEditMode(false);
+        }
+      }}>
+        <DialogContent className="max-w-2xl max-h-[90vh]">
           <DialogHeader>
-            <DialogTitle>Gerenciar Agendamento</DialogTitle>
-          </DialogHeader>
-          {selectedSession && (
-            <div className="space-y-4">
-              <div className="p-4 border rounded-lg bg-muted/20">
-                <h3 className="font-semibold text-lg">{selectedSession.title}</h3>
-                <div className="flex items-center gap-4 text-sm text-muted-foreground mt-2">
-                  <div className="flex items-center gap-1">
-                    <Clock className="w-4 h-4" />
-                    {formatTime(selectedSession.start_time)} - {formatTime(selectedSession.end_time)}
-                  </div>
-                  {selectedSession.location && (
-                    <div className="flex items-center gap-1">
-                      <MapPin className="w-4 h-4" />
-                      {selectedSession.location}
-                    </div>
-                  )}
-                  {selectedSession.price && (
-                    <div className="flex items-center gap-1">
-                      <DollarSign className="w-4 h-4" />
-                      R$ {selectedSession.price.toFixed(2)}
-                    </div>
-                  )}
-                </div>
-                {selectedSession.description && (
-                  <p className="text-sm text-muted-foreground mt-2">
-                    {selectedSession.description}
-                  </p>
-                )}
-                <div className="mt-3">
-                  {getStatusBadge(selectedSession.status, selectedSession.session_type)}
-                </div>
-              </div>
-
-              {userType === 'professional' && selectedSession.status === 'pending' && (
-                <div className="flex gap-2">
-                  <Button
-                    className="flex-1"
-                    onClick={() => {
-                      handleSessionAction(selectedSession.id, 'confirm');
-                      setIsManageDialogOpen(false);
-                    }}
-                    disabled={loading}
-                  >
-                    <CheckCircle className="w-4 h-4 mr-2" />
-                    Confirmar
-                  </Button>
-                  <Button
-                    variant="outline"
-                    className="flex-1"
-                    onClick={() => {
-                      handleSessionAction(selectedSession.id, 'cancel');
-                      setIsManageDialogOpen(false);
-                    }}
-                    disabled={loading}
-                  >
-                    <XCircle className="w-4 h-4 mr-2" />
-                    Cancelar
-                  </Button>
-                </div>
-              )}
-
-              {userType === 'athlete' && selectedSession.session_type === 'available' && selectedSession.status === 'available' && (
+            <DialogTitle className="flex items-center justify-between">
+              <span>{isEditMode ? 'Editar Agendamento' : 'Gerenciar Agendamento'}</span>
+              {userType === 'professional' && !isEditMode && selectedSession && (
                 <Button
-                  className="w-full"
-                  onClick={() => {
-                    handleBookSession(selectedSession.id);
-                    setIsManageDialogOpen(false);
-                  }}
-                  disabled={loading}
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setIsEditMode(true)}
                 >
-                  Agendar Sessão
+                  <Edit className="w-4 h-4 mr-2" />
+                  Editar
                 </Button>
               )}
-
-              {selectedSession.athlete_id && selectedSession.athlete && (
-                <div className="p-3 bg-muted/20 rounded-lg">
-                  <div className="flex items-center gap-2">
-                    <User className="w-4 h-4" />
-                    <span className="font-medium">Atleta:</span>
-                    <span>{selectedSession.athlete.full_name}</span>
+            </DialogTitle>
+          </DialogHeader>
+          
+          {selectedSession && (
+            <ScrollArea className="max-h-[75vh] pr-4">
+              {isEditMode ? (
+                <form onSubmit={handleUpdateSession} className="space-y-4">
+                  <div>
+                    <Label htmlFor="edit_appointment_type">Tipo de Agendamento</Label>
+                    <Select 
+                      value={editFormData.appointment_type} 
+                      onValueChange={(value) => setEditFormData({ ...editFormData, appointment_type: value })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione o tipo de agendamento" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="consulta-medica">Consulta Médica</SelectItem>
+                        <SelectItem value="consulta-nutricao">Consulta de Nutrição</SelectItem>
+                        <SelectItem value="treinamento">Treinamento</SelectItem>
+                        <SelectItem value="fisioterapia">Atendimento da Fisioterapia</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
+
+                  <div>
+                    <Label htmlFor="edit_title">Título da Sessão</Label>
+                    <Input
+                      id="edit_title"
+                      value={editFormData.title}
+                      onChange={(e) => setEditFormData({ ...editFormData, title: e.target.value })}
+                      placeholder="Ex: Consulta Nutricional"
+                      required
+                    />
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="edit_athlete">Atleta</Label>
+                    <Select 
+                      value={editFormData.athlete_id || 'none'} 
+                      onValueChange={(value) => setEditFormData({ ...editFormData, athlete_id: value })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione um atleta ou deixe disponível" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">Horário livre (disponível para qualquer atleta)</SelectItem>
+                        {athletes.map((athlete) => (
+                          <SelectItem key={athlete.id} value={athlete.id}>
+                            {athlete.full_name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="edit_description">Descrição</Label>
+                    <Textarea
+                      id="edit_description"
+                      value={editFormData.description}
+                      onChange={(e) => setEditFormData({ ...editFormData, description: e.target.value })}
+                      placeholder="Detalhes sobre a sessão..."
+                    />
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="edit_session_date">Data</Label>
+                    <Input
+                      id="edit_session_date"
+                      type="date"
+                      value={editFormData.session_date}
+                      onChange={(e) => setEditFormData({ ...editFormData, session_date: e.target.value })}
+                      required
+                    />
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="edit_start_time">Início</Label>
+                      <Input
+                        id="edit_start_time"
+                        type="time"
+                        value={editFormData.start_time}
+                        onChange={(e) => setEditFormData({ ...editFormData, start_time: e.target.value })}
+                        required
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="edit_end_time">Fim</Label>
+                      <Input
+                        id="edit_end_time"
+                        type="time"
+                        value={editFormData.end_time}
+                        onChange={(e) => setEditFormData({ ...editFormData, end_time: e.target.value })}
+                        required
+                      />
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="edit_location">Local</Label>
+                    <Input
+                      id="edit_location"
+                      value={editFormData.location}
+                      onChange={(e) => setEditFormData({ ...editFormData, location: e.target.value })}
+                      placeholder="Ex: Consultório, Online, etc."
+                    />
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="edit_price">Preço</Label>
+                    <Input
+                      id="edit_price"
+                      type="number"
+                      step="0.01"
+                      value={editFormData.price}
+                      onChange={(e) => setEditFormData({ ...editFormData, price: e.target.value })}
+                      placeholder="0.00"
+                    />
+                  </div>
+                  
+                  <div className="flex gap-2 pt-4">
+                    <Button type="submit" disabled={loading} className="flex-1">
+                      {loading ? 'Salvando...' : 'Salvar Alterações'}
+                    </Button>
+                    <Button 
+                      type="button" 
+                      variant="outline" 
+                      onClick={() => setIsEditMode(false)}
+                      className="flex-1"
+                    >
+                      Cancelar
+                    </Button>
+                  </div>
+                </form>
+              ) : (
+                <div className="space-y-4">
+                  <div className="p-4 border rounded-lg bg-muted/20">
+                    <h3 className="font-semibold text-lg">{selectedSession.title}</h3>
+                    <div className="flex items-center gap-4 text-sm text-muted-foreground mt-2">
+                      <div className="flex items-center gap-1">
+                        <Clock className="w-4 h-4" />
+                        {formatTime(selectedSession.start_time)} - {formatTime(selectedSession.end_time)}
+                      </div>
+                      {selectedSession.location && (
+                        <div className="flex items-center gap-1">
+                          <MapPin className="w-4 h-4" />
+                          {selectedSession.location}
+                        </div>
+                      )}
+                      {selectedSession.price && (
+                        <div className="flex items-center gap-1">
+                          <DollarSign className="w-4 h-4" />
+                          R$ {selectedSession.price.toFixed(2)}
+                        </div>
+                      )}
+                    </div>
+                    {selectedSession.description && (
+                      <p className="text-sm text-muted-foreground mt-2">
+                        {selectedSession.description}
+                      </p>
+                    )}
+                    <div className="mt-3">
+                      {getStatusBadge(selectedSession.status, selectedSession.session_type)}
+                    </div>
+                  </div>
+
+                  {userType === 'professional' && selectedSession.status === 'pending' && (
+                    <div className="flex gap-2">
+                      <Button
+                        className="flex-1"
+                        onClick={() => {
+                          handleSessionAction(selectedSession.id, 'confirm');
+                          setIsManageDialogOpen(false);
+                        }}
+                        disabled={loading}
+                      >
+                        <CheckCircle className="w-4 h-4 mr-2" />
+                        Confirmar
+                      </Button>
+                      <Button
+                        variant="outline"
+                        className="flex-1"
+                        onClick={() => {
+                          handleSessionAction(selectedSession.id, 'cancel');
+                          setIsManageDialogOpen(false);
+                        }}
+                        disabled={loading}
+                      >
+                        <XCircle className="w-4 h-4 mr-2" />
+                        Cancelar
+                      </Button>
+                    </div>
+                  )}
+
+                  {userType === 'athlete' && selectedSession.session_type === 'available' && selectedSession.status === 'available' && (
+                    <Button
+                      className="w-full"
+                      onClick={() => {
+                        handleBookSession(selectedSession.id);
+                        setIsManageDialogOpen(false);
+                      }}
+                      disabled={loading}
+                    >
+                      Agendar Sessão
+                    </Button>
+                  )}
+
+                  {selectedSession.athlete_id && selectedSession.athlete && (
+                    <div className="p-3 bg-muted/20 rounded-lg">
+                      <div className="flex items-center gap-2">
+                        <User className="w-4 h-4" />
+                        <span className="font-medium">Atleta:</span>
+                        <span>{selectedSession.athlete.full_name}</span>
+                      </div>
+                    </div>
+                  )}
+
+                  {userType === 'athlete' && selectedSession.professional && (
+                    <div className="p-3 bg-muted/20 rounded-lg">
+                      <div className="flex items-center gap-2">
+                        <User className="w-4 h-4" />
+                        <span className="font-medium">Profissional:</span>
+                        <span>{selectedSession.professional.full_name}</span>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
-
-              {userType === 'athlete' && selectedSession.professional && (
-                <div className="p-3 bg-muted/20 rounded-lg">
-                  <div className="flex items-center gap-2">
-                    <User className="w-4 h-4" />
-                    <span className="font-medium">Profissional:</span>
-                    <span>{selectedSession.professional.full_name}</span>
-                  </div>
-                </div>
-              )}
-            </div>
+            </ScrollArea>
           )}
         </DialogContent>
       </Dialog>
