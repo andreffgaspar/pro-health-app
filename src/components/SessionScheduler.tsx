@@ -119,7 +119,8 @@ const SessionScheduler = ({ userType }: SessionSchedulerProps) => {
 
   // Preenche os dados do formulário quando entra em modo de edição
   useEffect(() => {
-    if (isEditMode && selectedSession && isCreateDialogOpen) {
+    if (isEditMode && selectedSession && isManageDialogOpen) {
+      console.log('Preenchendo dados para edição:', selectedSession);
       setEditFormData({
         title: selectedSession.title,
         description: selectedSession.description || '',
@@ -132,7 +133,7 @@ const SessionScheduler = ({ userType }: SessionSchedulerProps) => {
         appointment_type: selectedSession.appointment_type || ''
       });
     }
-  }, [isEditMode, selectedSession, isCreateDialogOpen]);
+  }, [isEditMode, selectedSession, isManageDialogOpen]);
 
   const fetchSessionDates = async () => {
     try {
@@ -1135,9 +1136,10 @@ const SessionScheduler = ({ userType }: SessionSchedulerProps) => {
         onOpenChange={setIsMedicalModalOpen}
         session={selectedSession}
         onEditSchedule={(session) => {
+          console.log('Editando sessão:', session);
           setSelectedSession(session);
           setIsEditMode(true);
-          setIsCreateDialogOpen(true);
+          setIsManageDialogOpen(true);
           setIsMedicalModalOpen(false);
         }}
       />
@@ -1147,9 +1149,10 @@ const SessionScheduler = ({ userType }: SessionSchedulerProps) => {
         onOpenChange={setIsTrainingModalOpen}
         session={selectedSession}
         onEditSchedule={(session) => {
+          console.log('Editando sessão:', session);
           setSelectedSession(session);
           setIsEditMode(true);
-          setIsCreateDialogOpen(true);
+          setIsManageDialogOpen(true);
           setIsTrainingModalOpen(false);
         }}
       />
@@ -1159,9 +1162,10 @@ const SessionScheduler = ({ userType }: SessionSchedulerProps) => {
         onOpenChange={setIsNutritionModalOpen}
         session={selectedSession}
         onEditSchedule={(session) => {
+          console.log('Editando sessão:', session);
           setSelectedSession(session);
           setIsEditMode(true);
-          setIsCreateDialogOpen(true);
+          setIsManageDialogOpen(true);
           setIsNutritionModalOpen(false);
         }}
       />
@@ -1171,9 +1175,10 @@ const SessionScheduler = ({ userType }: SessionSchedulerProps) => {
         onOpenChange={setIsPhysiotherapyModalOpen}
         session={selectedSession}
         onEditSchedule={(session) => {
+          console.log('Editando sessão:', session);
           setSelectedSession(session);
           setIsEditMode(true);
-          setIsCreateDialogOpen(true);
+          setIsManageDialogOpen(true);
           setIsPhysiotherapyModalOpen(false);
         }}
       />
