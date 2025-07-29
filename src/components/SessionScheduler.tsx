@@ -205,8 +205,8 @@ const SessionScheduler = ({ userType }: SessionSchedulerProps) => {
       if (userType === 'professional') {
         query = query.eq('professional_id', user?.id);
       } else {
-        // For athletes, show available sessions and their own bookings
-        query = query.or(`athlete_id.eq.${user?.id},session_type.eq.available`);
+        // For athletes, show only their own bookings
+        query = query.eq('athlete_id', user?.id);
       }
 
       const { data, error } = await query.order('start_time');
