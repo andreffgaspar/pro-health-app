@@ -75,7 +75,8 @@ const SessionScheduler = ({ userType }: SessionSchedulerProps) => {
     end_time: '',
     location: '',
     price: '',
-    athlete_id: ''
+    athlete_id: '',
+    appointment_type: ''
   });
 
   useEffect(() => {
@@ -240,7 +241,8 @@ const SessionScheduler = ({ userType }: SessionSchedulerProps) => {
         end_time: '',
         location: '',
         price: '',
-        athlete_id: ''
+        athlete_id: '',
+        appointment_type: ''
       });
       fetchSessions();
     } catch (error) {
@@ -395,6 +397,24 @@ const SessionScheduler = ({ userType }: SessionSchedulerProps) => {
                 <DialogTitle>Criar Novo Horário</DialogTitle>
               </DialogHeader>
               <form onSubmit={handleCreateSession} className="space-y-4">
+                <div>
+                  <Label htmlFor="appointment_type">Tipo de Agendamento</Label>
+                  <Select 
+                    value={formData.appointment_type} 
+                    onValueChange={(value) => setFormData({ ...formData, appointment_type: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione o tipo de agendamento" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="consulta-medica">Consulta Médica</SelectItem>
+                      <SelectItem value="consulta-nutricao">Consulta de Nutrição</SelectItem>
+                      <SelectItem value="treinamento">Treinamento</SelectItem>
+                      <SelectItem value="fisioterapia">Atendimento da Fisioterapia</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
                 <div>
                   <Label htmlFor="title">Título da Sessão</Label>
                   <Input
