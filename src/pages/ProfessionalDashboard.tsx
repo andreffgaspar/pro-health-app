@@ -399,6 +399,16 @@ const ProfessionalDashboard = () => {
                   {pendingInvitations.length} convite{pendingInvitations.length > 1 ? 's' : ''}
                 </Badge>
               )}
+              {unreadCount > 0 && (
+                <Badge variant="secondary" className="gap-1">
+                  <MessageSquare className="w-3 h-3" />
+                  {unreadCount} mensagem{unreadCount > 1 ? 's' : ''}
+                </Badge>
+              )}
+              <div className="flex items-center gap-1 text-xs text-green-600">
+                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                Tempo Real
+              </div>
               <Badge variant="outline" className="text-secondary border-secondary">
                 Plano Pro
               </Badge>

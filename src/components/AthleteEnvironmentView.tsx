@@ -74,7 +74,30 @@ const AthleteEnvironmentView = ({ athleteId, athleteName }: AthleteEnvironmentVi
   const [performanceData, setPerformanceData] = useState<PerformanceData[]>([]);
 
   useEffect(() => {
-    fetchAthleteData();
+    if (athleteId) {
+      fetchAthleteData();
+
+      const channel = supabase
+        .channel(`athlete-environment-${athleteId}`)
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'athlete_data',
+            filter: `athlete_id=eq.${athleteId}`
+          },
+          (payload) => {
+            console.log('Real-time athlete environment update:', payload);
+            fetchAthleteData();
+          }
+        )
+        .subscribe();
+
+      return () => {
+        supabase.removeChannel(channel);
+      };
+    }
   }, [athleteId]);
 
   const fetchAthleteData = async () => {
