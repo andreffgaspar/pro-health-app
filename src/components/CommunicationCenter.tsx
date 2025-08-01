@@ -86,21 +86,20 @@ const CommunicationCenter = () => {
     }
   }, [selectedConversation, selectedGroupConversation]);
 
-  // Auto-scroll when conversation is selected or when new messages arrive
+  // Auto-scroll only when conversation is initially selected
   useEffect(() => {
     if (selectedConversation) {
-      const currentMessages = messages[selectedConversation] || [];
-      // Scroll to bottom when switching conversations or when messages update
+      // Only scroll when switching to a different conversation
       scrollToBottom();
     }
-  }, [selectedConversation, messages]);
+  }, [selectedConversation]);
 
-  // Auto-scroll for group conversations
+  // Auto-scroll only when group conversation is initially selected
   useEffect(() => {
     if (selectedGroupConversation) {
       scrollToBottom();
     }
-  }, [selectedGroupConversation, groupMessages]);
+  }, [selectedGroupConversation]);
 
   // Force update when conversations are updated (real-time) and refresh current conversation
   useEffect(() => {
@@ -300,7 +299,8 @@ const CommunicationCenter = () => {
         if (error) throw error;
 
         setNewMessage('');
-        await fetchMessages(selectedConversation);
+        // Scroll to bottom after sending a message
+        setTimeout(() => scrollToBottom(), 100);
         
         await supabase
           .from('conversations')
@@ -319,7 +319,8 @@ const CommunicationCenter = () => {
         if (error) throw error;
 
         setNewMessage('');
-        await fetchGroupMessages(selectedGroupConversation);
+        // Scroll to bottom after sending a group message
+        setTimeout(() => scrollToBottom(), 100);
         
         await supabase
           .from('group_conversations')

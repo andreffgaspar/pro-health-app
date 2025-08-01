@@ -115,6 +115,7 @@ export const useRealtimeCommunication = () => {
         0
       );
       
+      console.log('📊 Total unread count updated:', totalUnread);
       setUnreadCount(totalUnread);
       
     } catch (error) {
@@ -268,16 +269,15 @@ export const useRealtimeCommunication = () => {
               
               // If this is a message from another user, update immediately
               if (newMessage.sender_id !== user.id) {
-                console.log('⏰ Updating messages for conversation:', newMessage.conversation_id);
+                console.log('⏰ Updating messages and unread count for conversation:', newMessage.conversation_id);
                 
-                // Force update the messages first
+                // Update messages first
                 await fetchMessages(newMessage.conversation_id);
                 
-                // Then update conversations with a small delay to ensure consistency
-                setTimeout(async () => {
-                  console.log('⏰ Updating conversations...');
-                  await fetchConversations();
-                }, 50);
+                // Force update conversations and unread count
+                await fetchConversations();
+                
+                console.log('✅ Real-time update completed');
               }
             }
           }
