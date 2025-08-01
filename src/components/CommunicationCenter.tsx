@@ -46,7 +46,6 @@ const CommunicationCenter = () => {
   const { conversations, messages, fetchMessages, markConversationAsRead } = useRealtimeCommunication();
   const { toast } = useToast();
   
-  console.log('CommunicationCenter loaded with markConversationAsRead:', typeof markConversationAsRead);
   const [professionals, setProfessionals] = useState<Professional[]>([]);
   const [athletes, setAthletes] = useState<Athlete[]>([]);
   const [groupConversations, setGroupConversations] = useState<GroupConversation[]>([]);
@@ -77,14 +76,11 @@ const CommunicationCenter = () => {
 
   useEffect(() => {
     if (selectedConversation) {
-      console.log('Selected conversation:', selectedConversation);
       fetchMessages(selectedConversation);
       // Mark conversation as read when selected
-      console.log('About to mark conversation as read...');
       markConversationAsRead(selectedConversation);
       setSelectedGroupConversation(null);
     } else if (selectedGroupConversation) {
-      console.log('Selected group conversation:', selectedGroupConversation);
       fetchGroupMessages(selectedGroupConversation);
       setSelectedConversation(null);
     }
@@ -536,10 +532,7 @@ const CommunicationCenter = () => {
                       ? 'bg-primary text-primary-foreground'
                       : 'hover:bg-accent'
                   }`}
-                  onClick={() => {
-                    console.log('Clicking on conversation:', conversation.id);
-                    setSelectedConversation(conversation.id);
-                  }}
+                   onClick={() => setSelectedConversation(conversation.id)}
                 >
                   <div className="flex items-center justify-between">
                     <div className="font-medium text-sm">

@@ -44,8 +44,6 @@ export const useRealtimeCommunication = () => {
   const fetchConversations = async () => {
     if (!user?.id) return;
 
-    console.log('🔄 Fetching conversations for user:', user.id);
-
     try {
       // First, get accepted relationships to filter conversations
       const { data: relationships, error: relError } = await supabase
@@ -56,17 +54,12 @@ export const useRealtimeCommunication = () => {
 
       if (relError) throw relError;
 
-      console.log('Found relationships:', relationships);
-
       // Extract valid user IDs that this user can communicate with
       const validUserIds = relationships?.map(rel => 
         rel.athlete_id === user.id ? rel.professional_id : rel.athlete_id
       ) || [];
 
-      console.log('Valid user IDs for conversations:', validUserIds);
-
       if (validUserIds.length === 0) {
-        console.log('No valid relationships found, clearing conversations');
         setConversations([]);
         setUnreadCount(0);
         return;
@@ -85,43 +78,21 @@ export const useRealtimeCommunication = () => {
 
       if (error) throw error;
       
-      console.log('Raw conversations found:', data);
-      
       // Filter conversations to only include valid relationships
       const validConversations = (data || []).filter(conv => {
         const otherUserId = conv.athlete_id === user.id ? conv.professional_id : conv.athlete_id;
-        const isValid = validUserIds.includes(otherUserId);
-        console.log(`Conversation ${conv.id}: otherUser=${otherUserId}, isValid=${isValid}`);
-        return isValid;
+        return validUserIds.includes(otherUserId);
       });
-
-      console.log('Valid conversations after filtering:', validConversations);
 
       // For each valid conversation, count unread messages and get other party name
       const conversationsWithUnread = await Promise.all(
         validConversations.map(async (conv) => {
-          // First, let's see what messages exist in this conversation
-          const { data: allMessages } = await supabase
-            .from('messages')
-            .select('id, sender_id, read_at, created_at, content')
-            .eq('conversation_id', conv.id);
-          
-          console.log(`Messages in conversation ${conv.id}:`, allMessages?.map(m => ({
-            id: m.id,
-            sender_id: m.sender_id,
-            read_at: m.read_at,
-            content: m.content?.substring(0, 20) + '...',
-            is_from_current_user: m.sender_id === user.id
-          })));
-          
           const { count } = await supabase
             .from('messages')
             .select('*', { count: 'exact', head: true })
             .eq('conversation_id', conv.id)
             .neq('sender_id', user.id)
             .is('read_at', null);
-
-          console.log(`Unread count for conversation ${conv.id}:`, count);
 
           const isAthlete = user.id === conv.athlete_id;
           const otherParty = isAthlete 
@@ -136,8 +107,6 @@ export const useRealtimeCommunication = () => {
         })
       );
 
-      console.log('Final conversations with unread counts:', conversationsWithUnread);
-
       setConversations(conversationsWithUnread);
       
       // Calculate total unread count
@@ -146,7 +115,6 @@ export const useRealtimeCommunication = () => {
         0
       );
       
-      console.log('Total unread count:', totalUnread);
       setUnreadCount(totalUnread);
       
     } catch (error) {
@@ -231,19 +199,7 @@ export const useRealtimeCommunication = () => {
   const markConversationAsRead = async (conversationId: string) => {
     if (!user?.id) return;
     
-    console.log('Marking conversation as read:', conversationId, 'for user:', user.id);
-    
     try {
-      // First check what messages we're trying to update
-      const { data: checkMessages } = await supabase
-        .from('messages')
-        .select('id, sender_id, read_at, content')
-        .eq('conversation_id', conversationId)
-        .neq('sender_id', user.id)
-        .is('read_at', null);
-        
-      console.log('Messages to be marked as read:', checkMessages);
-
       // Mark all unread messages in this conversation as read
       const { data, error } = await supabase
         .from('messages')
@@ -254,8 +210,6 @@ export const useRealtimeCommunication = () => {
         .select();
 
       if (error) throw error;
-      
-      console.log('Messages marked as read:', data);
       
       // Update local state immediately for better UX
       if (data && data.length > 0) {
@@ -292,10 +246,7 @@ export const useRealtimeCommunication = () => {
 
       fetchAllData();
 
-      // Set up real-time subscriptions with debugging
-      console.log('🚀 Setting up realtime subscriptions for user:', user.id);
-      
-      // Use a more specific channel name and simpler configuration
+      // Set up real-time subscriptions
       const messagesChannel = supabase
         .channel('public:messages')
         .on(
@@ -306,26 +257,12 @@ export const useRealtimeCommunication = () => {
             table: 'messages'
           },
           async (payload) => {
-            console.log('🆕 New message inserted:', payload);
-            
             if (payload.new) {
               const newMessage = payload.new as any;
-              console.log('📝 Message details:', {
-                id: newMessage.id,
-                conversation_id: newMessage.conversation_id,
-                sender_id: newMessage.sender_id,
-                content: newMessage.content?.substring(0, 30),
-                is_from_other_user: newMessage.sender_id !== user.id
-              });
               
               // If this is a message from another user, update immediately
               if (newMessage.sender_id !== user.id) {
-                console.log('💬 Message from other user - updating...');
-                
-                // First update the messages for this conversation
                 await fetchMessages(newMessage.conversation_id);
-                
-                // Then update conversations to refresh unread counts
                 await fetchConversations();
               }
             }
@@ -339,8 +276,6 @@ export const useRealtimeCommunication = () => {
             table: 'messages'
           },
           async (payload) => {
-            console.log('📝 Message updated:', payload);
-            
             if (payload.new) {
               const updatedMessage = payload.new as any;
               await fetchMessages(updatedMessage.conversation_id);
@@ -348,15 +283,7 @@ export const useRealtimeCommunication = () => {
             }
           }
         )
-        .subscribe((status, err) => {
-          console.log('📡 Messages subscription status:', status);
-          if (err) {
-            console.error('❌ Messages subscription error:', err);
-          }
-          if (status === 'SUBSCRIBED') {
-            console.log('✅ Successfully subscribed to messages');
-          }
-        });
+        .subscribe();
 
       const conversationsChannel = supabase
         .channel('public:conversations')
@@ -368,16 +295,10 @@ export const useRealtimeCommunication = () => {
             table: 'conversations'
           },
           async (payload) => {
-            console.log('🔄 Conversation updated:', payload);
             await fetchConversations();
           }
         )
-        .subscribe((status, err) => {
-          console.log('📡 Conversations subscription status:', status);
-          if (err) {
-            console.error('❌ Conversations subscription error:', err);
-          }
-        });
+        .subscribe();
 
       const notificationsChannel = supabase
         .channel('public:notifications')
@@ -390,26 +311,15 @@ export const useRealtimeCommunication = () => {
             filter: `user_id=eq.${user.id}`
           },
           (payload) => {
-            console.log('🔔 Notification update:', payload);
             fetchNotifications();
           }
         )
         .subscribe();
 
-      // Fallback: Poll for updates every 5 seconds when document is visible
-      const pollInterval = setInterval(() => {
-        if (!document.hidden) {
-          console.log('🔄 Polling for updates...');
-          fetchConversations();
-        }
-      }, 5000);
-
       return () => {
-        console.log('🧹 Cleaning up subscriptions...');
         supabase.removeChannel(messagesChannel);
         supabase.removeChannel(conversationsChannel);
         supabase.removeChannel(notificationsChannel);
-        clearInterval(pollInterval);
       };
     }
   }, [user?.id, conversations]);
