@@ -78,6 +78,7 @@ const CommunicationCenter = () => {
       console.log('Selected conversation:', selectedConversation);
       fetchMessages(selectedConversation);
       // Mark conversation as read when selected
+      console.log('About to mark conversation as read...');
       markConversationAsRead(selectedConversation);
       setSelectedGroupConversation(null);
     } else if (selectedGroupConversation) {

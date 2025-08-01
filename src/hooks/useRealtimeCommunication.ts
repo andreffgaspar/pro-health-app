@@ -100,12 +100,22 @@ export const useRealtimeCommunication = () => {
       // For each valid conversation, count unread messages and get other party name
       const conversationsWithUnread = await Promise.all(
         validConversations.map(async (conv) => {
+          // First, let's see what messages exist in this conversation
+          const { data: allMessages } = await supabase
+            .from('messages')
+            .select('id, sender_id, read_at, created_at')
+            .eq('conversation_id', conv.id);
+          
+          console.log(`Messages in conversation ${conv.id}:`, allMessages);
+          
           const { count } = await supabase
             .from('messages')
             .select('*', { count: 'exact', head: true })
             .eq('conversation_id', conv.id)
             .neq('sender_id', user.id)
             .is('read_at', null);
+
+          console.log(`Unread count for conversation ${conv.id}:`, count);
 
           const isAthlete = user.id === conv.athlete_id;
           const otherParty = isAthlete 
@@ -215,16 +225,21 @@ export const useRealtimeCommunication = () => {
   const markConversationAsRead = async (conversationId: string) => {
     if (!user?.id) return;
     
+    console.log('Marking conversation as read:', conversationId, 'for user:', user.id);
+    
     try {
       // Mark all unread messages in this conversation as read
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('messages')
         .update({ read_at: new Date().toISOString() })
         .eq('conversation_id', conversationId)
         .neq('sender_id', user.id)
-        .is('read_at', null);
+        .is('read_at', null)
+        .select();
 
       if (error) throw error;
+      
+      console.log('Messages marked as read:', data);
       
       // Refresh conversations to update unread counts
       fetchConversations();
