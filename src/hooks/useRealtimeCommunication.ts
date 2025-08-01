@@ -44,7 +44,7 @@ export const useRealtimeCommunication = () => {
   const fetchConversations = async () => {
     if (!user?.id) return;
 
-    console.log('Fetching conversations for user:', user.id);
+    console.log('🔄 Fetching conversations for user:', user.id);
 
     try {
       // First, get accepted relationships to filter conversations
@@ -292,9 +292,14 @@ export const useRealtimeCommunication = () => {
 
       fetchAllData();
 
-      // Set up real-time subscriptions
+      // Set up real-time subscriptions with better error handling
       const conversationsChannel = supabase
-        .channel('conversations-changes')
+        .channel('conversations-realtime', {
+          config: {
+            broadcast: { self: true },
+            presence: { key: user.id }
+          }
+        })
         .on(
           'postgres_changes',
           {
@@ -302,22 +307,23 @@ export const useRealtimeCommunication = () => {
             schema: 'public',
             table: 'conversations'
           },
-          (payload) => {
+          async (payload) => {
             console.log('Real-time conversation update:', payload);
-            // Check if this conversation involves the current user
-            const conv = payload.new || payload.old;
-            if (conv && typeof conv === 'object' && 'athlete_id' in conv && 'professional_id' in conv) {
-              const conversation = conv as { athlete_id: string; professional_id: string };
-              if (conversation.athlete_id === user.id || conversation.professional_id === user.id) {
-                fetchConversations();
-              }
-            }
+            // Always refresh conversations for any change
+            await fetchConversations();
           }
         )
-        .subscribe();
+        .subscribe((status) => {
+          console.log('Conversations channel status:', status);
+        });
 
       const messagesChannel = supabase
-        .channel('messages-changes')
+        .channel('messages-realtime', {
+          config: {
+            broadcast: { self: true },
+            presence: { key: user.id }
+          }
+        })
         .on(
           'postgres_changes',
           {
@@ -325,16 +331,46 @@ export const useRealtimeCommunication = () => {
             schema: 'public',
             table: 'messages'
           },
-          (payload) => {
-            console.log('Real-time message update:', payload);
-            if (payload.new && 'conversation_id' in payload.new) {
-              fetchMessages(payload.new.conversation_id as string);
-              // Also refresh conversations to update unread counts
-              fetchConversations();
+          async (payload) => {
+            console.log('🔔 Real-time message update:', payload);
+            
+            if (payload.eventType === 'INSERT' && payload.new) {
+              const newMessage = payload.new as any;
+              console.log('✅ New message received:', {
+                id: newMessage.id,
+                conversation_id: newMessage.conversation_id,
+                sender_id: newMessage.sender_id,
+                content: newMessage.content?.substring(0, 50) + '...',
+                is_for_current_user: newMessage.sender_id !== user.id
+              });
+              
+              // Update messages state immediately for the affected conversation
+              if (newMessage.conversation_id) {
+                console.log('📥 Updating messages for conversation:', newMessage.conversation_id);
+                await fetchMessages(newMessage.conversation_id);
+                
+                console.log('🔄 Refreshing conversations to update unread counts');
+                await fetchConversations();
+              }
+            } else if (payload.eventType === 'UPDATE' && payload.new) {
+              // Handle message updates (like read_at changes)
+              const updatedMessage = payload.new as any;
+              console.log('✏️ Message updated:', {
+                id: updatedMessage.id,
+                conversation_id: updatedMessage.conversation_id,
+                read_at: updatedMessage.read_at
+              });
+              
+              if (updatedMessage.conversation_id) {
+                await fetchMessages(updatedMessage.conversation_id);
+                await fetchConversations();
+              }
             }
           }
         )
-        .subscribe();
+        .subscribe((status) => {
+          console.log('Messages channel status:', status);
+        });
 
       const notificationsChannel = supabase
         .channel('notifications-changes')
