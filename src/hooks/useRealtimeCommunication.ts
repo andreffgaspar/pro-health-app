@@ -103,10 +103,16 @@ export const useRealtimeCommunication = () => {
           // First, let's see what messages exist in this conversation
           const { data: allMessages } = await supabase
             .from('messages')
-            .select('id, sender_id, read_at, created_at')
+            .select('id, sender_id, read_at, created_at, content')
             .eq('conversation_id', conv.id);
           
-          console.log(`Messages in conversation ${conv.id}:`, allMessages);
+          console.log(`Messages in conversation ${conv.id}:`, allMessages?.map(m => ({
+            id: m.id,
+            sender_id: m.sender_id,
+            read_at: m.read_at,
+            content: m.content?.substring(0, 20) + '...',
+            is_from_current_user: m.sender_id === user.id
+          })));
           
           const { count } = await supabase
             .from('messages')
