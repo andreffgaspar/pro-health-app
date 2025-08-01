@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
@@ -11,6 +12,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Send, MessageCircle, Users, Plus, UsersIcon } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { useRealtimeCommunication } from '@/hooks/useRealtimeCommunication';
 import { useToast } from '@/hooks/use-toast';
 
 interface Professional {
@@ -21,14 +23,6 @@ interface Professional {
 interface Athlete {
   user_id: string;
   full_name: string | null;
-}
-
-interface Message {
-  id: string;
-  content: string;
-  sender_id: string;
-  created_at: string;
-  sender_name: string;
 }
 
 interface GroupConversation {
@@ -47,26 +41,15 @@ interface GroupMessage {
   sender_name: string;
 }
 
-interface Conversation {
-  id: string;
-  athlete_id: string;
-  professional_id: string;
-  other_party_id: string;
-  other_party_name: string;
-  title: string | null;
-  updated_at: string;
-}
-
 const CommunicationCenter = () => {
   const { user, profile } = useAuth();
+  const { conversations, messages, fetchMessages } = useRealtimeCommunication();
   const { toast } = useToast();
   const [professionals, setProfessionals] = useState<Professional[]>([]);
   const [athletes, setAthletes] = useState<Athlete[]>([]);
-  const [conversations, setConversations] = useState<Conversation[]>([]);
   const [groupConversations, setGroupConversations] = useState<GroupConversation[]>([]);
   const [selectedConversation, setSelectedConversation] = useState<string | null>(null);
   const [selectedGroupConversation, setSelectedGroupConversation] = useState<string | null>(null);
-  const [messages, setMessages] = useState<Message[]>([]);
   const [groupMessages, setGroupMessages] = useState<GroupMessage[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(false);
@@ -86,7 +69,6 @@ const CommunicationCenter = () => {
       } else {
         fetchAthletes();
       }
-      fetchConversations();
       fetchGroupConversations();
     }
   }, [user, profile]);
@@ -111,7 +93,6 @@ const CommunicationCenter = () => {
 
   const fetchProfessionals = async () => {
     try {
-      // Fetch professionals that have relationships with this athlete
       const { data, error } = await supabase
         .from('athlete_professional_relationships')
         .select(`
@@ -136,7 +117,6 @@ const CommunicationCenter = () => {
 
   const fetchAthletes = async () => {
     try {
-      // Fetch athletes that have relationships with this professional
       const { data, error } = await supabase
         .from('athlete_professional_relationships')
         .select(`
@@ -156,86 +136,6 @@ const CommunicationCenter = () => {
       setAthletes(athletesList);
     } catch (error) {
       console.error('Error fetching athletes:', error);
-    }
-  };
-
-  const fetchConversations = async () => {
-    try {
-      if (isAthlete) {
-        // For athletes, only show conversations with accepted professionals
-        const { data: relationshipsData, error: relationshipsError } = await supabase
-          .from('athlete_professional_relationships')
-          .select('professional_id')
-          .eq('athlete_id', user?.id)
-          .eq('status', 'accepted');
-
-        if (relationshipsError) throw relationshipsError;
-
-        const acceptedProfessionalIds = relationshipsData?.map(rel => rel.professional_id) || [];
-
-        if (acceptedProfessionalIds.length === 0) {
-          setConversations([]);
-          return;
-        }
-
-        const { data, error } = await supabase
-          .from('conversations')
-          .select(`
-            id,
-            athlete_id,
-            professional_id,
-            title,
-            updated_at,
-            athlete:profiles!conversations_athlete_id_fkey(full_name),
-            professional:profiles!conversations_professional_id_fkey(full_name)
-          `)
-          .eq('athlete_id', user?.id)
-          .in('professional_id', acceptedProfessionalIds);
-
-        if (error) throw error;
-        
-        const formattedConversations = data?.map(conv => ({
-          id: conv.id,
-          athlete_id: conv.athlete_id,
-          professional_id: conv.professional_id,
-          other_party_id: conv.professional_id,
-          other_party_name: (conv.professional as any)?.full_name || 'Profissional',
-          title: conv.title,
-          updated_at: conv.updated_at
-        })) || [];
-
-        setConversations(formattedConversations);
-      } else {
-        // For professionals, show conversations with their athletes
-        const { data, error } = await supabase
-          .from('conversations')
-          .select(`
-            id,
-            athlete_id,
-            professional_id,
-            title,
-            updated_at,
-            athlete:profiles!conversations_athlete_id_fkey(full_name),
-            professional:profiles!conversations_professional_id_fkey(full_name)
-          `)
-          .eq('professional_id', user?.id);
-
-        if (error) throw error;
-        
-        const formattedConversations = data?.map(conv => ({
-          id: conv.id,
-          athlete_id: conv.athlete_id,
-          professional_id: conv.professional_id,
-          other_party_id: conv.athlete_id,
-          other_party_name: (conv.athlete as any)?.full_name || 'Atleta',
-          title: conv.title,
-          updated_at: conv.updated_at
-        })) || [];
-
-        setConversations(formattedConversations);
-      }
-    } catch (error) {
-      console.error('Error fetching conversations:', error);
     }
   };
 
@@ -298,36 +198,6 @@ const CommunicationCenter = () => {
     }
   };
 
-  const fetchMessages = async (conversationId: string) => {
-    try {
-      const { data, error } = await supabase
-        .from('messages')
-        .select(`
-          id,
-          content,
-          sender_id,
-          created_at,
-          sender:profiles!messages_sender_id_fkey(full_name)
-        `)
-        .eq('conversation_id', conversationId)
-        .order('created_at', { ascending: true });
-
-      if (error) throw error;
-      
-      const formattedMessages = data?.map(msg => ({
-        id: msg.id,
-        content: msg.content,
-        sender_id: msg.sender_id,
-        created_at: msg.created_at,
-        sender_name: (msg.sender as any)?.full_name || 'Usuário'
-      })) || [];
-
-      setMessages(formattedMessages);
-    } catch (error) {
-      console.error('Error fetching messages:', error);
-    }
-  };
-
   const startConversation = async (otherPartyId: string) => {
     try {
       setLoading(true);
@@ -361,7 +231,6 @@ const CommunicationCenter = () => {
 
       if (error) throw error;
 
-      await fetchConversations();
       setSelectedConversation(data.id);
       
       toast({
@@ -385,7 +254,6 @@ const CommunicationCenter = () => {
 
     try {
       if (selectedConversation) {
-        // Send to regular conversation
         const { error } = await supabase
           .from('messages')
           .insert([{
@@ -399,14 +267,12 @@ const CommunicationCenter = () => {
         setNewMessage('');
         await fetchMessages(selectedConversation);
         
-        // Update conversation timestamp
         await supabase
           .from('conversations')
           .update({ updated_at: new Date().toISOString() })
           .eq('id', selectedConversation);
 
       } else if (selectedGroupConversation) {
-        // Send to group conversation
         const { error } = await supabase
           .from('group_messages')
           .insert([{
@@ -420,7 +286,6 @@ const CommunicationCenter = () => {
         setNewMessage('');
         await fetchGroupMessages(selectedGroupConversation);
         
-        // Update group timestamp
         await supabase
           .from('group_conversations')
           .update({ updated_at: new Date().toISOString() })
@@ -450,7 +315,6 @@ const CommunicationCenter = () => {
     try {
       setLoading(true);
 
-      // Create the group
       const { data: groupData, error: groupError } = await supabase
         .from('group_conversations')
         .insert([{
@@ -463,7 +327,6 @@ const CommunicationCenter = () => {
 
       if (groupError) throw groupError;
 
-      // Add the creator as admin
       const participants = [
         { group_id: groupData.id, user_id: user?.id, role: 'admin' },
         ...selectedProfessionals.map(profId => ({
@@ -479,13 +342,11 @@ const CommunicationCenter = () => {
 
       if (participantsError) throw participantsError;
 
-      // Reset form
       setNewGroupName('');
       setNewGroupDescription('');
       setSelectedProfessionals([]);
       setShowCreateGroupDialog(false);
 
-      // Refresh groups
       await fetchGroupConversations();
 
       toast({
@@ -508,6 +369,8 @@ const CommunicationCenter = () => {
   if (!isAthlete && !isProfessional) {
     return null;
   }
+
+  const currentConversationMessages = selectedConversation ? messages[selectedConversation] || [] : [];
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-6 h-[600px]">
@@ -546,7 +409,7 @@ const CommunicationCenter = () => {
         </CardContent>
       </Card>
 
-      {/* Conversations List */}
+      {/* Conversations List with Unread Indicators */}
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
@@ -645,9 +508,11 @@ const CommunicationCenter = () => {
                   }`}
                   onClick={() => setSelectedGroupConversation(group.id)}
                 >
-                  <div className="flex items-center gap-2">
-                    <UsersIcon className="h-4 w-4" />
-                    <div className="font-medium text-sm">{group.name}</div>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <UsersIcon className="h-4 w-4" />
+                      <div className="font-medium text-sm">{group.name}</div>
+                    </div>
                   </div>
                   <div className="text-xs text-muted-foreground mt-1">
                     {group.participants_count} participantes • {new Date(group.last_message_at).toLocaleDateString()}
@@ -655,7 +520,7 @@ const CommunicationCenter = () => {
                 </div>
               ))}
               
-              {/* Individual Conversations */}
+              {/* Individual Conversations with Unread Count */}
               {conversations.map((conversation) => (
                 <div
                   key={conversation.id}
@@ -666,8 +531,15 @@ const CommunicationCenter = () => {
                   }`}
                   onClick={() => setSelectedConversation(conversation.id)}
                 >
-                  <div className="font-medium text-sm">
-                    {conversation.other_party_name}
+                  <div className="flex items-center justify-between">
+                    <div className="font-medium text-sm">
+                      {conversation.other_party_name}
+                    </div>
+                    {conversation.unread_count > 0 && (
+                      <Badge variant="destructive" className="ml-2 text-xs">
+                        {conversation.unread_count}
+                      </Badge>
+                    )}
                   </div>
                   <div className="text-xs text-muted-foreground mt-1">
                     {new Date(conversation.updated_at).toLocaleDateString()}
@@ -696,7 +568,7 @@ const CommunicationCenter = () => {
             <>
               <ScrollArea className="flex-1 mb-4">
                 <div className="space-y-4">
-                  {(selectedConversation ? messages : groupMessages).map((message) => (
+                  {(selectedConversation ? currentConversationMessages : groupMessages).map((message) => (
                     <div
                       key={message.id}
                       className={`flex ${

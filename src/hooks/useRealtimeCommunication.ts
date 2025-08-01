@@ -12,13 +12,15 @@ interface Message {
   message_type: string;
 }
 
-interface Conversation {
+interface ConversationWithUnread {
   id: string;
   athlete_id: string;
   professional_id: string;
   title?: string;
   created_at: string;
   updated_at: string;
+  unread_count: number;
+  other_party_name?: string;
 }
 
 interface Notification {
@@ -33,7 +35,7 @@ interface Notification {
 
 export const useRealtimeCommunication = () => {
   const { user } = useAuth();
-  const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [conversations, setConversations] = useState<ConversationWithUnread[]>([]);
   const [messages, setMessages] = useState<{ [conversationId: string]: Message[] }>({});
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -45,12 +47,48 @@ export const useRealtimeCommunication = () => {
     try {
       const { data, error } = await supabase
         .from('conversations')
-        .select('*')
+        .select(`
+          *,
+          athlete:profiles!conversations_athlete_id_fkey(full_name),
+          professional:profiles!conversations_professional_id_fkey(full_name)
+        `)
         .or(`athlete_id.eq.${user.id},professional_id.eq.${user.id}`)
         .order('updated_at', { ascending: false });
 
       if (error) throw error;
-      setConversations(data || []);
+      
+      // For each conversation, count unread messages
+      const conversationsWithUnread = await Promise.all(
+        (data || []).map(async (conv) => {
+          const { count } = await supabase
+            .from('messages')
+            .select('*', { count: 'exact', head: true })
+            .eq('conversation_id', conv.id)
+            .neq('sender_id', user.id)
+            .is('read_at', null);
+
+          const isAthlete = user.id === conv.athlete_id;
+          const otherParty = isAthlete 
+            ? (conv.professional as any)?.full_name 
+            : (conv.athlete as any)?.full_name;
+
+          return {
+            ...conv,
+            unread_count: count || 0,
+            other_party_name: otherParty || 'Usuário'
+          };
+        })
+      );
+
+      setConversations(conversationsWithUnread);
+      
+      // Calculate total unread count
+      const totalUnread = conversationsWithUnread.reduce(
+        (sum, conv) => sum + conv.unread_count, 
+        0
+      );
+      setUnreadCount(totalUnread);
+      
     } catch (error) {
       console.error('Error fetching conversations:', error);
     }
@@ -88,10 +126,6 @@ export const useRealtimeCommunication = () => {
 
       if (error) throw error;
       setNotifications(data || []);
-      
-      // Count unread notifications
-      const unread = (data || []).filter(n => !n.read_at).length;
-      setUnreadCount(unread);
     } catch (error) {
       console.error('Error fetching notifications:', error);
     }
