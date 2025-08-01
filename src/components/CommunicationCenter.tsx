@@ -86,9 +86,21 @@ const CommunicationCenter = () => {
     }
   }, [selectedConversation, selectedGroupConversation]);
 
+  // Auto-scroll when messages change and force re-render when new messages arrive
   useEffect(() => {
     scrollToBottom();
-  }, [messages, groupMessages]);
+  }, [messages, groupMessages, selectedConversation]);
+
+  // Force update when conversations are updated (real-time)
+  useEffect(() => {
+    if (selectedConversation && conversations.length > 0) {
+      const currentMessages = messages[selectedConversation];
+      // If we don't have messages or conversation was updated, refetch
+      if (!currentMessages) {
+        fetchMessages(selectedConversation);
+      }
+    }
+  }, [conversations]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
