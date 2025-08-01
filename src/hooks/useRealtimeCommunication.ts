@@ -249,8 +249,9 @@ export const useRealtimeCommunication = () => {
 
       // Set up real-time subscriptions
       console.log('🔌 Setting up real-time channels for user:', user.id);
+      
       const messagesChannel = supabase
-        .channel('public:messages')
+        .channel('messages-channel')
         .on(
           'postgres_changes',
           {
@@ -302,10 +303,15 @@ export const useRealtimeCommunication = () => {
         )
         .subscribe((status) => {
           console.log('📡 Messages channel status:', status);
+          if (status === 'SUBSCRIBED') {
+            console.log('✅ Messages channel connected successfully');
+          } else if (status === 'CHANNEL_ERROR') {
+            console.error('❌ Messages channel failed to connect');
+          }
         });
 
       const conversationsChannel = supabase
-        .channel('public:conversations')
+        .channel('conversations-channel')
         .on(
           'postgres_changes',
           {
@@ -319,10 +325,15 @@ export const useRealtimeCommunication = () => {
         )
         .subscribe((status) => {
           console.log('📡 Conversations channel status:', status);
+          if (status === 'SUBSCRIBED') {
+            console.log('✅ Conversations channel connected successfully');
+          } else if (status === 'CHANNEL_ERROR') {
+            console.error('❌ Conversations channel failed to connect');
+          }
         });
 
       const notificationsChannel = supabase
-        .channel('public:notifications')
+        .channel('notifications-channel')
         .on(
           'postgres_changes',
           {
@@ -337,6 +348,11 @@ export const useRealtimeCommunication = () => {
         )
         .subscribe((status) => {
           console.log('📡 Notifications channel status:', status);
+          if (status === 'SUBSCRIBED') {
+            console.log('✅ Notifications channel connected successfully');
+          } else if (status === 'CHANNEL_ERROR') {
+            console.error('❌ Notifications channel failed to connect');
+          }
         });
 
       return () => {
