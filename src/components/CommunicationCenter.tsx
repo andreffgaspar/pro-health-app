@@ -91,16 +91,25 @@ const CommunicationCenter = () => {
     scrollToBottom();
   }, [messages, groupMessages, selectedConversation]);
 
-  // Force update when conversations are updated (real-time)
+  // Force update when conversations are updated (real-time) and refresh current conversation
   useEffect(() => {
-    if (selectedConversation && conversations.length > 0) {
+    if (selectedConversation) {
       const currentMessages = messages[selectedConversation];
-      // If we don't have messages or conversation was updated, refetch
-      if (!currentMessages) {
-        fetchMessages(selectedConversation);
-      }
+      // Always refetch to ensure we have the latest messages
+      fetchMessages(selectedConversation);
     }
   }, [conversations]);
+
+  // Add interval polling as fallback for real-time updates
+  useEffect(() => {
+    if (selectedConversation) {
+      const interval = setInterval(() => {
+        fetchMessages(selectedConversation);
+      }, 2000); // Poll every 2 seconds
+
+      return () => clearInterval(interval);
+    }
+  }, [selectedConversation]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });

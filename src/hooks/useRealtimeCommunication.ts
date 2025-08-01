@@ -259,11 +259,25 @@ export const useRealtimeCommunication = () => {
           async (payload) => {
             if (payload.new) {
               const newMessage = payload.new as any;
+              console.log('🆕 New message received:', {
+                id: newMessage.id,
+                conversation_id: newMessage.conversation_id,
+                sender_id: newMessage.sender_id,
+                is_from_other_user: newMessage.sender_id !== user.id
+              });
               
               // If this is a message from another user, update immediately
               if (newMessage.sender_id !== user.id) {
+                console.log('⏰ Updating messages for conversation:', newMessage.conversation_id);
+                
+                // Force update the messages first
                 await fetchMessages(newMessage.conversation_id);
-                await fetchConversations();
+                
+                // Then update conversations with a small delay to ensure consistency
+                setTimeout(async () => {
+                  console.log('⏰ Updating conversations...');
+                  await fetchConversations();
+                }, 50);
               }
             }
           }
@@ -322,7 +336,7 @@ export const useRealtimeCommunication = () => {
         supabase.removeChannel(notificationsChannel);
       };
     }
-  }, [user?.id, conversations]);
+  }, [user?.id]);
 
   return {
     conversations,
