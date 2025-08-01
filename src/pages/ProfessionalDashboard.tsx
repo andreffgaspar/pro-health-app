@@ -35,6 +35,8 @@ import {
 
 import { LineChart, Line, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from "recharts";
 import { useAuth } from "@/hooks/useAuth";
+import { useProfessionalData } from "@/hooks/useProfessionalData";
+import { useRealtimeCommunication } from "@/hooks/useRealtimeCommunication";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import CommunicationCenter from "@/components/CommunicationCenter";
@@ -94,10 +96,10 @@ interface SearchedAthlete {
 
 const ProfessionalDashboard = () => {
   const { user, profile, signOut } = useAuth();
+  const { myAthletes, pendingInvitations, loading: dataLoading, refetchAthletes, refetchInvitations } = useProfessionalData();
+  const { unreadCount } = useRealtimeCommunication();
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
-  const [pendingInvitations, setPendingInvitations] = useState<PendingInvitation[]>([]);
-  const [myAthletes, setMyAthletes] = useState<AthleteData[]>([]);
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState("athletes");
   const [selectedAthlete, setSelectedAthlete] = useState<AthleteData | null>(null);
@@ -120,66 +122,12 @@ const ProfessionalDashboard = () => {
   const [selectedAthleteForEnvironment, setSelectedAthleteForEnvironment] = useState<{ id: string; name: string } | null>(null);
 
   useEffect(() => {
-    if (user) {
-      fetchPendingInvitations();
-      fetchMyAthletes();
-    }
-  }, [user]);
-
-  useEffect(() => {
     const timeoutId = setTimeout(() => {
       searchAthletes(searchQuery);
     }, 300);
 
     return () => clearTimeout(timeoutId);
   }, [searchQuery]);
-
-  const fetchPendingInvitations = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('athlete_professional_relationships')
-        .select(`
-          id,
-          athlete_id,
-          specialty,
-          status,
-          invited_at,
-          athlete:profiles!athlete_professional_relationships_athlete_id_fkey(full_name, user_id)
-        `)
-        .eq('professional_id', user?.id)
-        .eq('status', 'pending')
-        .order('invited_at', { ascending: false });
-
-      if (error) throw error;
-      setPendingInvitations(data || []);
-    } catch (error) {
-      console.error('Error fetching pending invitations:', error);
-    }
-  };
-
-  const fetchMyAthletes = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('athlete_professional_relationships')
-        .select(`
-          id,
-          athlete_id,
-          specialty,
-          status,
-          accepted_at,
-          athlete:profiles!athlete_professional_relationships_athlete_id_fkey(full_name, user_id)
-        `)
-        .eq('professional_id', user?.id)
-        .eq('status', 'accepted')
-        .eq('is_active', true)
-        .order('accepted_at', { ascending: false });
-
-      if (error) throw error;
-      setMyAthletes(data || []);
-    } catch (error) {
-      console.error('Error fetching my athletes:', error);
-    }
-  };
 
   const handleInvitationResponse = async (invitationId: string, action: 'accept' | 'reject') => {
     try {
@@ -202,8 +150,8 @@ const ProfessionalDashboard = () => {
           "O convite foi rejeitado.",
       });
 
-      fetchPendingInvitations();
-      fetchMyAthletes();
+      refetchInvitations();
+      refetchAthletes();
     } catch (error) {
       console.error('Error responding to invitation:', error);
       toast({
@@ -257,7 +205,7 @@ const ProfessionalDashboard = () => {
         description: `${athleteName} foi marcado como inativo na sua equipe.`
       });
 
-      fetchMyAthletes();
+      refetchAthletes();
     } catch (error) {
       console.error('Error deactivating athlete relationship:', error);
       toast({
@@ -391,7 +339,7 @@ const ProfessionalDashboard = () => {
       setShowInviteDialog(false);
 
       // Refresh data
-      fetchMyAthletes();
+      refetchAthletes();
 
     } catch (error) {
       console.error('Error sending invitation:', error);

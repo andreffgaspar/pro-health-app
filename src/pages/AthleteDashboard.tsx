@@ -28,11 +28,13 @@ import { Link, useNavigate } from "react-router-dom";
 import { LineChart, Line, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from "recharts";
 import { useAuth } from "@/hooks/useAuth";
 import { useAthleteData } from "@/hooks/useAthleteData";
+import { useRealtimeCommunication } from "@/hooks/useRealtimeCommunication";
 
 const AthleterDashboard = () => {
   const navigate = useNavigate();
   const { user, profile, signOut } = useAuth();
   const { todaysMetrics, weeklyData, performanceData, loading } = useAthleteData();
+  const { unreadCount } = useRealtimeCommunication();
   const [showProfileSettings, setShowProfileSettings] = useState(false);
   const [selectedMetric, setSelectedMetric] = useState("score");
   const [selectedPeriod, setSelectedPeriod] = useState("7");

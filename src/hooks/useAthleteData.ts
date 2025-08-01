@@ -233,6 +233,31 @@ export const useAthleteData = () => {
 
   useEffect(() => {
     fetchAthleteData();
+
+    // Set up real-time subscription for athlete data
+    if (user?.id) {
+      const channel = supabase
+        .channel('athlete-data-changes')
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'athlete_data',
+            filter: `athlete_id=eq.${user.id}`
+          },
+          (payload) => {
+            console.log('Real-time athlete data update:', payload);
+            // Refetch data on any change
+            fetchAthleteData();
+          }
+        )
+        .subscribe();
+
+      return () => {
+        supabase.removeChannel(channel);
+      };
+    }
   }, [user?.id]);
 
   return {
