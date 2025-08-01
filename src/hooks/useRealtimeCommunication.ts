@@ -248,6 +248,7 @@ export const useRealtimeCommunication = () => {
       fetchAllData();
 
       // Set up real-time subscriptions
+      console.log('🔌 Setting up real-time channels for user:', user.id);
       const messagesChannel = supabase
         .channel('public:messages')
         .on(
@@ -258,12 +259,14 @@ export const useRealtimeCommunication = () => {
             table: 'messages'
           },
           async (payload) => {
+            console.log('🔔 Message INSERT detected:', payload);
             if (payload.new) {
               const newMessage = payload.new as any;
               console.log('🆕 New message received:', {
                 id: newMessage.id,
                 conversation_id: newMessage.conversation_id,
                 sender_id: newMessage.sender_id,
+                current_user: user.id,
                 is_from_other_user: newMessage.sender_id !== user.id
               });
               
@@ -297,7 +300,9 @@ export const useRealtimeCommunication = () => {
             }
           }
         )
-        .subscribe();
+        .subscribe((status) => {
+          console.log('📡 Messages channel status:', status);
+        });
 
       const conversationsChannel = supabase
         .channel('public:conversations')
@@ -312,7 +317,9 @@ export const useRealtimeCommunication = () => {
             await fetchConversations();
           }
         )
-        .subscribe();
+        .subscribe((status) => {
+          console.log('📡 Conversations channel status:', status);
+        });
 
       const notificationsChannel = supabase
         .channel('public:notifications')
@@ -328,7 +335,9 @@ export const useRealtimeCommunication = () => {
             fetchNotifications();
           }
         )
-        .subscribe();
+        .subscribe((status) => {
+          console.log('📡 Notifications channel status:', status);
+        });
 
       return () => {
         supabase.removeChannel(messagesChannel);
