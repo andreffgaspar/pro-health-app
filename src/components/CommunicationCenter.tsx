@@ -75,11 +75,13 @@ const CommunicationCenter = () => {
 
   useEffect(() => {
     if (selectedConversation) {
+      console.log('Selected conversation:', selectedConversation);
       fetchMessages(selectedConversation);
       // Mark conversation as read when selected
       markConversationAsRead(selectedConversation);
       setSelectedGroupConversation(null);
     } else if (selectedGroupConversation) {
+      console.log('Selected group conversation:', selectedGroupConversation);
       fetchGroupMessages(selectedGroupConversation);
       setSelectedConversation(null);
     }

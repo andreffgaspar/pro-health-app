@@ -44,6 +44,8 @@ export const useRealtimeCommunication = () => {
   const fetchConversations = async () => {
     if (!user?.id) return;
 
+    console.log('Fetching conversations for user:', user.id);
+
     try {
       // First, get accepted relationships to filter conversations
       const { data: relationships, error: relError } = await supabase
@@ -54,12 +56,17 @@ export const useRealtimeCommunication = () => {
 
       if (relError) throw relError;
 
+      console.log('Found relationships:', relationships);
+
       // Extract valid user IDs that this user can communicate with
       const validUserIds = relationships?.map(rel => 
         rel.athlete_id === user.id ? rel.professional_id : rel.athlete_id
       ) || [];
 
+      console.log('Valid user IDs for conversations:', validUserIds);
+
       if (validUserIds.length === 0) {
+        console.log('No valid relationships found, clearing conversations');
         setConversations([]);
         setUnreadCount(0);
         return;
@@ -78,11 +85,17 @@ export const useRealtimeCommunication = () => {
 
       if (error) throw error;
       
+      console.log('Raw conversations found:', data);
+      
       // Filter conversations to only include valid relationships
       const validConversations = (data || []).filter(conv => {
         const otherUserId = conv.athlete_id === user.id ? conv.professional_id : conv.athlete_id;
-        return validUserIds.includes(otherUserId);
+        const isValid = validUserIds.includes(otherUserId);
+        console.log(`Conversation ${conv.id}: otherUser=${otherUserId}, isValid=${isValid}`);
+        return isValid;
       });
+
+      console.log('Valid conversations after filtering:', validConversations);
 
       // For each valid conversation, count unread messages and get other party name
       const conversationsWithUnread = await Promise.all(
@@ -107,6 +120,8 @@ export const useRealtimeCommunication = () => {
         })
       );
 
+      console.log('Final conversations with unread counts:', conversationsWithUnread);
+
       setConversations(conversationsWithUnread);
       
       // Calculate total unread count
@@ -114,6 +129,8 @@ export const useRealtimeCommunication = () => {
         (sum, conv) => sum + conv.unread_count, 
         0
       );
+      
+      console.log('Total unread count:', totalUnread);
       setUnreadCount(totalUnread);
       
     } catch (error) {
