@@ -292,88 +292,95 @@ export const useRealtimeCommunication = () => {
 
       fetchAllData();
 
-      // Set up real-time subscriptions with better error handling
-      const conversationsChannel = supabase
-        .channel('conversations-realtime', {
-          config: {
-            broadcast: { self: true },
-            presence: { key: user.id }
-          }
-        })
-        .on(
-          'postgres_changes',
-          {
-            event: '*',
-            schema: 'public',
-            table: 'conversations'
-          },
-          async (payload) => {
-            console.log('Real-time conversation update:', payload);
-            // Always refresh conversations for any change
-            await fetchConversations();
-          }
-        )
-        .subscribe((status) => {
-          console.log('Conversations channel status:', status);
-        });
-
+      // Set up real-time subscriptions with debugging
+      console.log('🚀 Setting up realtime subscriptions for user:', user.id);
+      
+      // Use a more specific channel name and simpler configuration
       const messagesChannel = supabase
-        .channel('messages-realtime', {
-          config: {
-            broadcast: { self: true },
-            presence: { key: user.id }
-          }
-        })
+        .channel('public:messages')
         .on(
           'postgres_changes',
           {
-            event: '*',
+            event: 'INSERT',
             schema: 'public',
             table: 'messages'
           },
           async (payload) => {
-            console.log('🔔 Real-time message update:', payload);
+            console.log('🆕 New message inserted:', payload);
             
-            if (payload.eventType === 'INSERT' && payload.new) {
+            if (payload.new) {
               const newMessage = payload.new as any;
-              console.log('✅ New message received:', {
+              console.log('📝 Message details:', {
                 id: newMessage.id,
                 conversation_id: newMessage.conversation_id,
                 sender_id: newMessage.sender_id,
-                content: newMessage.content?.substring(0, 50) + '...',
-                is_for_current_user: newMessage.sender_id !== user.id
+                content: newMessage.content?.substring(0, 30),
+                is_from_other_user: newMessage.sender_id !== user.id
               });
               
-              // Update messages state immediately for the affected conversation
-              if (newMessage.conversation_id) {
-                console.log('📥 Updating messages for conversation:', newMessage.conversation_id);
+              // If this is a message from another user, update immediately
+              if (newMessage.sender_id !== user.id) {
+                console.log('💬 Message from other user - updating...');
+                
+                // First update the messages for this conversation
                 await fetchMessages(newMessage.conversation_id);
                 
-                console.log('🔄 Refreshing conversations to update unread counts');
-                await fetchConversations();
-              }
-            } else if (payload.eventType === 'UPDATE' && payload.new) {
-              // Handle message updates (like read_at changes)
-              const updatedMessage = payload.new as any;
-              console.log('✏️ Message updated:', {
-                id: updatedMessage.id,
-                conversation_id: updatedMessage.conversation_id,
-                read_at: updatedMessage.read_at
-              });
-              
-              if (updatedMessage.conversation_id) {
-                await fetchMessages(updatedMessage.conversation_id);
+                // Then update conversations to refresh unread counts
                 await fetchConversations();
               }
             }
           }
         )
-        .subscribe((status) => {
-          console.log('Messages channel status:', status);
+        .on(
+          'postgres_changes',
+          {
+            event: 'UPDATE',
+            schema: 'public',
+            table: 'messages'
+          },
+          async (payload) => {
+            console.log('📝 Message updated:', payload);
+            
+            if (payload.new) {
+              const updatedMessage = payload.new as any;
+              await fetchMessages(updatedMessage.conversation_id);
+              await fetchConversations();
+            }
+          }
+        )
+        .subscribe((status, err) => {
+          console.log('📡 Messages subscription status:', status);
+          if (err) {
+            console.error('❌ Messages subscription error:', err);
+          }
+          if (status === 'SUBSCRIBED') {
+            console.log('✅ Successfully subscribed to messages');
+          }
+        });
+
+      const conversationsChannel = supabase
+        .channel('public:conversations')
+        .on(
+          'postgres_changes',
+          {
+            event: 'UPDATE',
+            schema: 'public',
+            table: 'conversations'
+          },
+          async (payload) => {
+            console.log('🔄 Conversation updated:', payload);
+            await fetchConversations();
+          }
+        )
+        .subscribe((status, err) => {
+          console.log('📡 Conversations subscription status:', status);
+          if (err) {
+            console.error('❌ Conversations subscription error:', err);
+          }
         });
 
       const notificationsChannel = supabase
-        .channel('notifications-changes')
+        .channel('public:notifications')
         .on(
           'postgres_changes',
           {
@@ -383,19 +390,29 @@ export const useRealtimeCommunication = () => {
             filter: `user_id=eq.${user.id}`
           },
           (payload) => {
-            console.log('Real-time notification update:', payload);
+            console.log('🔔 Notification update:', payload);
             fetchNotifications();
           }
         )
         .subscribe();
 
+      // Fallback: Poll for updates every 5 seconds when document is visible
+      const pollInterval = setInterval(() => {
+        if (!document.hidden) {
+          console.log('🔄 Polling for updates...');
+          fetchConversations();
+        }
+      }, 5000);
+
       return () => {
-        supabase.removeChannel(conversationsChannel);
+        console.log('🧹 Cleaning up subscriptions...');
         supabase.removeChannel(messagesChannel);
+        supabase.removeChannel(conversationsChannel);
         supabase.removeChannel(notificationsChannel);
+        clearInterval(pollInterval);
       };
     }
-  }, [user?.id]);
+  }, [user?.id, conversations]);
 
   return {
     conversations,
