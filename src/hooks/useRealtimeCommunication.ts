@@ -257,7 +257,22 @@ export const useRealtimeCommunication = () => {
       
       console.log('Messages marked as read:', data);
       
-      // Refresh conversations to update unread counts
+      // Update local state immediately for better UX
+      if (data && data.length > 0) {
+        // Update conversations state to reflect read messages
+        setConversations(prev => 
+          prev.map(conv => 
+            conv.id === conversationId 
+              ? { ...conv, unread_count: Math.max(0, conv.unread_count - data.length) }
+              : conv
+          )
+        );
+        
+        // Update total unread count
+        setUnreadCount(prev => Math.max(0, prev - data.length));
+      }
+      
+      // Refresh conversations to ensure consistency
       fetchConversations();
     } catch (error) {
       console.error('Error marking conversation as read:', error);
