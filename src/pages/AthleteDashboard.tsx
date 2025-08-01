@@ -37,6 +37,8 @@ const AthleterDashboard = () => {
   const { todaysMetrics, weeklyData, performanceData, loading } = useAthleteData();
   const { unreadCount } = useRealtimeCommunication();
   const [showProfileSettings, setShowProfileSettings] = useState(false);
+  const [activeTab, setActiveTab] = useState("training");
+  const [showCommunication, setShowCommunication] = useState(false);
   const [selectedMetric, setSelectedMetric] = useState("score");
   const [selectedPeriod, setSelectedPeriod] = useState("7");
   const sleepTriggerRef = useRef<HTMLButtonElement>(null);
@@ -101,7 +103,14 @@ const AthleterDashboard = () => {
             
             <div className="flex items-center gap-3">
               {unreadCount > 0 && (
-                <Badge variant="destructive" className="gap-1">
+                <Badge 
+                  variant="destructive" 
+                  className="gap-1 cursor-pointer hover:bg-destructive/80 transition-colors"
+                  onClick={() => {
+                    const communicationSection = document.querySelector('#communication-center');
+                    communicationSection?.scrollIntoView({ behavior: 'smooth' });
+                  }}
+                >
                   <MessageSquare className="w-3 h-3" />
                   {unreadCount} mensagem{unreadCount > 1 ? 's' : ''}
                 </Badge>
@@ -513,7 +522,7 @@ const AthleterDashboard = () => {
         </Card>
 
         {/* Communication Center */}
-        <Card className="mt-8">
+        <Card className="mt-8" id="communication-center">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Heart className="w-5 h-5 text-primary" />
