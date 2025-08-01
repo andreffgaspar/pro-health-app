@@ -43,7 +43,7 @@ interface GroupMessage {
 
 const CommunicationCenter = () => {
   const { user, profile } = useAuth();
-  const { conversations, messages, fetchMessages } = useRealtimeCommunication();
+  const { conversations, messages, fetchMessages, markConversationAsRead } = useRealtimeCommunication();
   const { toast } = useToast();
   const [professionals, setProfessionals] = useState<Professional[]>([]);
   const [athletes, setAthletes] = useState<Athlete[]>([]);
@@ -76,6 +76,8 @@ const CommunicationCenter = () => {
   useEffect(() => {
     if (selectedConversation) {
       fetchMessages(selectedConversation);
+      // Mark conversation as read when selected
+      markConversationAsRead(selectedConversation);
       setSelectedGroupConversation(null);
     } else if (selectedGroupConversation) {
       fetchGroupMessages(selectedGroupConversation);

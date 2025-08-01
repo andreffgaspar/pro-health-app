@@ -45,6 +45,27 @@ export const useRealtimeCommunication = () => {
     if (!user?.id) return;
 
     try {
+      // First, get accepted relationships to filter conversations
+      const { data: relationships, error: relError } = await supabase
+        .from('athlete_professional_relationships')
+        .select('athlete_id, professional_id')
+        .or(`athlete_id.eq.${user.id},professional_id.eq.${user.id}`)
+        .eq('status', 'accepted');
+
+      if (relError) throw relError;
+
+      // Extract valid user IDs that this user can communicate with
+      const validUserIds = relationships?.map(rel => 
+        rel.athlete_id === user.id ? rel.professional_id : rel.athlete_id
+      ) || [];
+
+      if (validUserIds.length === 0) {
+        setConversations([]);
+        setUnreadCount(0);
+        return;
+      }
+
+      // Fetch conversations where user is participant AND the other party is in valid relationships
       const { data, error } = await supabase
         .from('conversations')
         .select(`
@@ -57,9 +78,15 @@ export const useRealtimeCommunication = () => {
 
       if (error) throw error;
       
-      // For each conversation, count unread messages
+      // Filter conversations to only include valid relationships
+      const validConversations = (data || []).filter(conv => {
+        const otherUserId = conv.athlete_id === user.id ? conv.professional_id : conv.athlete_id;
+        return validUserIds.includes(otherUserId);
+      });
+
+      // For each valid conversation, count unread messages and get other party name
       const conversationsWithUnread = await Promise.all(
-        (data || []).map(async (conv) => {
+        validConversations.map(async (conv) => {
           const { count } = await supabase
             .from('messages')
             .select('*', { count: 'exact', head: true })
@@ -168,6 +195,27 @@ export const useRealtimeCommunication = () => {
     }
   };
 
+  const markConversationAsRead = async (conversationId: string) => {
+    if (!user?.id) return;
+    
+    try {
+      // Mark all unread messages in this conversation as read
+      const { error } = await supabase
+        .from('messages')
+        .update({ read_at: new Date().toISOString() })
+        .eq('conversation_id', conversationId)
+        .neq('sender_id', user.id)
+        .is('read_at', null);
+
+      if (error) throw error;
+      
+      // Refresh conversations to update unread counts
+      fetchConversations();
+    } catch (error) {
+      console.error('Error marking conversation as read:', error);
+    }
+  };
+
   useEffect(() => {
     if (user?.id) {
       const fetchAllData = async () => {
@@ -189,12 +237,18 @@ export const useRealtimeCommunication = () => {
           {
             event: '*',
             schema: 'public',
-            table: 'conversations',
-            filter: `athlete_id=eq.${user.id},professional_id=eq.${user.id}`
+            table: 'conversations'
           },
           (payload) => {
             console.log('Real-time conversation update:', payload);
-            fetchConversations();
+            // Check if this conversation involves the current user
+            const conv = payload.new || payload.old;
+            if (conv && typeof conv === 'object' && 'athlete_id' in conv && 'professional_id' in conv) {
+              const conversation = conv as { athlete_id: string; professional_id: string };
+              if (conversation.athlete_id === user.id || conversation.professional_id === user.id) {
+                fetchConversations();
+              }
+            }
           }
         )
         .subscribe();
@@ -212,6 +266,8 @@ export const useRealtimeCommunication = () => {
             console.log('Real-time message update:', payload);
             if (payload.new && 'conversation_id' in payload.new) {
               fetchMessages(payload.new.conversation_id as string);
+              // Also refresh conversations to update unread counts
+              fetchConversations();
             }
           }
         )
@@ -251,6 +307,7 @@ export const useRealtimeCommunication = () => {
     fetchMessages,
     markNotificationAsRead,
     markMessageAsRead,
+    markConversationAsRead,
     refetchConversations: fetchConversations,
     refetchNotifications: fetchNotifications
   };
