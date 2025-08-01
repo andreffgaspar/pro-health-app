@@ -269,13 +269,13 @@ export const useRealtimeCommunication = () => {
               
               // If this is a message from another user, update immediately
               if (newMessage.sender_id !== user.id) {
-                console.log('⏰ Updating messages and unread count for conversation:', newMessage.conversation_id);
+                console.log('⏰ New message from other user, updating counts...');
                 
-                // Update messages first
-                await fetchMessages(newMessage.conversation_id);
-                
-                // Force update conversations and unread count
+                // Update conversations first to get latest unread counts
                 await fetchConversations();
+                
+                // Then update messages for the specific conversation
+                await fetchMessages(newMessage.conversation_id);
                 
                 console.log('✅ Real-time update completed');
               }

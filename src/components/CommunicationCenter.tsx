@@ -301,6 +301,7 @@ const CommunicationCenter = () => {
         setNewMessage('');
         // Scroll to bottom after sending a message
         setTimeout(() => scrollToBottom(), 100);
+        await fetchMessages(selectedConversation);
         
         await supabase
           .from('conversations')
@@ -321,6 +322,7 @@ const CommunicationCenter = () => {
         setNewMessage('');
         // Scroll to bottom after sending a group message
         setTimeout(() => scrollToBottom(), 100);
+        await fetchGroupMessages(selectedGroupConversation);
         
         await supabase
           .from('group_conversations')
