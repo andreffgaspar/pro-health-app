@@ -234,6 +234,16 @@ export const useRealtimeCommunication = () => {
     console.log('Marking conversation as read:', conversationId, 'for user:', user.id);
     
     try {
+      // First check what messages we're trying to update
+      const { data: checkMessages } = await supabase
+        .from('messages')
+        .select('id, sender_id, read_at, content')
+        .eq('conversation_id', conversationId)
+        .neq('sender_id', user.id)
+        .is('read_at', null);
+        
+      console.log('Messages to be marked as read:', checkMessages);
+
       // Mark all unread messages in this conversation as read
       const { data, error } = await supabase
         .from('messages')
