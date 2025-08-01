@@ -86,23 +86,7 @@ const CommunicationCenter = () => {
     }
   }, [selectedConversation, selectedGroupConversation]);
 
-  // Auto-scroll only when new messages are added or conversation changes
-  useEffect(() => {
-    if (selectedConversation) {
-      const currentMessages = selectedConversation ? messages[selectedConversation] || [] : [];
-      // Only scroll if there are messages and we're switching conversations
-      if (currentMessages.length > 0) {
-        scrollToBottom();
-      }
-    }
-  }, [selectedConversation]);
-
-  // Auto-scroll for group conversations when switching
-  useEffect(() => {
-    if (selectedGroupConversation && groupMessages.length > 0) {
-      scrollToBottom();
-    }
-  }, [selectedGroupConversation]);
+  // Remove auto-scroll functionality - let users scroll manually
 
   // Force update when conversations are updated (real-time) and refresh current conversation
   useEffect(() => {
