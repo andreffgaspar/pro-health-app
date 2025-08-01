@@ -400,7 +400,11 @@ const ProfessionalDashboard = () => {
                 </Badge>
               )}
               {unreadCount > 0 && (
-                <Badge variant="secondary" className="gap-1">
+                <Badge 
+                  variant="destructive" 
+                  className="gap-1 cursor-pointer hover:bg-destructive/80 transition-colors"
+                  onClick={() => setActiveTab("communication")}
+                >
                   <MessageSquare className="w-3 h-3" />
                   {unreadCount} mensagem{unreadCount > 1 ? 's' : ''}
                 </Badge>
