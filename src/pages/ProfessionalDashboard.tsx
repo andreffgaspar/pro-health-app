@@ -508,7 +508,7 @@ const ProfessionalDashboard = () => {
                   <div className="flex items-center justify-between">
                     <div>
                       <CardTitle className="flex items-center gap-2">
-                        <Users className="w-5 h-5 text-secondary" />
+                        <Users className="w-5 h-5 text-primary" />
                         Meus Atletas
                       </CardTitle>
                       <CardDescription>
