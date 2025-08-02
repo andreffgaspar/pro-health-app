@@ -202,7 +202,27 @@ export const useRealtimeCommunication = () => {
     if (!user?.id) return;
     
     try {
-      // Mark all unread messages in this conversation as read
+      // First get the current unread count for this conversation
+      const conversation = conversations.find(c => c.id === conversationId);
+      const currentUnreadCount = conversation?.unread_count || 0;
+      
+      if (currentUnreadCount === 0) return; // Nothing to mark as read
+      
+      // Update local state immediately for better UX
+      setConversations(prev => 
+        prev.map(conv => 
+          conv.id === conversationId 
+            ? { ...conv, unread_count: 0 }
+            : conv
+        )
+      );
+      
+      // Update total unread count immediately
+      setUnreadCount(prev => Math.max(0, prev - currentUnreadCount));
+      
+      console.log(`📖 Marking conversation ${conversationId} as read. Reducing unread count by ${currentUnreadCount}`);
+      
+      // Mark all unread messages in this conversation as read in the database
       const { data, error } = await supabase
         .from('messages')
         .update({ read_at: new Date().toISOString() })
@@ -211,25 +231,22 @@ export const useRealtimeCommunication = () => {
         .is('read_at', null)
         .select();
 
-      if (error) throw error;
-      
-      // Update local state immediately for better UX
-      if (data && data.length > 0) {
-        // Update conversations state to reflect read messages
+      if (error) {
+        console.error('Error marking conversation as read:', error);
+        // Revert local changes if database update failed
         setConversations(prev => 
           prev.map(conv => 
             conv.id === conversationId 
-              ? { ...conv, unread_count: Math.max(0, conv.unread_count - data.length) }
+              ? { ...conv, unread_count: currentUnreadCount }
               : conv
           )
         );
-        
-        // Update total unread count
-        setUnreadCount(prev => Math.max(0, prev - data.length));
+        setUnreadCount(prev => prev + currentUnreadCount);
+        throw error;
       }
       
-      // Refresh conversations to ensure consistency
-      fetchConversations();
+      console.log(`✅ Successfully marked ${data?.length || 0} messages as read in conversation ${conversationId}`);
+      
     } catch (error) {
       console.error('Error marking conversation as read:', error);
     }
