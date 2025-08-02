@@ -176,13 +176,13 @@ const AIChatInterface = () => {
                   )}
                   
                   <div
-                    className={`max-w-[70%] rounded-lg p-3 ${
+                    className={`max-w-[70%] max-h-60 overflow-y-auto rounded-lg p-3 ${
                       message.role === 'user'
                         ? 'bg-primary text-primary-foreground ml-auto'
                         : 'bg-muted text-foreground'
                     }`}
                   >
-                    <p className="whitespace-pre-wrap">{message.content}</p>
+                    <p className="whitespace-pre-wrap break-words">{message.content}</p>
                     <p className={`text-xs mt-2 opacity-70`}>
                       {message.timestamp.toLocaleTimeString('pt-BR', {
                         hour: '2-digit',
