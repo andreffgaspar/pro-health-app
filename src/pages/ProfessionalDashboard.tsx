@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Separator } from "@/components/ui/separator";
-import { Users, Search, Plus, Settings, LogOut, TrendingUp, Calendar, AlertCircle, Activity, Target, FileText, MessageSquare, Check, X, Bell, MoreVertical, UserMinus, Eye, Edit } from "lucide-react";
+import { Users, Search, Plus, Settings, LogOut, TrendingUp, Calendar, AlertCircle, Activity, Target, FileText, MessageSquare, Check, X, Bell, MoreVertical, UserMinus, Eye, Edit, Brain } from "lucide-react";
 import { LineChart, Line, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from "recharts";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfessionalData } from "@/hooks/useProfessionalData";
@@ -22,6 +22,7 @@ import CommunicationCenter from "@/components/CommunicationCenter";
 import SessionScheduler from "@/components/SessionScheduler";
 import ProfileSettings from "@/components/ProfileSettings";
 import AthleteEnvironmentView from "@/components/AthleteEnvironmentView";
+import AIChatInterface from "@/components/AIChatInterface";
 interface AthleteData {
   id: string;
   athlete_id: string;
@@ -474,7 +475,7 @@ const ProfessionalDashboard = () => {
 
         {/* Main Content */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-4 mb-8">
+          <TabsList className="grid w-full grid-cols-5 mb-8">
             <TabsTrigger value="athletes" className="gap-2">
               <Users className="w-4 h-4" />
               Meus Atletas
@@ -486,6 +487,10 @@ const ProfessionalDashboard = () => {
             <TabsTrigger value="communication" className="gap-2">
               <MessageSquare className="w-4 h-4" />
               Comunicação
+            </TabsTrigger>
+            <TabsTrigger value="ai-chat" className="gap-2">
+              <Brain className="w-4 h-4" />
+              IA
             </TabsTrigger>
             <TabsTrigger value="analytics" className="gap-2">
               <TrendingUp className="w-4 h-4" />
@@ -623,6 +628,10 @@ const ProfessionalDashboard = () => {
 
           <TabsContent value="communication">
             <CommunicationCenter />
+          </TabsContent>
+
+          <TabsContent value="ai-chat" className="h-[600px]">
+            <AIChatInterface />
           </TabsContent>
 
           <TabsContent value="analytics">
