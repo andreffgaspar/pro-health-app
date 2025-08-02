@@ -43,7 +43,7 @@ interface GroupMessage {
 
 const CommunicationCenter = () => {
   const { user, profile } = useAuth();
-  const { conversations, messages, fetchMessages, markConversationAsRead, setOnMessagesUpdate } = useRealtimeCommunication();
+  const { conversations, messages, fetchMessages, markConversationAsRead, setOnMessagesUpdate, refetchConversations } = useRealtimeCommunication();
   const { toast } = useToast();
   
   const [professionals, setProfessionals] = useState<Professional[]>([]);
@@ -66,6 +66,7 @@ const CommunicationCenter = () => {
 
   useEffect(() => {
     if (user && (isAthlete || isProfessional)) {
+      console.log('🔄 CommunicationCenter: Initializing for user type:', profile?.user_type);
       if (isAthlete) {
         fetchProfessionals();
       } else {
@@ -119,6 +120,24 @@ const CommunicationCenter = () => {
     const interval = setInterval(pollMessages, 2000);
     return () => clearInterval(interval);
   }, [selectedConversation]);
+
+  // Force refresh conversations list every 5 seconds to ensure unread counts are updated
+  useEffect(() => {
+    if (!user) return;
+    
+    console.log('🔄 Setting up conversation list polling for user:', user.id, 'type:', profile?.user_type);
+    
+    const refreshConversations = async () => {
+      console.log('🔄 Refreshing conversation list...');
+      // Trigger a re-fetch of conversations from the hook
+      if (typeof refetchConversations === 'function') {
+        await refetchConversations();
+      }
+    };
+    
+    const interval = setInterval(refreshConversations, 5000);
+    return () => clearInterval(interval);
+  }, [user, profile]);
 
   // Keep track of previous message count for auto-scroll
   const previousMessageCount = useRef<{[key: string]: number}>({});

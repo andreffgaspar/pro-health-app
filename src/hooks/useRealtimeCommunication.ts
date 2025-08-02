@@ -117,6 +117,11 @@ export const useRealtimeCommunication = () => {
       );
       
       console.log('📊 Total unread count updated:', totalUnread);
+      console.log('📋 Conversations with unread counts:', conversationsWithUnread.map(c => ({ 
+        id: c.id, 
+        name: c.other_party_name, 
+        unread: c.unread_count 
+      })));
       setUnreadCount(totalUnread);
       
     } catch (error) {
