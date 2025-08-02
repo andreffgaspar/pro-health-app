@@ -25,9 +25,6 @@ jobs:
       - name: Instalar Capacitor
         run: npm install -g @capacitor/cli
 
-      - name: Adicionar iOS
-        run: npx cap add ios
-
       - name: Sincronizar Capacitor
         run: npx cap sync
 
