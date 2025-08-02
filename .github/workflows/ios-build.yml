@@ -55,31 +55,57 @@ jobs:
           mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
           cp profile.mobileprovision ~/Library/MobileDevice/Provisioning\ Profiles/
 
+      - name: Criar release.xcconfig
+        run: |
+          echo "DEVELOPMENT_TEAM = $APPLE_TEAM_ID" > ios/App/release.xcconfig
+          echo "CODE_SIGN_STYLE = Manual" >> ios/App/release.xcconfig
+          echo "PROVISIONING_PROFILE_SPECIFIER = ProfileProHealth" >> ios/App/release.xcconfig
+
+      - name: Criar exportOptions.plist
+        run: |
+          cat <<EOF > ios/App/exportOptions.plist
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+            <key>method</key>
+            <string>app-store</string>
+            <key>teamID</key>
+            <string>${APPLE_TEAM_ID}</string>
+            <key>signingStyle</key>
+            <string>manual</string>
+            <key>provisioningProfiles</key>
+            <dict>
+              <key>app.lovable.7bde27a9721845aaa0217e78cef04596</key>
+              <string>ProfileProHealth</string>
+            </dict>
+          </dict>
+          </plist>
+          EOF
+
       - name: Verificar Schemes disponíveis
         run: |
           cd ios/App
           xcodebuild -list
 
-      - name: Criar configuração de assinatura
-        run: |
-          echo "DEVELOPMENT_TEAM = $APPLE_TEAM_ID" > ios/App/release.xcconfig
-          echo "CODE_SIGN_STYLE = Manual" >> ios/App/release.xcconfig
-    
       - name: Build com Xcode
         run: |
           cd ios/App
           xcodebuild -scheme App \
-          -configuration Release \
-          -workspace App.xcworkspace \
-          -sdk iphoneos \
-          -archivePath $PWD/build/App.xcarchive \
-          DEVELOPMENT_TEAM=$APPLE_TEAM_ID \
-          -allowProvisioningUpdates \
-          archive
+            -configuration Release \
+            -workspace App.xcworkspace \
+            -sdk iphoneos \
+            -xcconfig release.xcconfig \
+            -archivePath $PWD/build/App.xcarchive \
+            -allowProvisioningUpdates \
+            archive
 
       - name: Exportar IPA
         run: |
-          xcodebuild -exportArchive -archivePath ios/App/build/App.xcarchive -exportOptionsPlist ios/App/exportOptions.plist -exportPath ios/App/build
+          xcodebuild -exportArchive \
+            -archivePath ios/App/build/App.xcarchive \
+            -exportOptionsPlist ios/App/exportOptions.plist \
+            -exportPath ios/App/build
 
       - name: Upload do .ipa
         uses: actions/upload-artifact@v4
@@ -90,4 +116,4 @@ jobs:
       - name: Enviar para TestFlight
         run: |
           xcrun altool --upload-app --type ios --file ios/App/build/App.ipa \
-          --username "$APPLE_ID" --password "$APP_SPECIFIC_PASSWORD"
+            --username "$APPLE_ID" --password "$APP_SPECIFIC_PASSWORD"
