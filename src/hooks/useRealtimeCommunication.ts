@@ -247,11 +247,11 @@ export const useRealtimeCommunication = () => {
 
       fetchAllData();
 
-      // Set up real-time subscriptions
+      // Set up real-time subscriptions with basic approach
       console.log('🔌 Setting up real-time channels for user:', user.id);
       
       const channel = supabase
-        .channel('realtime-communication')
+        .channel('schema-db-changes')
         .on(
           'postgres_changes',
           {
@@ -312,24 +312,19 @@ export const useRealtimeCommunication = () => {
             await fetchConversations();
           }
         )
-        .on(
-          'postgres_changes',
-          {
-            event: '*',
-            schema: 'public',
-            table: 'notifications',
-            filter: `user_id=eq.${user.id}`
-          },
-          (payload) => {
-            fetchNotifications();
-          }
-        )
         .subscribe((status) => {
           console.log('📡 Realtime channel status:', status);
           if (status === 'SUBSCRIBED') {
             console.log('✅ Realtime channel connected successfully');
           } else if (status === 'CHANNEL_ERROR') {
-            console.error('❌ Realtime channel failed to connect');
+            console.error('❌ Realtime channel failed to connect - using polling fallback');
+            // Set up polling as fallback
+            const pollInterval = setInterval(async () => {
+              await fetchConversations();
+            }, 5000);
+            
+            // Clean up interval on unmount
+            return () => clearInterval(pollInterval);
           }
         });
 
