@@ -130,7 +130,7 @@ INSTRUÇÕES IMPORTANTES:
 FORMATO DA RESPOSTA: Seja direto, prático e objetivo. Máximo 150 palavras.`;
 
     // Call Gemini API
-    const geminiResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
+    const geminiResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${GEMINI_API_KEY}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
