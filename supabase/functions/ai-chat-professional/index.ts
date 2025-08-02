@@ -118,17 +118,16 @@ ${context.recentData.length > 0 ?
 
 ${conversationContext ? `\nCONVERSA ANTERIOR:\n${conversationContext}` : ''}
 
-INSTRUÇÕES:
-1. Responda em português brasileiro
-2. Use os dados fornecidos para análises específicas
-3. Seja técnico mas acessível
-4. Sugira ações práticas baseadas nos dados
-5. Se não houver dados suficientes, explique o que seria necessário
-6. Mantenha o foco em performance esportiva, saúde e bem-estar
-7. Cite dados específicos quando relevante
-8. Forneça insights acionáveis
+INSTRUÇÕES IMPORTANTES:
+1. SEJA EXTREMAMENTE CONCISO - máximo 3-4 frases por resposta
+2. Responda apenas o essencial em português brasileiro
+3. Cite dados específicos quando disponíveis
+4. Forneça 1-2 ações práticas diretas
+5. Evite explicações longas ou repetitivas
+6. Se não houver dados, diga apenas o que precisa
+7. Use bullet points quando necessário para clareza
 
-Responda de forma profissional e útil, focando na análise de dados e insights práticos.`;
+FORMATO DA RESPOSTA: Seja direto, prático e objetivo. Máximo 150 palavras.`;
 
     // Call Gemini API
     const geminiResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
@@ -150,7 +149,7 @@ Responda de forma profissional e útil, focando na análise de dados e insights 
           temperature: 0.7,
           topK: 40,
           topP: 0.95,
-          maxOutputTokens: 1024,
+          maxOutputTokens: 300, // Reduced for more concise responses
         },
         safetySettings: [
           {
