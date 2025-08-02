@@ -91,17 +91,34 @@ const CommunicationCenter = () => {
     }
   }, [selectedConversation, selectedGroupConversation]);
 
-  // Set up callback for polling to trigger scroll when new messages arrive in open conversation
+  // Set up polling for the currently open conversation to detect new messages
   useEffect(() => {
-    setOnMessagesUpdate((conversationId: string) => {
-      // Only scroll if the conversation with new messages is currently open
-      if (conversationId === selectedConversation) {
-        setTimeout(() => scrollToBottom(), 100);
-      }
-    });
+    if (!selectedConversation) return;
     
-    return () => setOnMessagesUpdate(null);
-  }, [selectedConversation, setOnMessagesUpdate]);
+    let currentMessageCount = 0;
+    
+    const pollMessages = async () => {
+      const beforeCount = currentMessageCount;
+      await fetchMessages(selectedConversation);
+      
+      // Update current count based on latest state
+      setTimeout(() => {
+        const afterMessages = messages[selectedConversation] || [];
+        if (afterMessages.length > beforeCount && beforeCount > 0) {
+          console.log('📝 New messages detected in open conversation, scrolling...');
+          setTimeout(() => scrollToBottom(), 100);
+        }
+        currentMessageCount = afterMessages.length;
+      }, 100);
+    };
+    
+    // Initialize count
+    const initialMessages = messages[selectedConversation] || [];
+    currentMessageCount = initialMessages.length;
+    
+    const interval = setInterval(pollMessages, 2000);
+    return () => clearInterval(interval);
+  }, [selectedConversation]);
 
   // Keep track of previous message count for auto-scroll
   const previousMessageCount = useRef<{[key: string]: number}>({});
@@ -570,7 +587,16 @@ const CommunicationCenter = () => {
                       ? 'bg-primary text-primary-foreground'
                       : 'hover:bg-accent'
                   }`}
-                   onClick={() => setSelectedConversation(conversation.id)}
+                   onClick={() => {
+                     // Always refresh the conversation when clicked, even if already selected
+                     if (selectedConversation === conversation.id) {
+                       fetchMessages(conversation.id);
+                       markConversationAsRead(conversation.id);
+                       setTimeout(() => scrollToBottom(), 100);
+                     } else {
+                       setSelectedConversation(conversation.id);
+                     }
+                   }}
                 >
                   <div className="flex items-center justify-between">
                     <div className="font-medium text-sm">

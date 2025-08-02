@@ -343,24 +343,7 @@ export const useRealtimeCommunication = () => {
               if (!isPolling) return;
               
               console.log('🔄 Polling for updates...');
-              const previousUnreadCount = unreadCount;
-              const previousConversations = [...conversations];
-              
               await fetchConversations();
-              
-              // Check for changes and notify callback if needed
-              setTimeout(() => {
-                if (onMessagesUpdate) {
-                  // Compare with previous state to detect new messages
-                  conversations.forEach((currentConv, index) => {
-                    const prevConv = previousConversations.find(p => p.id === currentConv.id);
-                    if (prevConv && currentConv.unread_count > prevConv.unread_count) {
-                      console.log('📝 New messages detected in conversation:', currentConv.id);
-                      onMessagesUpdate(currentConv.id);
-                    }
-                  });
-                }
-              }, 100);
             }, 5000);
             
             // Clean up interval on unmount
