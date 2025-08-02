@@ -44,6 +44,14 @@ jobs:
           cd ios/App
           pod install
 
+      - name: Desativar assinatura dos Pods
+        run: |
+          find ios/App/Pods -name "project.pbxproj" | while read proj; do
+            sed -i '' 's/CODE_SIGNING_ALLOWED = YES;/CODE_SIGNING_ALLOWED = NO;/g' "$proj"
+            sed -i '' 's/CODE_SIGNING_REQUIRED = YES;/CODE_SIGNING_REQUIRED = NO;/g' "$proj"
+            sed -i '' 's/CODE_SIGN_STYLE = Manual;/CODE_SIGN_STYLE = Automatic;/g' "$proj"
+          done
+          
       - name: Preparar certificado
         run: |
           echo "$IOS_CERTIFICATE" | base64 --decode > certificate.p12
@@ -99,18 +107,31 @@ jobs:
           -xcconfig release.xcconfig \
           -archivePath $PWD/build/App.xcarchive \
           -allowProvisioningUpdates \
-          CODE_SIGNING_ALLOWED=NO \
           archive
 
       - name: Exportar IPA
         run: |
           set -x
+          echo "::group::exportOptions.plist"
+          cat ios/App/exportOptions.plist
+          echo "::endgroup::"
+      
+          echo "::group::Conteúdo do .xcarchive"
+          find ios/App/build/App.xcarchive
+          echo "::endgroup::"
+      
           xcodebuild -exportArchive -verbose \
             -archivePath ios/App/build/App.xcarchive \
             -exportOptionsPlist ios/App/exportOptions.plist \
-            -exportPath ios/App/build
-          timeout-minutes: 5
-          continue-on-error: true
+            -exportPath ios/App/build | tee ios/App/build/export-log.txt
+        timeout-minutes: 10
+        continue-on-error: true
+
+      - name: Upload log de exportação
+        uses: actions/upload-artifact@v4
+        with:
+          name: export-log
+          path: ios/App/build/export-log.txt
 
       - name: Upload do .ipa
         uses: actions/upload-artifact@v4
