@@ -40,6 +40,7 @@ export const useRealtimeCommunication = () => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [onMessagesUpdate, setOnMessagesUpdate] = useState<((conversationId: string) => void) | null>(null);
 
   const fetchConversations = async () => {
     if (!user?.id) return;
@@ -318,13 +319,38 @@ export const useRealtimeCommunication = () => {
             console.log('✅ Realtime channel connected successfully');
           } else if (status === 'CHANNEL_ERROR') {
             console.error('❌ Realtime channel failed to connect - using polling fallback');
+            
             // Set up polling as fallback
+            let isPolling = true;
             const pollInterval = setInterval(async () => {
+              if (!isPolling) return;
+              
+              console.log('🔄 Polling for updates...');
+              const previousUnreadCount = unreadCount;
+              const previousConversations = [...conversations];
+              
               await fetchConversations();
+              
+              // Check for changes and notify callback if needed
+              setTimeout(() => {
+                if (onMessagesUpdate) {
+                  // Compare with previous state to detect new messages
+                  conversations.forEach((currentConv, index) => {
+                    const prevConv = previousConversations.find(p => p.id === currentConv.id);
+                    if (prevConv && currentConv.unread_count > prevConv.unread_count) {
+                      console.log('📝 New messages detected in conversation:', currentConv.id);
+                      onMessagesUpdate(currentConv.id);
+                    }
+                  });
+                }
+              }, 100);
             }, 5000);
             
             // Clean up interval on unmount
-            return () => clearInterval(pollInterval);
+            return () => {
+              isPolling = false;
+              clearInterval(pollInterval);
+            };
           }
         });
 
@@ -345,6 +371,7 @@ export const useRealtimeCommunication = () => {
     markMessageAsRead,
     markConversationAsRead,
     refetchConversations: fetchConversations,
-    refetchNotifications: fetchNotifications
+    refetchNotifications: fetchNotifications,
+    setOnMessagesUpdate
   };
 };

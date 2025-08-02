@@ -43,7 +43,7 @@ interface GroupMessage {
 
 const CommunicationCenter = () => {
   const { user, profile } = useAuth();
-  const { conversations, messages, fetchMessages, markConversationAsRead } = useRealtimeCommunication();
+  const { conversations, messages, fetchMessages, markConversationAsRead, setOnMessagesUpdate } = useRealtimeCommunication();
   const { toast } = useToast();
   
   const [professionals, setProfessionals] = useState<Professional[]>([]);
@@ -59,6 +59,7 @@ const CommunicationCenter = () => {
   const [newGroupDescription, setNewGroupDescription] = useState('');
   const [selectedProfessionals, setSelectedProfessionals] = useState<string[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
 
   const isAthlete = profile?.user_type === 'athlete';
   const isProfessional = profile?.user_type === 'professional';
@@ -80,49 +81,51 @@ const CommunicationCenter = () => {
       // Mark conversation as read when selected
       markConversationAsRead(selectedConversation);
       setSelectedGroupConversation(null);
+      // Scroll to bottom when opening conversation
+      setTimeout(() => scrollToBottom(), 100);
     } else if (selectedGroupConversation) {
       fetchGroupMessages(selectedGroupConversation);
       setSelectedConversation(null);
+      // Scroll to bottom when opening group conversation
+      setTimeout(() => scrollToBottom(), 100);
     }
   }, [selectedConversation, selectedGroupConversation]);
 
-  // Auto-scroll only when conversation is initially selected
+  // Set up callback for polling to trigger scroll when new messages arrive in open conversation
   useEffect(() => {
-    if (selectedConversation) {
-      // Only scroll when switching to a different conversation
-      scrollToBottom();
-    }
-  }, [selectedConversation]);
+    setOnMessagesUpdate((conversationId: string) => {
+      // Only scroll if the conversation with new messages is currently open
+      if (conversationId === selectedConversation) {
+        setTimeout(() => scrollToBottom(), 100);
+      }
+    });
+    
+    return () => setOnMessagesUpdate(null);
+  }, [selectedConversation, setOnMessagesUpdate]);
 
-  // Auto-scroll only when group conversation is initially selected
-  useEffect(() => {
-    if (selectedGroupConversation) {
-      scrollToBottom();
-    }
-  }, [selectedGroupConversation]);
-
-  // Force update when conversations are updated (real-time) and refresh current conversation
+  // Keep track of previous message count for auto-scroll
+  const previousMessageCount = useRef<{[key: string]: number}>({});
+  
+  // Watch for new messages in the current conversation and auto-scroll
   useEffect(() => {
     if (selectedConversation) {
       const currentMessages = messages[selectedConversation];
-      // Always refetch to ensure we have the latest messages
-      fetchMessages(selectedConversation);
+      const prevCount = previousMessageCount.current[selectedConversation] || 0;
+      
+      // If message count increased, scroll to bottom
+      if (currentMessages && currentMessages.length > prevCount) {
+        setTimeout(() => scrollToBottom(), 100);
+      }
+      
+      previousMessageCount.current[selectedConversation] = currentMessages?.length || 0;
     }
-  }, [conversations]);
-
-  // Add interval polling as fallback for real-time updates
-  useEffect(() => {
-    if (selectedConversation) {
-      const interval = setInterval(() => {
-        fetchMessages(selectedConversation);
-      }, 2000); // Poll every 2 seconds
-
-      return () => clearInterval(interval);
-    }
-  }, [selectedConversation]);
+  }, [messages, selectedConversation]);
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    // Scroll only the messages area, not the entire page
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: 'smooth', block: 'end' });
+    }
   };
 
   const fetchProfessionals = async () => {
@@ -299,9 +302,9 @@ const CommunicationCenter = () => {
         if (error) throw error;
 
         setNewMessage('');
+        await fetchMessages(selectedConversation);
         // Scroll to bottom after sending a message
         setTimeout(() => scrollToBottom(), 100);
-        await fetchMessages(selectedConversation);
         
         await supabase
           .from('conversations')
@@ -320,9 +323,9 @@ const CommunicationCenter = () => {
         if (error) throw error;
 
         setNewMessage('');
+        await fetchGroupMessages(selectedGroupConversation);
         // Scroll to bottom after sending a group message
         setTimeout(() => scrollToBottom(), 100);
-        await fetchGroupMessages(selectedGroupConversation);
         
         await supabase
           .from('group_conversations')
