@@ -1,7 +1,9 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
+const isCI = process.env.CI === 'true'; // Detecta se está rodando no GitHub Actions
+
 const config: CapacitorConfig = {
-  appId: 'app.lovable.7bde27a9721845aaa0217e78cef04596',
+  appId: isCI ? 'com.prosoccerapp.prohealthapp' : 'app.lovable.7bde27a9721845aaa0217e78cef04596',
   appName: 'pro-health-app',
   webDir: 'dist',
   server: {
