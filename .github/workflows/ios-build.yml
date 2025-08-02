@@ -74,6 +74,7 @@ jobs:
           -sdk iphoneos \
           -archivePath $PWD/build/App.xcarchive \
           DEVELOPMENT_TEAM=$APPLE_TEAM_ID \
+          -allowProvisioningUpdates \
           archive
 
       - name: Exportar IPA
