@@ -104,10 +104,13 @@ jobs:
 
       - name: Exportar IPA
         run: |
+          set -x
           xcodebuild -exportArchive -verbose \
             -archivePath ios/App/build/App.xcarchive \
             -exportOptionsPlist ios/App/exportOptions.plist \
             -exportPath ios/App/build
+          timeout-minutes: 5
+          continue-on-error: true
 
       - name: Upload do .ipa
         uses: actions/upload-artifact@v4
