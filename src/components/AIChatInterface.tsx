@@ -183,7 +183,7 @@ const AIChatInterface = () => {
                   )}
                   
                   <div
-                    className={`max-w-[70%] max-h-60 overflow-y-auto rounded-lg p-3 ${
+                    className={`max-w-[70%] max-h-32 overflow-y-auto rounded-lg p-3 ${
                       message.role === 'user'
                         ? 'bg-primary text-primary-foreground ml-auto'
                         : 'bg-muted text-foreground'
