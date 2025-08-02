@@ -403,7 +403,11 @@ const ProfessionalDashboard = () => {
                 <Badge 
                   variant="destructive" 
                   className="gap-1 cursor-pointer hover:bg-destructive/80 transition-colors"
-                  onClick={() => setActiveTab("communication")}
+                  onClick={() => {
+                    setActiveTab("communication");
+                    const communicationSection = document.getElementById('communication-section');
+                    communicationSection?.scrollIntoView({ behavior: 'smooth' });
+                  }}
                 >
                   <MessageSquare className="w-3 h-3" />
                   {unreadCount} mensagem{unreadCount > 1 ? 's' : ''}
@@ -714,8 +718,10 @@ const ProfessionalDashboard = () => {
             <SessionScheduler userType="professional" />
           </TabsContent>
 
-          <TabsContent value="communication">
-            <CommunicationCenter />
+          <TabsContent value="communication" className="space-y-6">
+            <div id="communication-section">
+              <CommunicationCenter />
+            </div>
           </TabsContent>
 
           <TabsContent value="analytics">
