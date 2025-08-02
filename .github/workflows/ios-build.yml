@@ -44,6 +44,12 @@ jobs:
           cd ios/App
           xcodebuild -list
 
+      - name: Limpar pasta iOS (caso exista)
+        run: rm -rf ios
+      
+      - name: Adicionar iOS
+        run: npx cap add ios
+
       - name: Instalar dependências nativas iOS (CocoaPods)
         run: |
           cd ios/App
