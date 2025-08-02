@@ -44,6 +44,11 @@ jobs:
           cd ios/App
           xcodebuild -list
 
+      - name: Instalar dependências nativas iOS (CocoaPods)
+        run: |
+          cd ios/App
+          pod install
+          
       - name: Build com Xcode
         run: |
           cd ios/App
