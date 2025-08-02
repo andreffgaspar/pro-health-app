@@ -15,10 +15,23 @@ const config: CapacitorConfig = {
       showSpinner: true,
       spinnerColor: '#ffffff'
     },
-    CapacitorHealthkit: {
+    Health: {
       permissions: {
-        read: ['HKQuantityTypeIdentifierStepCount', 'HKQuantityTypeIdentifierHeartRate', 'HKCategoryTypeIdentifierSleepAnalysis']
+        read: ['steps', 'distance', 'calories', 'heart_rate', 'activity', 'sleep'],
+        write: ['steps', 'distance', 'calories', 'heart_rate', 'activity']
       }
+    }
+  },
+  cordova: {
+    preferences: {
+      ScrollEnabled: 'false',
+      'android-minSdkVersion': '19',
+      BackupWebStorage: 'none',
+      SplashMaintainAspectRatio: 'true',
+      FadeSplashScreenDuration: '300',
+      SplashShowOnlyFirstTime: 'false',
+      SplashScreen: 'screen',
+      SplashScreenDelay: '3000'
     }
   }
 };

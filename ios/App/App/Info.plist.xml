@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- Add this to existing Info.plist -->
+	<key>NSHealthShareUsageDescription</key>
+	<string>This app needs access to health data to provide personalized fitness insights and track your health metrics.</string>
+	<key>NSHealthUpdateUsageDescription</key>
+	<string>This app needs to write health data to keep your health records up to date with your activities.</string>
+	
+	<!-- Required HealthKit capabilities -->
+	<key>UIRequiredDeviceCapabilities</key>
+	<array>
+		<string>healthkit</string>
+	</array>
+</dict>
+</plist>

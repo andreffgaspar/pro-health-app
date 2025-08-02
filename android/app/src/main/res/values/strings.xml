@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Add these to existing strings.xml -->
+    <string name="health_permission_description">This app needs access to your health and fitness data to provide personalized insights.</string>
+    <string name="health_read_permission">Read health data</string>
+    <string name="health_write_permission">Write health data</string>
+</resources>
