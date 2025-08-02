@@ -59,7 +59,6 @@ jobs:
         run: |
           echo "DEVELOPMENT_TEAM = $APPLE_TEAM_ID" > ios/App/release.xcconfig
           echo "CODE_SIGN_STYLE = Manual" >> ios/App/release.xcconfig
-          echo "PROVISIONING_PROFILE_SPECIFIER = ProfileProHealth" >> ios/App/release.xcconfig
           echo "CODE_SIGN_IDENTITY = Apple Distribution" >> ios/App/release.xcconfig
 
       - name: Criar exportOptions.plist
@@ -98,6 +97,7 @@ jobs:
             -sdk iphoneos \
             -xcconfig release.xcconfig \
             -archivePath $PWD/build/App.xcarchive \
+            PROVISIONING_PROFILE_SPECIFIER=ProfileProHealth \
             -allowProvisioningUpdates \
             archive
 
