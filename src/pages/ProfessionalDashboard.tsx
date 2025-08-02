@@ -528,8 +528,8 @@ const ProfessionalDashboard = () => {
                 <CardContent>
                   <div className="space-y-4">
                     {filteredAthletes.length > 0 ? filteredAthletes.map(relationship => {
-                    const athlete = relationship.athlete as any;
-                    return <div key={relationship.id} className="flex items-center justify-between p-4 border border-border rounded-lg hover:bg-muted/50 transition-colors cursor-pointer" onClick={() => openAthleteEnvironment(athlete?.user_id, athlete?.full_name || 'Atleta')}>
+                      const athlete = relationship.athlete as any;
+                      return <div key={relationship.id} className="flex items-center justify-between p-4 border border-border rounded-lg hover:bg-muted/50 transition-colors cursor-pointer" onClick={() => openAthleteEnvironment(athlete?.user_id, athlete?.full_name || 'Atleta')}>
                             <div className="flex items-center gap-4">
                               <Avatar>
                                 <AvatarFallback>
@@ -574,7 +574,7 @@ const ProfessionalDashboard = () => {
                               </DropdownMenu>
                             </div>
                           </div>;
-                  }) : <div className="text-center py-8 text-muted-foreground">
+                    }) : <div className="text-center py-8 text-muted-foreground">
                         <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
                         <p>Nenhum atleta vinculado ainda</p>
                         <p className="text-sm">Aguarde convites de atletas ou promova seus serviços</p>
@@ -597,8 +597,8 @@ const ProfessionalDashboard = () => {
                 <CardContent>
                   {myAthletes.length > 0 ? <div className="space-y-4">
                       {myAthletes.slice(0, 5).map(relationship => {
-                    const athlete = relationship.athlete as any;
-                    return <div key={relationship.id} className="flex items-center justify-between p-3 border rounded-lg">
+                      const athlete = relationship.athlete as any;
+                      return <div key={relationship.id} className="flex items-center justify-between p-3 border rounded-lg">
                             <div className="flex items-center gap-3">
                               <Avatar className="h-8 w-8">
                                 <AvatarFallback>
@@ -614,7 +614,7 @@ const ProfessionalDashboard = () => {
                               Ativo
                             </Badge>
                           </div>;
-                  })}
+                    })}
                     </div> : <div className="text-center py-8 text-muted-foreground">
                       <Target className="h-8 w-8 mx-auto mb-2 opacity-50" />
                       <p className="text-sm">Nenhum atleta para análise</p>
@@ -817,33 +817,7 @@ const ProfessionalDashboard = () => {
       }} athleteId={selectedAthleteForEnvironment.id} athleteName={selectedAthleteForEnvironment.name} />}
 
         {/* Quick Actions Footer - Always at bottom */}
-        <div className="relative mt-12 border-t pt-8 w-full">
-          <h3 className="text-lg font-semibold mb-6">Ações Rápidas</h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <Button variant="outline" className="h-24 flex flex-col gap-3 hover-scale animate-fade-in transition-all duration-200 hover:shadow-lg group">
-              <FileText className="w-8 h-8 text-primary group-hover:text-black transition-colors" />
-              <span className="text-sm font-medium">Criar Relatório</span>
-            </Button>
-            <Button variant="outline" className="h-24 flex flex-col gap-3 hover-scale animate-fade-in transition-all duration-200 hover:shadow-lg group" onClick={() => setActiveTab("sessions")} style={{
-              animationDelay: "0.1s"
-            }}>
-              <Calendar className="w-8 h-8 text-primary group-hover:text-black transition-colors" />
-              <span className="text-sm font-medium">Agendar Sessão</span>
-            </Button>
-            <Button variant="outline" className="h-24 flex flex-col gap-3 hover-scale animate-fade-in transition-all duration-200 hover:shadow-lg group" onClick={() => setActiveTab("communication")} style={{
-              animationDelay: "0.2s"
-            }}>
-              <MessageSquare className="w-8 h-8 text-primary group-hover:text-black transition-colors" />
-              <span className="text-sm font-medium">Mensagens</span>
-            </Button>
-            <Button variant="outline" className="h-24 flex flex-col gap-3 hover-scale animate-fade-in transition-all duration-200 hover:shadow-lg group" onClick={() => setActiveTab("analytics")} style={{
-              animationDelay: "0.3s"
-            }}>
-              <TrendingUp className="w-8 h-8 text-primary group-hover:text-black transition-colors" />
-              <span className="text-sm font-medium">Análises</span>
-            </Button>
-          </div>
-        </div>
+        
       </div>
     </div>;
 };
