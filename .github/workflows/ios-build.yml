@@ -56,3 +56,9 @@ jobs:
         with:
           name: app-ios
           path: ios/App/build/*.ipa
+
+      - name: Enviar para TestFlight
+        run: |
+          xcrun altool --upload-app --type ios --file ios/App/build/App.ipa \
+          --username "$APPLE_ID" --password "$APP_SPECIFIC_PASSWORD"
+
