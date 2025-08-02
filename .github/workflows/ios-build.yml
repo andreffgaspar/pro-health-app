@@ -42,6 +42,11 @@ jobs:
           mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
           cp profile.mobileprovision ~/Library/MobileDevice/Provisioning\ Profiles/
 
+      - name: Verificar Schemes disponíveis
+        run: |
+          cd ios/App
+          xcodebuild -list
+
       - name: Build com Xcode
         run: |
           cd ios/App
