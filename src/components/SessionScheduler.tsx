@@ -116,7 +116,14 @@ const SessionScheduler = ({ userType }: SessionSchedulerProps) => {
         fetchAthletes();
       }
     }
-  }, [user, selectedDate]);
+  }, [user]); // Removido selectedDate para evitar re-carregamento desnecessário
+
+  // Separate useEffect for fetchSessions when selectedDate changes
+  useEffect(() => {
+    if (user) {
+      fetchSessions();
+    }
+  }, [selectedDate]);
 
   // Preenche os dados do formulário quando entra em modo de edição
   useEffect(() => {
@@ -138,14 +145,16 @@ const SessionScheduler = ({ userType }: SessionSchedulerProps) => {
 
   const fetchSessionDates = async () => {
     try {
-      const startOfMonth = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1);
-      const endOfMonth = new Date(selectedDate.getFullYear(), selectedDate.getMonth() + 1, 0);
+      // Buscar todos os agendamentos futuros (não limitado ao mês atual)
+      const today = new Date();
+      const threeMonthsAgo = new Date(today.getFullYear(), today.getMonth() - 3, 1);
+      const sixMonthsAhead = new Date(today.getFullYear(), today.getMonth() + 6, 0);
       
       let query = supabase
         .from('sessions')
         .select('session_date')
-        .gte('session_date', format(startOfMonth, 'yyyy-MM-dd'))
-        .lte('session_date', format(endOfMonth, 'yyyy-MM-dd'));
+        .gte('session_date', format(threeMonthsAgo, 'yyyy-MM-dd'))
+        .lte('session_date', format(sixMonthsAhead, 'yyyy-MM-dd'));
 
       if (userType === 'professional') {
         query = query.eq('professional_id', user?.id);
@@ -693,7 +702,6 @@ const SessionScheduler = ({ userType }: SessionSchedulerProps) => {
               onSelect={(date) => {
                 if (date) {
                   setSelectedDate(date);
-                  fetchSessionDates();
                 }
               }}
               locale={ptBR}
