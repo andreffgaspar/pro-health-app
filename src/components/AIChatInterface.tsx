@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ScrollArea } from "@/components/ui/scroll-area";
+
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Send, Bot, User, Loader2, Brain, AlertCircle } from "lucide-react";
@@ -47,10 +47,7 @@ const AIChatInterface = () => {
     // Auto-scroll to bottom when new messages are added
     const timer = setTimeout(() => {
       if (scrollAreaRef.current) {
-        const scrollElement = scrollAreaRef.current.querySelector('[data-radix-scroll-area-viewport]');
-        if (scrollElement) {
-          scrollElement.scrollTop = scrollElement.scrollHeight;
-        }
+        scrollAreaRef.current.scrollTop = scrollAreaRef.current.scrollHeight;
       }
     }, 100);
 
@@ -160,71 +157,66 @@ const AIChatInterface = () => {
       </Card>
 
       {/* Chat Messages */}
-      <Card className="flex-1 flex flex-col min-h-[500px]">
+      <Card className="flex-1 flex flex-col min-h-[500px] max-h-[600px] overflow-y-auto" ref={scrollAreaRef}>
         <CardContent className="flex-1 flex flex-col p-0">
-          <ScrollArea 
-            ref={scrollAreaRef}
-            className="flex-1 p-6 min-h-[400px]"
-          >
-            <div className="space-y-4">
-              {messages.map((message) => (
-                <div
-                  key={message.id}
-                  className={`flex gap-3 ${
-                    message.role === 'user' ? 'justify-end' : 'justify-start'
-                  }`}
-                >
-                  {message.role === 'assistant' && (
-                    <Avatar className="w-8 h-8">
-                      <AvatarFallback className="bg-primary text-primary-foreground">
-                        <Bot className="w-4 h-4" />
-                      </AvatarFallback>
-                    </Avatar>
-                  )}
-                  
-                  <div
-                    className={`max-w-[70%] max-h-32 overflow-y-auto rounded-lg p-3 ${
-                      message.role === 'user'
-                        ? 'bg-primary text-primary-foreground ml-auto'
-                        : 'bg-muted text-foreground'
-                    }`}
-                  >
-                    <p className="whitespace-pre-wrap break-words">{message.content}</p>
-                    <p className={`text-xs mt-2 opacity-70`}>
-                      {message.timestamp.toLocaleTimeString('pt-BR', {
-                        hour: '2-digit',
-                        minute: '2-digit'
-                      })}
-                    </p>
-                  </div>
-
-                  {message.role === 'user' && (
-                    <Avatar className="w-8 h-8">
-                      <AvatarFallback className="bg-secondary text-secondary-foreground">
-                        <User className="w-4 h-4" />
-                      </AvatarFallback>
-                    </Avatar>
-                  )}
-                </div>
-              ))}
-              
-              {isLoading && (
-                <div className="flex gap-3 justify-start">
+          <div className="flex-1 p-6 space-y-4">
+            {messages.map((message) => (
+              <div
+                key={message.id}
+                className={`flex gap-3 ${
+                  message.role === 'user' ? 'justify-end' : 'justify-start'
+                }`}
+              >
+                {message.role === 'assistant' && (
                   <Avatar className="w-8 h-8">
                     <AvatarFallback className="bg-primary text-primary-foreground">
                       <Bot className="w-4 h-4" />
                     </AvatarFallback>
                   </Avatar>
-                  <div className="bg-muted text-foreground rounded-lg p-3">
-                    <div className="flex items-center gap-2">
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      <span className="text-sm">Analisando dados...</span>
-                    </div>
+                )}
+                
+                <div
+                  className={`max-w-[70%] max-h-32 overflow-y-auto rounded-lg p-3 ${
+                    message.role === 'user'
+                      ? 'bg-primary text-primary-foreground ml-auto'
+                      : 'bg-muted text-foreground'
+                  }`}
+                >
+                  <p className="whitespace-pre-wrap break-words">{message.content}</p>
+                  <p className={`text-xs mt-2 opacity-70`}>
+                    {message.timestamp.toLocaleTimeString('pt-BR', {
+                      hour: '2-digit',
+                      minute: '2-digit'
+                    })}
+                  </p>
+                </div>
+
+                {message.role === 'user' && (
+                  <Avatar className="w-8 h-8">
+                    <AvatarFallback className="bg-secondary text-secondary-foreground">
+                      <User className="w-4 h-4" />
+                    </AvatarFallback>
+                  </Avatar>
+                )}
+              </div>
+            ))}
+            
+            {isLoading && (
+              <div className="flex gap-3 justify-start">
+                <Avatar className="w-8 h-8">
+                  <AvatarFallback className="bg-primary text-primary-foreground">
+                    <Bot className="w-4 h-4" />
+                  </AvatarFallback>
+                </Avatar>
+                <div className="bg-muted text-foreground rounded-lg p-3">
+                  <div className="flex items-center gap-2">
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span className="text-sm">Analisando dados...</span>
                   </div>
                 </div>
-              )}
-            </div>
-          </ScrollArea>
+              </div>
+            )}
+          </div>
 
           {/* Input Area - Moved inside the Card */}
           <div className="border-t p-4 bg-background">
