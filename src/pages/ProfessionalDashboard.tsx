@@ -812,8 +812,8 @@ const ProfessionalDashboard = () => {
         setSelectedAthleteForEnvironment(null);
       }} athleteId={selectedAthleteForEnvironment.id} athleteName={selectedAthleteForEnvironment.name} />}
 
-        {/* Quick Actions Footer */}
-        <div className="mt-12 border-t pt-8">
+        {/* Quick Actions Footer - Always at bottom */}
+        <div className="relative mt-12 border-t pt-8 w-full">
           <h3 className="text-lg font-semibold mb-6">Ações Rápidas</h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <Button variant="outline" className="h-24 flex flex-col gap-3 hover-scale animate-fade-in transition-all duration-200 hover:shadow-lg group">
