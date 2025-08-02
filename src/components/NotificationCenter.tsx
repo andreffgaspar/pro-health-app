@@ -25,6 +25,37 @@ interface NotificationItem {
   data?: any;
 }
 
+// Helper functions moved outside component to avoid temporal dead zone
+const getNotificationTitle = (type: string, data?: any) => {
+  switch (type) {
+    case 'message':
+      return 'Nova Mensagem';
+    case 'appointment':
+      return 'Agendamento';
+    case 'training':
+      return 'Treinamento';
+    case 'nutrition':
+      return 'Nutrição';
+    default:
+      return 'Notificação';
+  }
+};
+
+const getNotificationIcon = (type: string) => {
+  switch (type) {
+    case 'message':
+      return <MessageSquare className="w-4 h-4" />;
+    case 'appointment':
+      return <Calendar className="w-4 h-4" />;
+    case 'training':
+      return <Dumbbell className="w-4 h-4" />;
+    case 'nutrition':
+      return <Apple className="w-4 h-4" />;
+    default:
+      return <Bell className="w-4 h-4" />;
+  }
+};
+
 const NotificationCenter = () => {
   const {
     permission,
@@ -69,35 +100,6 @@ const NotificationCenter = () => {
     data: (notif as any).data || {}
   }));
 
-  const getNotificationTitle = (type: string, data?: any) => {
-    switch (type) {
-      case 'message':
-        return 'Nova Mensagem';
-      case 'appointment':
-        return 'Agendamento';
-      case 'training':
-        return 'Treinamento';
-      case 'nutrition':
-        return 'Nutrição';
-      default:
-        return 'Notificação';
-    }
-  };
-
-  const getNotificationIcon = (type: string) => {
-    switch (type) {
-      case 'message':
-        return <MessageSquare className="w-4 h-4" />;
-      case 'appointment':
-        return <Calendar className="w-4 h-4" />;
-      case 'training':
-        return <Dumbbell className="w-4 h-4" />;
-      case 'nutrition':
-        return <Apple className="w-4 h-4" />;
-      default:
-        return <Bell className="w-4 h-4" />;
-    }
-  };
 
   const handleNotificationClick = async (notification: NotificationItem) => {
     if (!notification.read) {
