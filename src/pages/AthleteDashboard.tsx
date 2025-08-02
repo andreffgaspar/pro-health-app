@@ -5,21 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { 
-  Activity, 
-  Heart, 
-  Moon, 
-  Utensils, 
-  TrendingUp, 
-  Calendar,
-  Plus,
-  Settings,
-  LogOut,
-  Target,
-  Clock,
-  Zap,
-  MessageSquare
-} from "lucide-react";
+import { Activity, Heart, Moon, Utensils, TrendingUp, Calendar, Plus, Settings, LogOut, Target, Clock, Zap, MessageSquare } from "lucide-react";
 import DataInputModal from "@/components/DataInputModal";
 import DataVisualization from "@/components/DataVisualization";
 import AthleteProfileSettings from "@/components/AthleteProfileSettings";
@@ -30,12 +16,22 @@ import { LineChart, Line, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip,
 import { useAuth } from "@/hooks/useAuth";
 import { useAthleteData } from "@/hooks/useAthleteData";
 import { useRealtimeCommunication } from "@/hooks/useRealtimeCommunication";
-
 const AthleterDashboard = () => {
   const navigate = useNavigate();
-  const { user, profile, signOut } = useAuth();
-  const { todaysMetrics, weeklyData, performanceData, loading } = useAthleteData();
-  const { unreadCount } = useRealtimeCommunication();
+  const {
+    user,
+    profile,
+    signOut
+  } = useAuth();
+  const {
+    todaysMetrics,
+    weeklyData,
+    performanceData,
+    loading
+  } = useAthleteData();
+  const {
+    unreadCount
+  } = useRealtimeCommunication();
   const [showProfileSettings, setShowProfileSettings] = useState(false);
   const [activeTab, setActiveTab] = useState("training");
   const [showCommunication, setShowCommunication] = useState(false);
@@ -45,13 +41,11 @@ const AthleterDashboard = () => {
   const nutritionTriggerRef = useRef<HTMLButtonElement>(null);
   const trainingTriggerRef = useRef<HTMLButtonElement>(null);
   const vitalsTriggerRef = useRef<HTMLButtonElement>(null);
-
   const handleLogout = async () => {
     await signOut();
     // Force a hard navigation to clear any cached state
     window.location.href = "/";
   };
-
   const openModalWithTab = (tab: string) => {
     switch (tab) {
       case "sleep":
@@ -84,9 +78,7 @@ const AthleterDashboard = () => {
     const days = parseInt(selectedPeriod);
     return performanceData.slice(-days);
   };
-
-  return (
-    <div className="min-h-screen bg-gradient-subtle">
+  return <div className="min-h-screen bg-gradient-subtle">
       {/* Header */}
       <header className="bg-background/80 backdrop-blur-md border-b border-border sticky top-0 z-40">
         <div className="container mx-auto px-6 py-4">
@@ -102,28 +94,12 @@ const AthleterDashboard = () => {
             </div>
             
             <div className="flex items-center gap-3">
-              {unreadCount > 0 && (
-                <Badge 
-                  variant="destructive" 
-                  className="gap-1 cursor-pointer hover:bg-destructive/80 transition-colors"
-                  onClick={() => {
-                    const communicationSection = document.querySelector('#communication-center');
-                    communicationSection?.scrollIntoView({ behavior: 'smooth' });
-                  }}
-                >
-                  <MessageSquare className="w-3 h-3" />
-                  {unreadCount} mensagem{unreadCount > 1 ? 's' : ''}
-                </Badge>
-              )}
+              {unreadCount > 0}
               <div className="flex items-center gap-1 text-xs text-green-600">
                 <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
                 Tempo Real
               </div>
-              <Button 
-                variant="ghost" 
-                size="icon"
-                onClick={() => setShowProfileSettings(true)}
-              >
+              <Button variant="ghost" size="icon" onClick={() => setShowProfileSettings(true)}>
                 <Settings className="w-5 h-5" />
               </Button>
               <Button variant="ghost" size="icon" onClick={handleLogout}>
@@ -138,8 +114,7 @@ const AthleterDashboard = () => {
         {/* Quick Metrics */}
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 mb-8">
           {/* Medical Data Highlight Card */}
-          {todaysMetrics.lastMedicalData && (
-            <Card className="md:col-span-2 p-4 bg-gradient-to-r from-medical-bg to-medical-bg/50 border-medical-border">
+          {todaysMetrics.lastMedicalData && <Card className="md:col-span-2 p-4 bg-gradient-to-r from-medical-bg to-medical-bg/50 border-medical-border">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 bg-medical-accent/10 rounded-lg flex items-center justify-center">
                   <Activity className="w-5 h-5 text-medical-accent" />
@@ -150,12 +125,8 @@ const AthleterDashboard = () => {
                   <p className="text-xs text-muted-foreground">{todaysMetrics.lastMedicalData.date}</p>
                 </div>
               </div>
-            </Card>
-          )}
-          <Card 
-            className="p-4 hover:shadow-card-sport transition-shadow cursor-pointer" 
-            onClick={() => openModalWithTab("sleep")}
-          >
+            </Card>}
+          <Card className="p-4 hover:shadow-card-sport transition-shadow cursor-pointer" onClick={() => openModalWithTab("sleep")}>
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 bg-blue-500/10 rounded-lg flex items-center justify-center">
                 <Moon className="w-5 h-5 text-blue-500" />
@@ -167,10 +138,7 @@ const AthleterDashboard = () => {
             </div>
           </Card>
 
-          <Card 
-            className="p-4 hover:shadow-card-sport transition-shadow cursor-pointer" 
-            onClick={() => openModalWithTab("vitals")}
-          >
+          <Card className="p-4 hover:shadow-card-sport transition-shadow cursor-pointer" onClick={() => openModalWithTab("vitals")}>
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 bg-red-500/10 rounded-lg flex items-center justify-center">
                 <Heart className="w-5 h-5 text-red-500" />
@@ -182,10 +150,7 @@ const AthleterDashboard = () => {
             </div>
           </Card>
 
-          <Card 
-            className="p-4 hover:shadow-card-sport transition-shadow cursor-pointer" 
-            onClick={() => openModalWithTab("nutrition")}
-          >
+          <Card className="p-4 hover:shadow-card-sport transition-shadow cursor-pointer" onClick={() => openModalWithTab("nutrition")}>
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 bg-orange-500/10 rounded-lg flex items-center justify-center">
                 <Utensils className="w-5 h-5 text-orange-500" />
@@ -197,10 +162,7 @@ const AthleterDashboard = () => {
             </div>
           </Card>
 
-          <Card 
-            className="p-4 hover:shadow-card-sport transition-shadow cursor-pointer" 
-            onClick={() => openModalWithTab("nutrition")}
-          >
+          <Card className="p-4 hover:shadow-card-sport transition-shadow cursor-pointer" onClick={() => openModalWithTab("nutrition")}>
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 bg-cyan-500/10 rounded-lg flex items-center justify-center">
                 <Activity className="w-5 h-5 text-cyan-500" />
@@ -212,10 +174,7 @@ const AthleterDashboard = () => {
             </div>
           </Card>
 
-          <Card 
-            className="p-4 hover:shadow-card-sport transition-shadow cursor-pointer" 
-            onClick={() => openModalWithTab("training")}
-          >
+          <Card className="p-4 hover:shadow-card-sport transition-shadow cursor-pointer" onClick={() => openModalWithTab("training")}>
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 bg-green-500/10 rounded-lg flex items-center justify-center">
                 <Clock className="w-5 h-5 text-green-500" />
@@ -227,10 +186,7 @@ const AthleterDashboard = () => {
             </div>
           </Card>
 
-          <Card 
-            className="p-4 hover:shadow-card-sport transition-shadow cursor-pointer" 
-            onClick={() => openModalWithTab("vitals")}
-          >
+          <Card className="p-4 hover:shadow-card-sport transition-shadow cursor-pointer" onClick={() => openModalWithTab("vitals")}>
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 bg-purple-500/10 rounded-lg flex items-center justify-center">
                 <Zap className="w-5 h-5 text-purple-500" />
@@ -290,45 +246,30 @@ const AthleterDashboard = () => {
               </div>
             </CardHeader>
             <CardContent>
-              {loading ? (
-                <div className="h-[300px] flex items-center justify-center">
+              {loading ? <div className="h-[300px] flex items-center justify-center">
                   <div className="text-center">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
                     <p className="text-sm text-muted-foreground">Carregando dados...</p>
                   </div>
-                </div>
-              ) : getFilteredPerformanceData().length > 0 ? (
-                <ResponsiveContainer width="100%" height={300}>
+                </div> : getFilteredPerformanceData().length > 0 ? <ResponsiveContainer width="100%" height={300}>
                   <AreaChart data={getFilteredPerformanceData()}>
                     <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
                     <XAxis dataKey="date" />
                     <YAxis />
-                    <Tooltip 
-                      contentStyle={{ 
-                        backgroundColor: 'hsl(var(--card))', 
-                        border: '1px solid hsl(var(--border))',
-                        borderRadius: '8px'
-                      }}
-                    />
-                    <Area 
-                      type="monotone" 
-                      dataKey={selectedMetric} 
-                      stroke="hsl(var(--primary))" 
-                      fill="hsl(var(--primary))" 
-                      fillOpacity={0.2}
-                      strokeWidth={3}
-                    />
+                    <Tooltip contentStyle={{
+                  backgroundColor: 'hsl(var(--card))',
+                  border: '1px solid hsl(var(--border))',
+                  borderRadius: '8px'
+                }} />
+                    <Area type="monotone" dataKey={selectedMetric} stroke="hsl(var(--primary))" fill="hsl(var(--primary))" fillOpacity={0.2} strokeWidth={3} />
                   </AreaChart>
-                </ResponsiveContainer>
-              ) : (
-                <div className="h-[300px] flex items-center justify-center">
+                </ResponsiveContainer> : <div className="h-[300px] flex items-center justify-center">
                   <div className="text-center">
                     <TrendingUp className="w-16 h-16 text-muted-foreground/30 mx-auto mb-4" />
                     <p className="text-muted-foreground mb-2">Nenhum dado de performance encontrado</p>
                     <p className="text-sm text-muted-foreground">Comece registrando seus dados de treino, sono e recuperação</p>
                   </div>
-                </div>
-              )}
+                </div>}
             </CardContent>
           </Card>
 
@@ -349,7 +290,7 @@ const AthleterDashboard = () => {
                   <span>Hidratação</span>
                   <span>{todaysMetrics.water.toFixed(1)}/3.5L</span>
                 </div>
-                <Progress value={Math.min((todaysMetrics.water / 3.5) * 100, 100)} className="h-2" />
+                <Progress value={Math.min(todaysMetrics.water / 3.5 * 100, 100)} className="h-2" />
               </div>
 
               <div className="space-y-2">
@@ -357,7 +298,7 @@ const AthleterDashboard = () => {
                   <span>Tempo de Treino</span>
                   <span>{todaysMetrics.training}/150min</span>
                 </div>
-                <Progress value={Math.min((todaysMetrics.training / 150) * 100, 100)} className="h-2" />
+                <Progress value={Math.min(todaysMetrics.training / 150 * 100, 100)} className="h-2" />
               </div>
 
               <div className="space-y-2">
@@ -365,7 +306,7 @@ const AthleterDashboard = () => {
                   <span>Calorias</span>
                   <span>{todaysMetrics.calories}/2400</span>
                 </div>
-                <Progress value={Math.min((todaysMetrics.calories / 2400) * 100, 100)} className="h-2" />
+                <Progress value={Math.min(todaysMetrics.calories / 2400 * 100, 100)} className="h-2" />
               </div>
 
               <div className="space-y-2">
@@ -373,18 +314,13 @@ const AthleterDashboard = () => {
                   <span>Qualidade do Sono</span>
                   <span>{(todaysMetrics.sleep || 0).toFixed(1)}/8h</span>
                 </div>
-                <Progress value={Math.min((todaysMetrics.sleep / 8) * 100, 100)} className="h-2" />
+                <Progress value={Math.min(todaysMetrics.sleep / 8 * 100, 100)} className="h-2" />
               </div>
 
-              <DataInputModal 
-                initialTab="sleep"
-                trigger={
-                  <Button className="w-full gap-2">
+              <DataInputModal initialTab="sleep" trigger={<Button className="w-full gap-2">
                     <Plus className="w-4 h-4" />
                     Registrar Dados
-                  </Button>
-                }
-              />
+                  </Button>} />
             </CardContent>
           </Card>
         </div>
@@ -410,108 +346,84 @@ const AthleterDashboard = () => {
               </TabsList>
               
               <TabsContent value="training" className="mt-6">
-                {loading ? (
-                  <div className="h-[250px] flex items-center justify-center">
+                {loading ? <div className="h-[250px] flex items-center justify-center">
                     <div className="text-center">
                       <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
                       <p className="text-sm text-muted-foreground">Carregando dados...</p>
                     </div>
-                  </div>
-                ) : weeklyData.some(day => day.training > 0) ? (
-                  <ResponsiveContainer width="100%" height={250}>
+                  </div> : weeklyData.some(day => day.training > 0) ? <ResponsiveContainer width="100%" height={250}>
                     <BarChart data={weeklyData}>
                       <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
                       <XAxis dataKey="day" />
                       <YAxis />
-                      <Tooltip 
-                        contentStyle={{ 
-                          backgroundColor: 'hsl(var(--card))', 
-                          border: '1px solid hsl(var(--border))',
-                          borderRadius: '8px'
-                        }}
-                      />
+                      <Tooltip contentStyle={{
+                    backgroundColor: 'hsl(var(--card))',
+                    border: '1px solid hsl(var(--border))',
+                    borderRadius: '8px'
+                  }} />
                       <Bar dataKey="training" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
                     </BarChart>
-                  </ResponsiveContainer>
-                ) : (
-                  <div className="h-[250px] flex items-center justify-center">
+                  </ResponsiveContainer> : <div className="h-[250px] flex items-center justify-center">
                     <div className="text-center">
                       <Clock className="w-16 h-16 text-muted-foreground/30 mx-auto mb-4" />
                       <p className="text-muted-foreground mb-2">Nenhum dado de treino encontrado</p>
                       <p className="text-sm text-muted-foreground">Registre seus treinos para visualizar o progresso</p>
                     </div>
-                  </div>
-                )}
+                  </div>}
               </TabsContent>
               
               <TabsContent value="nutrition" className="mt-6">
-                {loading ? (
-                  <div className="h-[250px] flex items-center justify-center">
+                {loading ? <div className="h-[250px] flex items-center justify-center">
                     <div className="text-center">
                       <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
                       <p className="text-sm text-muted-foreground">Carregando dados...</p>
                     </div>
-                  </div>
-                ) : weeklyData.some(day => day.calories > 0) ? (
-                  <ResponsiveContainer width="100%" height={250}>
+                  </div> : weeklyData.some(day => day.calories > 0) ? <ResponsiveContainer width="100%" height={250}>
                     <BarChart data={weeklyData}>
                       <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
                       <XAxis dataKey="day" />
                       <YAxis />
-                      <Tooltip 
-                        contentStyle={{ 
-                          backgroundColor: 'hsl(var(--card))', 
-                          border: '1px solid hsl(var(--border))',
-                          borderRadius: '8px'
-                        }}
-                      />
+                      <Tooltip contentStyle={{
+                    backgroundColor: 'hsl(var(--card))',
+                    border: '1px solid hsl(var(--border))',
+                    borderRadius: '8px'
+                  }} />
                       <Bar dataKey="calories" fill="hsl(var(--accent))" radius={[4, 4, 0, 0]} />
                     </BarChart>
-                  </ResponsiveContainer>
-                ) : (
-                  <div className="h-[250px] flex items-center justify-center">
+                  </ResponsiveContainer> : <div className="h-[250px] flex items-center justify-center">
                     <div className="text-center">
                       <Utensils className="w-16 h-16 text-muted-foreground/30 mx-auto mb-4" />
                       <p className="text-muted-foreground mb-2">Nenhum dado de nutrição encontrado</p>
                       <p className="text-sm text-muted-foreground">Registre suas refeições para acompanhar as calorias</p>
                     </div>
-                  </div>
-                )}
+                  </div>}
               </TabsContent>
               
               <TabsContent value="hydration" className="mt-6">
-                {loading ? (
-                  <div className="h-[250px] flex items-center justify-center">
+                {loading ? <div className="h-[250px] flex items-center justify-center">
                     <div className="text-center">
                       <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
                       <p className="text-sm text-muted-foreground">Carregando dados...</p>
                     </div>
-                  </div>
-                ) : weeklyData.some(day => day.water > 0) ? (
-                  <ResponsiveContainer width="100%" height={250}>
+                  </div> : weeklyData.some(day => day.water > 0) ? <ResponsiveContainer width="100%" height={250}>
                     <BarChart data={weeklyData}>
                       <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
                       <XAxis dataKey="day" />
                       <YAxis />
-                      <Tooltip 
-                        contentStyle={{ 
-                          backgroundColor: 'hsl(var(--card))', 
-                          border: '1px solid hsl(var(--border))',
-                          borderRadius: '8px'
-                        }}
-                      />
+                      <Tooltip contentStyle={{
+                    backgroundColor: 'hsl(var(--card))',
+                    border: '1px solid hsl(var(--border))',
+                    borderRadius: '8px'
+                  }} />
                       <Bar dataKey="water" fill="hsl(var(--secondary))" radius={[4, 4, 0, 0]} />
                     </BarChart>
-                  </ResponsiveContainer>
-                ) : (
-                  <div className="h-[250px] flex items-center justify-center">
+                  </ResponsiveContainer> : <div className="h-[250px] flex items-center justify-center">
                     <div className="text-center">
                       <Activity className="w-16 h-16 text-muted-foreground/30 mx-auto mb-4" />
                       <p className="text-muted-foreground mb-2">Nenhum dado de hidratação encontrado</p>
                       <p className="text-sm text-muted-foreground">Registre seu consumo de água diário</p>
                     </div>
-                  </div>
-                )}
+                  </div>}
               </TabsContent>
 
               <TabsContent value="sessions" className="mt-6">
@@ -539,68 +451,37 @@ const AthleterDashboard = () => {
 
         {/* Quick Actions */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-8">
-          <Button 
-            variant="outline" 
-            className="h-16 flex flex-col gap-1"
-            onClick={() => openModalWithTab("training")}
-          >
+          <Button variant="outline" className="h-16 flex flex-col gap-1" onClick={() => openModalWithTab("training")}>
             <Plus className="w-5 h-5" />
             <span className="text-xs">Novo Treino</span>
           </Button>
-          <Button 
-            variant="outline" 
-            className="h-16 flex flex-col gap-1"
-            onClick={() => openModalWithTab("nutrition")}
-          >
+          <Button variant="outline" className="h-16 flex flex-col gap-1" onClick={() => openModalWithTab("nutrition")}>
             <Utensils className="w-5 h-5" />
             <span className="text-xs">Registrar Refeição</span>
           </Button>
-          <Button 
-            variant="outline" 
-            className="h-16 flex flex-col gap-1"
-            onClick={() => openModalWithTab("vitals")}
-          >
+          <Button variant="outline" className="h-16 flex flex-col gap-1" onClick={() => openModalWithTab("vitals")}>
             <Heart className="w-5 h-5" />
             <span className="text-xs">Dados Vitais</span>
           </Button>
-          <DataVisualization 
-            trigger={
-              <Button variant="outline" className="h-16 flex flex-col gap-1">
+          <DataVisualization trigger={<Button variant="outline" className="h-16 flex flex-col gap-1">
                 <TrendingUp className="w-5 h-5" />
                 <span className="text-xs">Ver Dados Salvos</span>
-              </Button>
-            }
-          />
+              </Button>} />
         </div>
 
         {/* Hidden Modal Triggers for Quick Access Cards */}
-        <div style={{ display: 'none' }}>
-          <DataInputModal 
-            initialTab="sleep"
-            trigger={<Button ref={sleepTriggerRef}>Hidden Sleep Trigger</Button>}
-          />
-          <DataInputModal 
-            initialTab="nutrition"
-            trigger={<Button ref={nutritionTriggerRef}>Hidden Nutrition Trigger</Button>}
-          />
-          <DataInputModal 
-            initialTab="training"
-            trigger={<Button ref={trainingTriggerRef}>Hidden Training Trigger</Button>}
-          />
-          <DataInputModal 
-            initialTab="vitals"
-            trigger={<Button ref={vitalsTriggerRef}>Hidden Vitals Trigger</Button>}
-          />
+        <div style={{
+        display: 'none'
+      }}>
+          <DataInputModal initialTab="sleep" trigger={<Button ref={sleepTriggerRef}>Hidden Sleep Trigger</Button>} />
+          <DataInputModal initialTab="nutrition" trigger={<Button ref={nutritionTriggerRef}>Hidden Nutrition Trigger</Button>} />
+          <DataInputModal initialTab="training" trigger={<Button ref={trainingTriggerRef}>Hidden Training Trigger</Button>} />
+          <DataInputModal initialTab="vitals" trigger={<Button ref={vitalsTriggerRef}>Hidden Vitals Trigger</Button>} />
         </div>
 
         {/* Athlete Profile Settings Modal */}
-        <AthleteProfileSettings 
-          open={showProfileSettings} 
-          onOpenChange={setShowProfileSettings} 
-        />
+        <AthleteProfileSettings open={showProfileSettings} onOpenChange={setShowProfileSettings} />
       </div>
-    </div>
-  );
+    </div>;
 };
-
 export default AthleterDashboard;
