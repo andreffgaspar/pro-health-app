@@ -157,9 +157,12 @@ const AIChatInterface = () => {
       </Card>
 
       {/* Chat Messages */}
-      <Card className="flex-1 flex flex-col min-h-[500px] max-h-[600px] overflow-y-auto" ref={scrollAreaRef}>
+      <Card className="flex-1 flex flex-col min-h-[500px]">
         <CardContent className="flex-1 flex flex-col p-0">
-          <div className="flex-1 p-6 space-y-4">
+          <div 
+            ref={scrollAreaRef}
+            className="flex-1 p-6 space-y-4 overflow-y-auto max-h-[400px]"
+          >
             {messages.map((message) => (
               <div
                 key={message.id}
