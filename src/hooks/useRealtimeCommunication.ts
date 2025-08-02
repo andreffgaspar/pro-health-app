@@ -250,8 +250,8 @@ export const useRealtimeCommunication = () => {
       // Set up real-time subscriptions
       console.log('🔌 Setting up real-time channels for user:', user.id);
       
-      const messagesChannel = supabase
-        .channel('messages-channel')
+      const channel = supabase
+        .channel('realtime-communication')
         .on(
           'postgres_changes',
           {
@@ -301,17 +301,6 @@ export const useRealtimeCommunication = () => {
             }
           }
         )
-        .subscribe((status) => {
-          console.log('📡 Messages channel status:', status);
-          if (status === 'SUBSCRIBED') {
-            console.log('✅ Messages channel connected successfully');
-          } else if (status === 'CHANNEL_ERROR') {
-            console.error('❌ Messages channel failed to connect');
-          }
-        });
-
-      const conversationsChannel = supabase
-        .channel('conversations-channel')
         .on(
           'postgres_changes',
           {
@@ -323,17 +312,6 @@ export const useRealtimeCommunication = () => {
             await fetchConversations();
           }
         )
-        .subscribe((status) => {
-          console.log('📡 Conversations channel status:', status);
-          if (status === 'SUBSCRIBED') {
-            console.log('✅ Conversations channel connected successfully');
-          } else if (status === 'CHANNEL_ERROR') {
-            console.error('❌ Conversations channel failed to connect');
-          }
-        });
-
-      const notificationsChannel = supabase
-        .channel('notifications-channel')
         .on(
           'postgres_changes',
           {
@@ -347,18 +325,16 @@ export const useRealtimeCommunication = () => {
           }
         )
         .subscribe((status) => {
-          console.log('📡 Notifications channel status:', status);
+          console.log('📡 Realtime channel status:', status);
           if (status === 'SUBSCRIBED') {
-            console.log('✅ Notifications channel connected successfully');
+            console.log('✅ Realtime channel connected successfully');
           } else if (status === 'CHANNEL_ERROR') {
-            console.error('❌ Notifications channel failed to connect');
+            console.error('❌ Realtime channel failed to connect');
           }
         });
 
       return () => {
-        supabase.removeChannel(messagesChannel);
-        supabase.removeChannel(conversationsChannel);
-        supabase.removeChannel(notificationsChannel);
+        supabase.removeChannel(channel);
       };
     }
   }, [user?.id]);
