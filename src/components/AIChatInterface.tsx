@@ -219,8 +219,8 @@ const AIChatInterface = () => {
             </div>
           </ScrollArea>
 
-          {/* Input Area */}
-          <div className="border-t p-4">
+          {/* Input Area - Moved inside the Card */}
+          <div className="border-t p-4 bg-background">
             <div className="flex gap-2">
               <Input
                 value={input}
