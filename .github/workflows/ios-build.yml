@@ -68,7 +68,13 @@ jobs:
       - name: Build com Xcode
         run: |
           cd ios/App
-          xcodebuild -scheme App -configuration Release -workspace App.xcworkspace -sdk iphoneos -archivePath $PWD/build/App.xcarchive archive
+          xcodebuild -scheme App \
+          -configuration Release \
+          -workspace App.xcworkspace \
+          -sdk iphoneos \
+          -archivePath $PWD/build/App.xcarchive \
+          DEVELOPMENT_TEAM=$APPLE_TEAM_ID \
+          archive
 
       - name: Exportar IPA
         run: |
