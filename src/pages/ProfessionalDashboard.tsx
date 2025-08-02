@@ -377,7 +377,8 @@ const ProfessionalDashboard = () => {
         </div>
       </header>
 
-      <div className="container mx-auto px-6 py-8">
+      {/* Main Content Container */}
+      <div className="container mx-auto px-6 py-8 min-h-[calc(100vh-140px)] flex flex-col">{/* Flex container para garantir que footer fique no final */}
         {/* Pending Invitations Alert */}
         {pendingInvitations.length > 0 && <Card className="mb-8 border-orange-200 bg-orange-50/50">
             <CardHeader>
@@ -473,8 +474,9 @@ const ProfessionalDashboard = () => {
           </Card>
         </div>
 
-        {/* Main Content */}
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        {/* Main Content - Flex grow para ocupar espaço disponível */}
+        <div className="flex-1">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid w-full grid-cols-5 mb-8">
             <TabsTrigger value="athletes" className="gap-2">
               <Users className="w-4 h-4" />
@@ -641,6 +643,8 @@ const ProfessionalDashboard = () => {
             </div>
           </TabsContent>
         </Tabs>
+        </div>
+        {/* End of main content flex container */}
 
         {/* Athlete Details Dialog */}
         <Dialog open={showAthleteDetailsDialog} onOpenChange={setShowAthleteDetailsDialog}>
