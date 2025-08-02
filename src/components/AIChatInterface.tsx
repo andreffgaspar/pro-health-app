@@ -45,9 +45,16 @@ const AIChatInterface = () => {
 
   useEffect(() => {
     // Auto-scroll to bottom when new messages are added
-    if (scrollAreaRef.current) {
-      scrollAreaRef.current.scrollTop = scrollAreaRef.current.scrollHeight;
-    }
+    const timer = setTimeout(() => {
+      if (scrollAreaRef.current) {
+        const scrollElement = scrollAreaRef.current.querySelector('[data-radix-scroll-area-viewport]');
+        if (scrollElement) {
+          scrollElement.scrollTop = scrollElement.scrollHeight;
+        }
+      }
+    }, 100);
+
+    return () => clearTimeout(timer);
   }, [messages]);
 
   const sendMessage = async () => {
@@ -153,11 +160,11 @@ const AIChatInterface = () => {
       </Card>
 
       {/* Chat Messages */}
-      <Card className="flex-1 flex flex-col">
+      <Card className="flex-1 flex flex-col min-h-[500px]">
         <CardContent className="flex-1 flex flex-col p-0">
           <ScrollArea 
             ref={scrollAreaRef}
-            className="flex-1 p-6"
+            className="flex-1 p-6 min-h-[400px]"
           >
             <div className="space-y-4">
               {messages.map((message) => (
