@@ -33,11 +33,13 @@ import {
   CheckCircle,
   Clock,
   XCircle,
-  X
+  X,
+  Smartphone
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { HealthIntegrationSettings } from "./HealthIntegrationSettings";
 
 interface AthleteProfileSettingsProps {
   open: boolean;
@@ -432,9 +434,10 @@ const AthleteProfileSettings = ({ open, onOpenChange }: AthleteProfileSettingsPr
         </DialogHeader>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-5">
+          <TabsList className="grid w-full grid-cols-6">
             <TabsTrigger value="profile">Perfil</TabsTrigger>
             <TabsTrigger value="sports">Esporte</TabsTrigger>
+            <TabsTrigger value="health">Saúde</TabsTrigger>
             <TabsTrigger value="professionals">Profissionais</TabsTrigger>
             <TabsTrigger value="notifications">Notificações</TabsTrigger>
             <TabsTrigger value="security">Segurança</TabsTrigger>
@@ -687,6 +690,10 @@ const AthleteProfileSettings = ({ open, onOpenChange }: AthleteProfileSettingsPr
                 </div>
               </CardContent>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="health" className="space-y-6">
+            <HealthIntegrationSettings />
           </TabsContent>
 
           <TabsContent value="professionals" className="space-y-6">

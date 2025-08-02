@@ -8,6 +8,7 @@ interface AthleteDataRecord {
   data: any;
   recorded_at: string;
   created_at: string;
+  athlete_id: string;
 }
 
 interface ProcessedMetrics {

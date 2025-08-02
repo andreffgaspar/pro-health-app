@@ -14,6 +14,11 @@ const config: CapacitorConfig = {
       backgroundColor: '#1a1a1a',
       showSpinner: true,
       spinnerColor: '#ffffff'
+    },
+    CapacitorHealthkit: {
+      permissions: {
+        read: ['HKQuantityTypeIdentifierStepCount', 'HKQuantityTypeIdentifierHeartRate', 'HKCategoryTypeIdentifierSleepAnalysis']
+      }
     }
   }
 };
