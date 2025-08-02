@@ -6,6 +6,10 @@ on:
 jobs:
   build-ios:
     runs-on: macos-latest
+    env:
+      IOS_CERTIFICATE: ${{ secrets.IOS_CERTIFICATE }}
+      IOS_CERT_PASSWORD: ${{ secrets.IOS_CERT_PASSWORD }}
+      IOS_PROFILE: ${{ secrets.IOS_PROFILE }}
 
     steps:
       - name: Checkout código
