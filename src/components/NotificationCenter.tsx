@@ -61,15 +61,15 @@ const NotificationCenter = () => {
   // Mapear notificações do Supabase para formato local
   const notificationItems: NotificationItem[] = notifications.map(notif => ({
     id: notif.id,
-    title: getNotificationTitle(notif.type, notif.data),
+    title: getNotificationTitle(notif.type, (notif as any).data || {}),
     message: notif.message,
     type: notif.type as any,
     timestamp: notif.created_at,
-    read: notif.read,
-    data: notif.data
+    read: (notif as any).read_at !== null,
+    data: (notif as any).data || {}
   }));
 
-  const getNotificationTitle = (type: string, data: any) => {
+  const getNotificationTitle = (type: string, data?: any) => {
     switch (type) {
       case 'message':
         return 'Nova Mensagem';

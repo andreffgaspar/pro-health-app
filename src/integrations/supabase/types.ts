@@ -287,11 +287,91 @@ export type Database = {
           },
         ]
       }
-      notifications: {
+      notification_settings: {
+        Row: {
+          appointments: boolean | null
+          created_at: string
+          email: boolean | null
+          id: string
+          messages: boolean | null
+          mobile: boolean | null
+          nutrition: boolean | null
+          sound_enabled: boolean | null
+          training: boolean | null
+          updated_at: string
+          user_id: string
+          vibration_enabled: boolean | null
+          web_push: boolean | null
+        }
+        Insert: {
+          appointments?: boolean | null
+          created_at?: string
+          email?: boolean | null
+          id?: string
+          messages?: boolean | null
+          mobile?: boolean | null
+          nutrition?: boolean | null
+          sound_enabled?: boolean | null
+          training?: boolean | null
+          updated_at?: string
+          user_id: string
+          vibration_enabled?: boolean | null
+          web_push?: boolean | null
+        }
+        Update: {
+          appointments?: boolean | null
+          created_at?: string
+          email?: boolean | null
+          id?: string
+          messages?: boolean | null
+          mobile?: boolean | null
+          nutrition?: boolean | null
+          sound_enabled?: boolean | null
+          training?: boolean | null
+          updated_at?: string
+          user_id?: string
+          vibration_enabled?: boolean | null
+          web_push?: boolean | null
+        }
+        Relationships: []
+      }
+      notification_subscriptions: {
         Row: {
           created_at: string
           id: string
+          is_active: boolean | null
+          platform: string
+          subscription_data: Json
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          platform: string
+          subscription_data: Json
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          platform?: string
+          subscription_data?: Json
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      notifications: {
+        Row: {
+          created_at: string
+          data: Json | null
+          id: string
           message: string
+          read: boolean | null
           read_at: string | null
           title: string
           type: string
@@ -300,8 +380,10 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          data?: Json | null
           id?: string
           message: string
+          read?: boolean | null
           read_at?: string | null
           title: string
           type?: string
@@ -310,8 +392,10 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          data?: Json | null
           id?: string
           message?: string
+          read?: boolean | null
           read_at?: string | null
           title?: string
           type?: string

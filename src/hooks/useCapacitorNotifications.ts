@@ -16,9 +16,7 @@ interface LocalNotificationConfig {
   attachments?: Array<{
     id: string;
     url: string;
-    options?: {
-      typeHint?: string;
-    };
+    options?: any;
   }>;
   actionTypeId?: string;
   extra?: any;
@@ -62,7 +60,7 @@ export const useCapacitorNotifications = () => {
 
     try {
       // @ts-ignore
-      const { LocalNotifications, PushNotifications } = await import('@capacitor/local-notifications');
+      const { LocalNotifications } = await import('@capacitor/local-notifications');
       
       // Verificar permissão para notificações locais
       const localPermission = await LocalNotifications.checkPermissions();
@@ -224,7 +222,7 @@ export const useCapacitorNotifications = () => {
       const { LocalNotifications } = await import('@capacitor/local-notifications');
 
       await LocalNotifications.cancel({
-        notifications: [{ id: id.toString() }]
+        notifications: [{ id }]
       });
 
     } catch (error) {
@@ -256,8 +254,9 @@ export const useCapacitorNotifications = () => {
     try {
       const { supabase } = await import('@/integrations/supabase/client');
       
+      // Usar query direta para as novas tabelas
       const { error } = await supabase
-        .from('notification_subscriptions')
+        .from('notification_subscriptions' as any)
         .upsert({
           user_id: user.id,
           platform: 'mobile',

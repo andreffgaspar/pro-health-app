@@ -158,8 +158,9 @@ export const useNotifications = () => {
     if (!user) return;
 
     try {
+      // Usar query direta para as novas tabelas
       const { error } = await supabase
-        .from('notification_subscriptions')
+        .from('notification_subscriptions' as any)
         .upsert({
           user_id: user.id,
           platform: 'web',
@@ -181,25 +182,26 @@ export const useNotifications = () => {
     if (!user) return;
 
     try {
+      // Usar query direta para as novas tabelas
       const { data, error } = await supabase
-        .from('notification_settings')
+        .from('notification_settings' as any)
         .select('*')
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
 
-      if (error && error.code !== 'PGRST116') throw error;
+      if (error) throw error;
 
       if (data) {
         setSettings({
-          webPush: data.web_push || false,
-          mobile: data.mobile || false,
-          email: data.email || true,
-          messages: data.messages || true,
-          appointments: data.appointments || true,
-          training: data.training || true,
-          nutrition: data.nutrition || true,
-          soundEnabled: data.sound_enabled || true,
-          vibrationEnabled: data.vibration_enabled || true
+          webPush: (data as any).web_push || false,
+          mobile: (data as any).mobile || false,
+          email: (data as any).email || true,
+          messages: (data as any).messages || true,
+          appointments: (data as any).appointments || true,
+          training: (data as any).training || true,
+          nutrition: (data as any).nutrition || true,
+          soundEnabled: (data as any).sound_enabled || true,
+          vibrationEnabled: (data as any).vibration_enabled || true
         });
       }
     } catch (error) {
@@ -216,8 +218,9 @@ export const useNotifications = () => {
       const updatedSettings = { ...settings, ...newSettings };
       setSettings(updatedSettings);
 
+      // Usar query direta para as novas tabelas
       const { error } = await supabase
-        .from('notification_settings')
+        .from('notification_settings' as any)
         .upsert({
           user_id: user.id,
           web_push: updatedSettings.webPush,
