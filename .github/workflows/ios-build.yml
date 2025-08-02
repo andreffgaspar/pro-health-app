@@ -57,7 +57,7 @@ jobs:
           xcodebuild -exportArchive -archivePath ios/App/build/App.xcarchive -exportOptionsPlist ios/App/exportOptions.plist -exportPath ios/App/build
 
       - name: Upload do .ipa
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: app-ios
           path: ios/App/build/*.ipa
