@@ -260,62 +260,6 @@ const AIChatInterface = () => {
         </CardContent>
       </Card>
 
-      {/* Quick Actions */}
-      <Card className="mt-4">
-        <CardContent className="p-4">
-          <h3 className="text-sm font-medium mb-3 text-muted-foreground">Ações Rápidas</h3>
-          <div className="grid grid-cols-2 gap-2">
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={() => setInput("Gere um relatório semanal de performance dos meus atletas")}
-              className="justify-start text-xs h-8"
-            >
-              📊 Relatório Semanal
-            </Button>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={() => setInput("Analise os padrões de sono dos atletas na última semana")}
-              className="justify-start text-xs h-8"
-            >
-              😴 Análise do Sono
-            </Button>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={() => setInput("Identifique atletas que podem estar em overtraining")}
-              className="justify-start text-xs h-8"
-            >
-              ⚠️ Risco Overtraining
-            </Button>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={() => setInput("Compare a performance entre diferentes atletas")}
-              className="justify-start text-xs h-8"
-            >
-              📈 Comparar Performance
-            </Button>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={() => setInput("Sugira ajustes nos treinos baseado nos dados recentes")}
-              className="justify-start text-xs h-8"
-            >
-              🎯 Otimizar Treinos
-            </Button>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={() => setInput("Analise a recuperação dos atletas após competições")}
-              className="justify-start text-xs h-8"
-            >
-              🔄 Análise Recuperação
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
     </div>
   );
 };
