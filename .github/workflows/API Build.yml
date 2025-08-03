@@ -15,6 +15,7 @@ jobs:
       APPLE_KEY_CONTENT: ${{ secrets.APPLE_KEY_CONTENT }}
       APP_IDENTIFIER: com.prosoccerapp.prohealthapp
       APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+      APP_STORE_EMAIL: ${{ secrets.APP_STORE_EMAIL}}
 
     steps:
       - name: Checkout
@@ -84,3 +85,11 @@ jobs:
         with:
           name: app-ios
           path: ios/App/*.ipa
+
+      - name: Upload para TestFlight
+        run: |
+          cd ios/App
+          fastlane pilot upload \
+            --username "$APP_STORE_EMAIL" \
+            --team_id "$APPLE_TEAM_ID" \
+            --ipa "./App.ipa"
