@@ -72,7 +72,6 @@ jobs:
         run: |
           echo "DEVELOPMENT_TEAM = $APPLE_TEAM_ID" > ios/App/release.xcconfig
           echo "CODE_SIGN_STYLE = Automatic" >> ios/App/release.xcconfig
-          echo "CODE_SIGN_IDENTITY = Apple Distribution" >> ios/App/release.xcconfig
 
       - name: Criar exportOptions.plist
         run: |
