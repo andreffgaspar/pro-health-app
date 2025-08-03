@@ -67,27 +67,45 @@ jobs:
             "in_house": false
           }
           EOF
+
+      - name: Criar arquivo app_store_connect_api_key.json
+        run: |
+          mkdir -p ~/.fastlane
+          echo '{
+            "key_id": "${APPLE_KEY_ID}",
+            "issuer_id": "${APPLE_ISSUER_ID}",
+            "key": "${APPLE_KEY_CONTENT}",
+            "in_house": false
+          }' > ~/.fastlane/app_store_connect_api_key.json
+        env:
+          APPLE_KEY_ID: ${{ secrets.APPLE_KEY_ID }}
+          APPLE_ISSUER_ID: ${{ secrets.APPLE_ISSUER_ID }}
+          APPLE_KEY_CONTENT: ${{ secrets.APPLE_KEY_CONTENT }}
+
+      - name: Criar estrutura do Fastlane e Fastfile com API Key
+        run: |
+          mkdir -p ios/App/fastlane
+      
+          cat <<EOF > ios/App/fastlane/Fastfile
+          api_key_path("~/.fastlane/app_store_connect_api_key.json")
           
-      - name: Fastlane build
+          default_platform(:ios)
+          
+          platform :ios do
+            desc "Build and upload to TestFlight"
+            lane :release do
+              match(type: "appstore", readonly: true)
+              build_app(scheme: "App", export_method: "app-store")
+              upload_to_testflight
+            end
+          end
+          EOF
+       
+      - name: Fastlane release
         run: |
           cd ios/App
-
-          fastlane match appstore \
-            --readonly \
-            --type appstore \
-            --team_id "$APPLE_TEAM_ID" \
-            --app_identifier "$APP_IDENTIFIER"
-
-          fastlane gym \
-            --scheme App \
-            --export_method app-store \
-            --export_options '{
-              "signingStyle": "automatic",
-              "compileBitcode": false,
-              "stripSwiftSymbols": true,
-              "method": "app-store"
-            }'
-
+          fastlane release
+    
       - name: Upload IPA
         uses: actions/upload-artifact@v4
         with:
