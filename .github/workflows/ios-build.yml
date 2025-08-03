@@ -52,21 +52,23 @@ jobs:
             sed -i '' 's/CODE_SIGNING_ALLOWED = YES;/CODE_SIGNING_ALLOWED = NO;/g' "$proj"
           done
           
-      - name: Preparar certificado
+      - name: Preparar certificado e configurar keychain
         run: |
           echo "$IOS_CERTIFICATE" | base64 --decode > certificate.p12
           echo "$IOS_PROFILE" | base64 --decode > profile.mobileprovision
-          security create-keychain -p github ios-build.keychain
+      
+          security create-keychain -p "$IOS_CERT_PASSWORD" ios-build.keychain
+          security list-keychains -s ios-build.keychain
           security default-keychain -s ios-build.keychain
-          security unlock-keychain -p github ios-build.keychain
+          security unlock-keychain -p "$IOS_CERT_PASSWORD" ios-build.keychain
+      
           security import certificate.p12 -k ios-build.keychain -P "$IOS_CERT_PASSWORD" -T /usr/bin/codesign
+      
+          # Permitir acesso sem interação
+          security set-key-partition-list -S apple-tool:,apple: -s -k "$IOS_CERT_PASSWORD" ios-build.keychain
+      
           mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
           cp profile.mobileprovision ~/Library/MobileDevice/Provisioning\ Profiles/
-
-      - name: Permitir acesso ao keychain
-        run: |
-          KEYCHAIN_PATH=$(security list-keychains | head -n 1 | tr -d ' "')
-          security set-key-partition-list -S apple-tool:,apple: -s -k "" "$KEYCHAIN_PATH"
           
       - name: Criar release.xcconfig
         run: |
