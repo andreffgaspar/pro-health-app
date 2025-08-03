@@ -56,22 +56,27 @@ jobs:
       - name: Criar chave privada para App Store Connect
         run: echo "${APPLE_KEY_CONTENT}" > AuthKey.p8
 
+      - name: Configurar API Key do App Store Connect
+        run: |
+          mkdir -p ~/.fastlane
+          cat <<EOF > ~/.fastlane/app_store_connect_api_key.json
+          {
+            "key_id": "${APPLE_KEY_ID}",
+            "issuer_id": "${APPLE_ISSUER_ID}",
+            "key": "${APPLE_KEY_CONTENT}",
+            "in_house": false
+          }
+          EOF
+          
       - name: Fastlane build
         run: |
           cd ios/App
-          fastlane produce \
-            --username "$APP_STORE_EMAIL" \
-            --app_identifier "$APP_IDENTIFIER" \
-            --team_id "$APPLE_TEAM_ID" || true
 
           fastlane match appstore \
-            --type appstore \
             --readonly \
+            --type appstore \
             --team_id "$APPLE_TEAM_ID" \
-            --app_identifier "$APP_IDENTIFIER" \
-            --key_id "$APPLE_KEY_ID" \
-            --issuer_id "$APPLE_ISSUER_ID" \
-            --key_content "$APPLE_KEY_CONTENT"
+            --app_identifier "$APP_IDENTIFIER"
 
           fastlane gym \
             --scheme App \
