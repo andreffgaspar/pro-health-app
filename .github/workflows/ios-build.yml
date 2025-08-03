@@ -63,6 +63,11 @@ jobs:
           mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
           cp profile.mobileprovision ~/Library/MobileDevice/Provisioning\ Profiles/
 
+      - name: Permitir acesso ao keychain
+        run: |
+          KEYCHAIN_PATH=$(security list-keychains | head -n 1 | tr -d ' "')
+          security set-key-partition-list -S apple-tool:,apple: -s -k "" "$KEYCHAIN_PATH"
+          
       - name: Criar release.xcconfig
         run: |
           echo "DEVELOPMENT_TEAM = $APPLE_TEAM_ID" > ios/App/release.xcconfig
@@ -81,12 +86,7 @@ jobs:
             <key>teamID</key>
             <string>${APPLE_TEAM_ID}</string>
             <key>signingStyle</key>
-            <string>manual</string>
-            <key>provisioningProfiles</key>
-            <dict>
-              <key>com.prosoccerapp.prohealthapp</key>
-              <string>ProfileProHealth</string>
-            </dict>
+            <string>automatic</string>
           </dict>
           </plist>
           EOF
@@ -139,7 +139,12 @@ jobs:
             echo "== $f =="
             security cms -D -i "$f" | plutil -p - | grep -E 'Name|UUID|TeamIdentifier|Entitlements|application-identifier'
           done
-    
+
+      - name: Verificar certificados
+        run: |
+          security find-identity -v -p codesigning
+          security list-keychains
+          
       - name: Exportar IPA
         run: |
           set -x
@@ -158,6 +163,18 @@ jobs:
         timeout-minutes: 5
         continue-on-error: true
 
+      - name: Dump logs de distribuição
+        if: always()
+        run: |
+          LOG_PATH=$(find /var/folders -name "*.xcdistributionlogs" | head -n 1)
+          if [[ -f "$LOG_PATH" ]]; then
+            echo "::group::Log de distribuição"
+            cat "$LOG_PATH"
+            echo "::endgroup::"
+          else
+            echo "Nenhum log encontrado."
+          fi
+          
       - name: Upload do .ipa
         uses: actions/upload-artifact@v4
         with:
