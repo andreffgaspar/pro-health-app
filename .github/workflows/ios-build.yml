@@ -126,6 +126,11 @@ jobs:
       
           echo "CapacitorLocalNotifications.framework"
           plutil -p ios/App/build/App.xcarchive/Products/Applications/App.app/Frameworks/CapacitorLocalNotifications.framework/Info.plist
+
+      - name: Verificar Info.plist do App principal
+        run: |
+          echo "App.app Info.plist"
+          plutil -p ios/App/build/App.xcarchive/Products/Applications/App.app/Info.plist
       
       - name: Exportar IPA
         run: |
