@@ -18,6 +18,8 @@ jobs:
       APP_STORE_EMAIL: ${{ secrets.APP_STORE_EMAIL}}
       IOS_CERT_PASSWORD: ${{ secrets.IOS_CERT_PASSWORD }}
       PROVISIONING_PROFILE_NAME: ${{ secrets.PROVISIONING_PROFILE_NAME }}
+      IOS_CERTIFICATE: ${{ secrets.IOS_CERTIFICATE }}
+      IOS_PROFILE: ${{ secrets.IOS_PROFILE }}
 
     steps:
       - name: Checkout
@@ -65,11 +67,8 @@ jobs:
     
       - name: Decodificar certificado e perfil de provisionamento
         run: |
-          echo "$IOS_CERTIFICATE_BASE64" | base64 -d -o certificate.p12
-          echo "$IOS_PROVISIONING_PROFILE_BASE64" | base64 -d -o profile.mobileprovision
-        env:
-          IOS_CERTIFICATE_BASE64: ${{ secrets.IOS_CERTIFICATE_BASE64 }}
-          IOS_PROVISIONING_PROFILE_BASE64: ${{ secrets.IOS_PROVISIONING_PROFILE_BASE64 }}
+          echo "$IOS_CERTIFICATE" | base64 -d -o certificate.p12
+          echo "$IOS_PROFILE" | base64 -d -o profile.mobileprovision
 
       - name: Configurar keychain e importar certificado
         run: |
