@@ -131,7 +131,15 @@ jobs:
         run: |
           echo "App.app Info.plist"
           plutil -p ios/App/build/App.xcarchive/Products/Applications/App.app/Info.plist
-      
+
+      - name: Listar Profiles instalados
+        run: |
+          ls -lh ~/Library/MobileDevice/Provisioning\ Profiles
+          for f in ~/Library/MobileDevice/Provisioning\ Profiles/*.mobileprovision; do
+            echo "== $f =="
+            security cms -D -i "$f" | plutil -p - | grep -E 'Name|UUID|TeamIdentifier|Entitlements|application-identifier'
+          done
+    
       - name: Exportar IPA
         run: |
           set -x
