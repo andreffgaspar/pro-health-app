@@ -105,8 +105,6 @@ jobs:
           -xcconfig release.xcconfig \
           -archivePath $PWD/build/App.xcarchive \
           -allowProvisioningUpdates \
-          PROVISIONING_PROFILE_SPECIFIER=ProfileProHealth \
-          CODE_SIGNING_ALLOWED=NO \
           archive
 
       - name: Verificar Info.plist dos frameworks
