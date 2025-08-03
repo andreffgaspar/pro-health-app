@@ -179,12 +179,24 @@ FORMATO DA RESPOSTA: Seja direto, prático e objetivo. Máximo 150 palavras.`;
     }
 
     const geminiData = await geminiResponse.json();
+    console.log('Gemini API response:', JSON.stringify(geminiData, null, 2));
     
     if (!geminiData.candidates || geminiData.candidates.length === 0) {
+      console.error('No candidates in Gemini response:', geminiData);
       throw new Error('Nenhuma resposta válida do Gemini');
     }
 
-    const response = geminiData.candidates[0].content.parts[0].text;
+    let response = '';
+    try {
+      response = geminiData.candidates[0]?.content?.parts?.[0]?.text || '';
+      if (!response) {
+        console.error('Empty response from Gemini candidate:', geminiData.candidates[0]);
+        response = 'Desculpe, não consegui gerar uma resposta no momento. Tente reformular sua pergunta.';
+      }
+    } catch (parseError) {
+      console.error('Error parsing Gemini response:', parseError);
+      response = 'Desculpe, ocorreu um erro ao processar a resposta. Tente novamente.';
+    }
 
     console.log('AI response generated successfully for professional:', professionalId);
 
