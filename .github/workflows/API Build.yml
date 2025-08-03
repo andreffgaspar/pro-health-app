@@ -70,7 +70,7 @@ jobs:
           IOS_CERTIFICATE_BASE64: ${{ secrets.IOS_CERTIFICATE_BASE64 }}
           IOS_PROVISIONING_PROFILE_BASE64: ${{ secrets.IOS_PROVISIONING_PROFILE_BASE64 }}
 
-      - name: Importar certificado para Keychain
+      - name: Configurar keychain e importar certificado
         run: |
           security create-keychain -p "temppass" ios-build.keychain
           security default-keychain -s ios-build.keychain
