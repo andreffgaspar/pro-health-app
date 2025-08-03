@@ -40,9 +40,12 @@ jobs:
       - name: Build do Vite
         run: npm run build
 
+      - name: Remover pasta iOS
+        run: rm -rf ios
+
       - name: Adicionar iOS e sincronizar Capacitor
         run: |
-          npx cap add ios || true
+          npx cap add ios
           npx cap sync
 
       - name: Instalar CocoaPods
