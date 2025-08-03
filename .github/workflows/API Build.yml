@@ -101,6 +101,10 @@ jobs:
                   provisioningProfiles: {
                     ENV['APP_IDENTIFIER'] => ENV['PROVISIONING_PROFILE_NAME']
                   }
+                },
+                export_team_id: ENV["APPLE_TEAM_ID"],
+                build_settings: {
+                  "DEVELOPMENT_TEAM" => ENV["APPLE_TEAM_ID"]
                 }
               )
               upload_to_testflight(
