@@ -56,6 +56,30 @@ jobs:
       - name: Criar chave privada para App Store Connect
         run: echo "${APPLE_KEY_CONTENT}" > AuthKey.p8
 
+      - name: Decodificar certificado e perfil de provisionamento
+        run: |
+          echo "$IOS_CERTIFICATE_BASE64" | base64 -d -o certificate.p12
+          echo "$IOS_PROVISIONING_PROFILE_BASE64" | base64 -d -o profile.mobileprovision
+        env:
+          IOS_CERTIFICATE_BASE64: ${{ secrets.IOS_CERTIFICATE_BASE64 }}
+          IOS_PROVISIONING_PROFILE_BASE64: ${{ secrets.IOS_PROVISIONING_PROFILE_BASE64 }}
+
+      - name: Importar certificado para Keychain
+        run: |
+          security create-keychain -p "temppass" ios-build.keychain
+          security default-keychain -s ios-build.keychain
+          security unlock-keychain -p "temppass" ios-build.keychain
+          security import certificate.p12 -k ios-build.keychain -P "$IOS_CERTIFICATE_PASSWORD" -T /usr/bin/codesign
+          security set-key-partition-list -S apple-tool:,apple: -s -k "temppass" ios-build.keychain
+        env:
+          IOS_CERTIFICATE_PASSWORD: ${{ secrets.IOS_CERTIFICATE_PASSWORD }}
+
+      - name: Copiar provisioning profile
+        run: |
+          mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
+          UUID=$(grep -a -o "[-A-F0-9]\{36\}" profile.mobileprovision | head -1)
+          cp profile.mobileprovision ~/Library/MobileDevice/Provisioning\ Profiles/$UUID.mobileprovision
+          
       - name: Criar estrutura do Fastlane e Fastfile com API Key
         run: |
           mkdir -p ios/App/fastlane
@@ -66,26 +90,22 @@ jobs:
           platform :ios do
             desc "Build and upload to TestFlight"
             lane :release do
-              api_key = app_store_connect_api_key(
-                key_id: ENV["APPLE_KEY_ID"],
-                issuer_id: ENV["APPLE_ISSUER_ID"],
-                key_content: ENV["APPLE_KEY_CONTENT"],
-                is_key_content_base64: true,
-                duration: 1200
-              )
-          
-              match(type: "appstore", readonly: true)
-          
               build_app(
                 scheme: "App",
                 export_method: "app-store",
                 export_options: {
-                  signingStyle: "automatic",
-                  method: "app-store"
+                  provisioningProfiles: {
+                    ENV['APP_IDENTIFIER'] => ENV['PROVISIONING_PROFILE_NAME']
+                  }
                 }
               )
-          
-              upload_to_testflight(api_key: api_key)
+              upload_to_testflight(
+                api_key: app_store_connect_api_key(
+                  key_id: ENV["APPLE_KEY_ID"],
+                  issuer_id: ENV["APPLE_ISSUER_ID"],
+                  key: ENV["APPLE_KEY_CONTENT"]
+                )
+              )
             end
           end
           EOF
