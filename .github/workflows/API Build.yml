@@ -57,6 +57,11 @@ jobs:
       - name: Criar chave privada para App Store Connect
         run: echo "${APPLE_KEY_CONTENT}" > AuthKey.p8
 
+      - name: Gerar arquivo do certificado a partir do base64
+        run: echo "$IOS_CERTIFICATE" | base64 --decode > certificate.p12
+        env:
+          IOS_CERTIFICATE: ${{ secrets.IOS_CERTIFICATE }}
+    
       - name: Decodificar certificado e perfil de provisionamento
         run: |
           echo "$IOS_CERTIFICATE_BASE64" | base64 -d -o certificate.p12
