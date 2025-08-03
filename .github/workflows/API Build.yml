@@ -17,6 +17,7 @@ jobs:
       APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
       APP_STORE_EMAIL: ${{ secrets.APP_STORE_EMAIL}}
       IOS_CERT_PASSWORD: ${{ secrets.IOS_CERT_PASSWORD }}
+      PROVISIONING_PROFILE_NAME: ${{ secrets.PROVISIONING_PROFILE_NAME }}
 
     steps:
       - name: Checkout
