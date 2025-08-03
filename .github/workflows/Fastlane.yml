@@ -1,0 +1,39 @@
+name: Fastlane
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build-ios:
+    runs-on: macos-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build web
+        run: npm run build
+        
+      - name: Remover pasta iOS
+        run: rm -rf ios
+        
+      - name: Adicionar iOS e sincronizar Capacitor
+        run: |
+          npx cap add ios
+          npx cap sync
+
+      - name: Install Fastlane
+        run: sudo gem install fastlane
+
+      - name: Build & Upload with Fastlane
+        run: fastlane ios release
+        env:
+          APP_STORE_CONNECT_API_KEY: ${{ secrets.APP_STORE_CONNECT_API_KEY }}
+          MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
