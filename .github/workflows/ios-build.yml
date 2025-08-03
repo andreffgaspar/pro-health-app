@@ -84,7 +84,7 @@ jobs:
             <string>manual</string>
             <key>provisioningProfiles</key>
             <dict>
-              <key>app.lovable.7bde27a9721845aaa0217e78cef04596</key>
+              <key>com.prosoccerapp.prohealthapp</key>
               <string>ProfileProHealth</string>
             </dict>
           </dict>
