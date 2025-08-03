@@ -110,6 +110,23 @@ jobs:
           CODE_SIGNING_ALLOWED=NO \
           archive
 
+      - name: Verificar Info.plist dos frameworks
+        run: |
+          echo "CapacitorPushNotifications.framework"
+          plutil -p ios/App/build/App.xcarchive/Products/Applications/App.app/Frameworks/CapacitorPushNotifications.framework/Info.plist
+      
+          echo "Capacitor.framework"
+          plutil -p ios/App/build/App.xcarchive/Products/Applications/App.app/Frameworks/Capacitor.framework/Info.plist
+      
+          echo "CordovaPlugins.framework"
+          plutil -p ios/App/build/App.xcarchive/Products/Applications/App.app/Frameworks/CordovaPlugins.framework/Info.plist
+      
+          echo "Cordova.framework"
+          plutil -p ios/App/build/App.xcarchive/Products/Applications/App.app/Frameworks/Cordova.framework/Info.plist
+      
+          echo "CapacitorLocalNotifications.framework"
+          plutil -p ios/App/build/App.xcarchive/Products/Applications/App.app/Frameworks/CapacitorLocalNotifications.framework/Info.plist
+      
       - name: Exportar IPA
         run: |
           set -x
@@ -125,14 +142,8 @@ jobs:
             -archivePath ios/App/build/App.xcarchive \
             -exportOptionsPlist ios/App/exportOptions.plist \
             -exportPath ios/App/build | tee ios/App/build/export-log.txt
-        timeout-minutes: 10
+        timeout-minutes: 5
         continue-on-error: true
-
-      - name: Upload log de exportação
-        uses: actions/upload-artifact@v4
-        with:
-          name: export-log
-          path: ios/App/build/export-log.txt
 
       - name: Upload do .ipa
         uses: actions/upload-artifact@v4
