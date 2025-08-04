@@ -45,9 +45,11 @@ jobs:
           xcodebuild -list
 
       - name: Build e export IPA com assinatura automática
+        env:
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         run: |
           cd ios/App
-          
+
           xcodebuild -workspace App.xcworkspace \
             -scheme App \
             -configuration Release \
@@ -56,6 +58,7 @@ jobs:
             -destination 'generic/platform=iOS' \
             -allowProvisioningUpdates \
             CODE_SIGN_STYLE=Automatic \
+            DEVELOPMENT_TEAM=$APPLE_TEAM_ID \
             archive
 
           xcodebuild -exportArchive \
@@ -71,6 +74,8 @@ jobs:
               <string>app-store</string>
               <key>signingStyle</key>
               <string>automatic</string>
+              <key>teamID</key>
+              <string>${APPLE_TEAM_ID}</string>
               <key>uploadBitcode</key>
               <false/>
               <key>compileBitcode</key>
@@ -81,6 +86,7 @@ jobs:
             </plist>
             EOF
             )
+
 
       - name: Upload do .ipa
         uses: actions/upload-artifact@v4
