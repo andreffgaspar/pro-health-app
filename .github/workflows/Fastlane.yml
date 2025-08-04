@@ -53,6 +53,7 @@ jobs:
                 scheme: "App",
                 export_method: "app-store",
                 export_team_id: ENV["APPLE_TEAM_ID"],
+                xcargs: "DEVELOPMENT_TEAM=#{ENV['APPLE_TEAM_ID']}",
                 clean: true,                          # força limpeza
                 silent: false,                        # garante logs completos
                 export_options: {
