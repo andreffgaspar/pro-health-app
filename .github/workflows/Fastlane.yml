@@ -73,7 +73,7 @@ jobs:
                 export_options: {
                   provisioningProfiles: {
                     "com.prosoccerapp.prohealthapp" => "AppStore_com.prosoccerapp.prohealthapp"
-                  }
+                  },
                   signingStyle: "manual",
                   signingCertificate: "Apple Distribution",
                   teamID: ENV["APPLE_TEAM_ID"]
