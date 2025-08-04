@@ -67,7 +67,7 @@ jobs:
       - name: Criar release.xcconfig
         run: |
           echo "DEVELOPMENT_TEAM = $APPLE_TEAM_ID" > ios/App/release.xcconfig
-          echo "CODE_SIGN_STYLE = Automatic" >> ios/App/release.xcconfig
+          echo "CODE_SIGN_STYLE = Manual" >> ios/App/release.xcconfig
           echo "PROVISIONING_PROFILE_SPECIFIER = $PROVISIONING_PROFILE_NAME" >> ios/App/release.xcconfig
 
       - name: Criar exportOptions.plist
