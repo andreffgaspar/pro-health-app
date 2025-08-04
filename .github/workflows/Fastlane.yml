@@ -41,6 +41,11 @@ jobs:
           cd ios/App
           pod install
 
+      - name: Patch Bundle Identifier
+        run: |
+          sed -i '' 's/com.prosoccerapp.prohealthapp/com.prosoccerapp.prohealthappv2/g' ios/App/App.xcodeproj/project.pbxproj
+
+
       - name: Generate Fastfile
         run: |
           mkdir -p ios/App/fastlane
