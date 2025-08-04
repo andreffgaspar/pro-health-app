@@ -96,42 +96,40 @@ jobs:
           cd ios/App
           xcodebuild -showBuildSettings -scheme App | grep -E "DEVELOPMENT_TEAM|CODE_SIGN|PROVISIONING"
 
-      - name: Corrigir assinatura dos Pods para automático
-        run: |
-          find ios/App/Pods -name "project.pbxproj" | while read proj; do
-            echo "Corrigindo $proj"
-            sed -i '' '/PROVISIONING_PROFILE_SPECIFIER/d' "$proj"
-            sed -i '' '/PROVISIONING_PROFILE =/d' "$proj"
-            sed -i '' '/CODE_SIGN_IDENTITY =/d' "$proj"
-            sed -i '' '/CODE_SIGN_STYLE =/d' "$proj"
-            sed -i '' '/buildSettings = {/,/}/ s/^[[:space:]]*$/        CODE_SIGN_STYLE = Automatic;/' "$proj"
-          done
-
-      - name: Verificar CODE_SIGN dos Pods principais
+      - name: Configurar assinatura automática para frameworks do Capacitor
         run: |
           cd ios/App
-          for target in Capacitor CapacitorCordova CapacitorPushNotifications CapacitorLocalNotifications CordovaPlugins Pods-App; do
-            echo "===== $target ====="
-            xcodebuild -project Pods/Pods.xcodeproj -target "$target" -showBuildSettings | grep CODE_SIGN
-          done
+          
+          # Configurar assinatura automática para todos os targets dos Pods
+          echo "Configurando assinatura automática para frameworks do Capacitor..."
+          
+          # Editar o projeto principal para permitir assinatura mista
+          sed -i '' 's/CODE_SIGN_STYLE = Manual;/CODE_SIGN_STYLE = Automatic;/g' Pods/Pods.xcodeproj/project.pbxproj
+          
+          # Remover configurações de assinatura manual dos frameworks
+          sed -i '' '/PROVISIONING_PROFILE_SPECIFIER.*Capacitor/d' Pods/Pods.xcodeproj/project.pbxproj
+          sed -i '' '/PROVISIONING_PROFILE_SPECIFIER.*Cordova/d' Pods/Pods.xcodeproj/project.pbxproj
+          sed -i '' '/CODE_SIGN_IDENTITY.*Apple Distribution.*Capacitor/d' Pods/Pods.xcodeproj/project.pbxproj
+          sed -i '' '/CODE_SIGN_IDENTITY.*Apple Distribution.*Cordova/d' Pods/Pods.xcodeproj/project.pbxproj
+          
+          echo "Frameworks configurados para assinatura automática"
     
       - name: Build com Xcode
         run: |
           cd ios/App
+          
+          # Build usando estratégia híbrida: manual para app principal, automático para frameworks
           xcodebuild -workspace App.xcworkspace \
             -scheme App \
             -configuration Release \
             -sdk iphoneos \
             -archivePath $PWD/build/App.xcarchive \
             -allowProvisioningUpdates \
-            -allowProvisioningDeviceRegistration \
             -destination 'generic/platform=iOS' \
             DEVELOPMENT_TEAM="$APPLE_TEAM_ID" \
-            PROVISIONING_PROFILE_SPECIFIER="$PROVISIONING_PROFILE_NAME" \
             CODE_SIGN_STYLE=Manual \
             CODE_SIGN_IDENTITY="Apple Distribution" \
-            CODE_SIGNING_ALLOWED=YES \
-            CODE_SIGNING_REQUIRED=NO \
+            PROVISIONING_PROFILE_SPECIFIER="$PROVISIONING_PROFILE_NAME" \
             archive
 
       - name: Verificar Info.plist dos frameworks
