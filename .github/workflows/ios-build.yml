@@ -11,6 +11,7 @@ jobs:
       IOS_CERT_PASSWORD: ${{ secrets.IOS_CERT_PASSWORD }}
       IOS_PROFILE: ${{ secrets.IOS_PROFILE }}
       APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+      PROVISIONING_PROFILE_NAME: ${{ secrets.PROVISIONING_PROFILE_NAME }}
 
     steps:
       - name: Checkout código
@@ -67,6 +68,7 @@ jobs:
         run: |
           echo "DEVELOPMENT_TEAM = $APPLE_TEAM_ID" > ios/App/release.xcconfig
           echo "CODE_SIGN_STYLE = Automatic" >> ios/App/release.xcconfig
+          echo "PROVISIONING_PROFILE_SPECIFIER = $PROVISIONING_PROFILE_NAME" >> ios/App/release.xcconfig
 
       - name: Criar exportOptions.plist
         run: |
@@ -111,9 +113,7 @@ jobs:
             -allowProvisioningUpdates \
             -allowProvisioningDeviceRegistration \
             -destination 'generic/platform=iOS' \
-            DEVELOPMENT_TEAM=$APPLE_TEAM_ID \
-            CODE_SIGN_STYLE=Manual \
-            CODE_SIGN_IDENTITY="Apple Distribution" \
+            -xcconfig release.xcconfig \
             archive
 
       - name: Verificar Info.plist dos frameworks
