@@ -66,15 +66,16 @@ jobs:
 
               build_app(
                 scheme: "App",
+                clean: true,
                 export_method: "app-store",
-                export_team_id: ENV["APPLE_TEAM_ID"],
                 export_options: {
                   provisioningProfiles: {
                     ENV["APP_IDENTIFIER"] => "match AppStore #{ENV["APP_IDENTIFIER"]}"
                   },
+                  signingStyle: "manual",
+                  signingCertificate: "Apple Distribution",
                   teamID: ENV["APPLE_TEAM_ID"]
-                },
-                clean: true
+                }
               )
 
               upload_to_testflight(
