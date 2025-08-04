@@ -69,9 +69,7 @@ jobs:
                 clean: true,
                 export_method: "app-store",
                 export_team_id: ENV["APPLE_TEAM_ID"],
-                build_settings: {
-                  "DEVELOPMENT_TEAM" => ENV["APPLE_TEAM_ID"]
-                },
+                xcargs: "DEVELOPMENT_TEAM=#{ENV["APPLE_TEAM_ID"]}",
                 export_options: {
                   provisioningProfiles: {
                     ENV["APP_IDENTIFIER"] => "match AppStore #{ENV["APP_IDENTIFIER"]}"
@@ -81,7 +79,6 @@ jobs:
                   teamID: ENV["APPLE_TEAM_ID"]
                 }
               )
-
 
               upload_to_testflight(
                 api_key: api_key,
