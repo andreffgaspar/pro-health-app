@@ -40,6 +40,23 @@ jobs:
       - run: |
           cd ios/App
           pod install
+          
+      - name: Exibir Pods Instalados e Configurações
+        run: |
+          echo "📦 Listando todos os Pods instalados..."
+          pod list || echo "Comando 'pod list' não disponível. Listando manualmente:"
+      
+          echo ""
+          echo "📄 Conteúdo de Podfile.lock:"
+          cat ios/App/Podfile.lock || echo "Podfile.lock não encontrado"
+      
+          echo ""
+          echo "📂 Estrutura dos diretórios Pods:"
+          find ios/App/Pods -maxdepth 2
+      
+          echo ""
+          echo "🔍 Build Settings dos Targets dos Pods:"
+          xcodebuild -workspace ios/App/App.xcworkspace -scheme App -showBuildSettings | grep -E "Pods-|PODS|SWIFT_VERSION|CODE_SIGN|FRAMEWORK"
 
       - name: Patch Bundle Identifier
         run: |
