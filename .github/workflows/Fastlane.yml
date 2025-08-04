@@ -13,7 +13,6 @@ jobs:
       APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
       APP_STORE_EMAIL: ${{ secrets.APP_STORE_EMAIL }}
       APP_IDENTIFIER: com.prosoccerapp.prohealthapp
-      FASTLANE_FASTFILE: ${{ secrets.FASTLANE_FASTFILE }}
 
     steps:
       - uses: actions/checkout@v3
@@ -44,7 +43,25 @@ jobs:
 
       - run: |
           mkdir -p ios/App/fastlane
-          echo "$FASTLANE_FASTFILE" > ios/App/fastlane/Fastfile
+          cat <<EOF > ios/App/fastlane/Fastfile
+          default_platform(:ios)
+      
+          platform :ios do
+            desc "Build and upload to TestFlight using Apple ID login"
+            lane :release do
+              build_app(
+                scheme: "App",
+                export_method: "app-store",
+                export_team_id: ENV["APPLE_TEAM_ID"]
+              )
+      
+              upload_to_testflight(
+                username: ENV["APP_STORE_EMAIL"],
+                app_identifier: ENV["APP_IDENTIFIER"]
+              )
+            end
+          end
+          EOF
 
       - run: |
           cd ios/App
