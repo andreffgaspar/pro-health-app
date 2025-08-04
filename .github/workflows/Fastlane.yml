@@ -58,7 +58,7 @@ jobs:
 
               match(
                 type: "appstore",
-                readonly: false, # <- ALTERADO AQUI PARA CRIAR CERTIFICADOS NA PRIMEIRA VEZ
+                readonly: true,
                 git_url: ENV["MATCH_GIT_URL"],
                 app_identifier: ENV["APP_IDENTIFIER"],
                 api_key: api_key
@@ -68,6 +68,12 @@ jobs:
                 scheme: "App",
                 export_method: "app-store",
                 export_team_id: ENV["APPLE_TEAM_ID"],
+                export_options: {
+                  provisioningProfiles: {
+                    ENV["APP_IDENTIFIER"] => "match AppStore #{ENV["APP_IDENTIFIER"]}"
+                  },
+                  teamID: ENV["APPLE_TEAM_ID"]
+                },
                 clean: true
               )
 
