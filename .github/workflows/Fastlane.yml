@@ -69,7 +69,6 @@ jobs:
                 clean: true,
                 export_method: "app-store",
                 export_team_id: ENV["APPLE_TEAM_ID"],
-                configuration: "Release",
                 xcargs: "DEVELOPMENT_TEAM=#{ENV["APPLE_TEAM_ID"]}",
                 export_options: {
                   provisioningProfiles: {
