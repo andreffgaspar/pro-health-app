@@ -52,9 +52,16 @@ jobs:
               build_app(
                 scheme: "App",
                 export_method: "app-store",
-                export_team_id: ENV["APPLE_TEAM_ID"]
+                export_team_id: ENV["APPLE_TEAM_ID"],
+                clean: true,                          # força limpeza
+                silent: false,                        # garante logs completos
+                export_options: {
+                  provisioningProfiles: {
+                    ENV["APP_IDENTIFIER"] => "match AppStore #{ENV["APP_IDENTIFIER"]}"
+                  }
+                }
               )
-      
+            
               upload_to_testflight(
                 username: ENV["APP_STORE_EMAIL"],
                 app_identifier: ENV["APP_IDENTIFIER"]
@@ -71,3 +78,8 @@ jobs:
         with:
           name: app-ios
           path: ios/App/*.ipa
+
+      - name: Show build log if failure
+        if: failure()
+        run: |
+          cat ~/Library/Logs/gym/App-App.log || echo "Log não encontrado"
