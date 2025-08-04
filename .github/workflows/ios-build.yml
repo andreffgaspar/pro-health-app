@@ -47,7 +47,9 @@ jobs:
       - name: Corrigir assinatura dos Pods para Automática
         run: |
           find ios/App/Pods -name "project.pbxproj" | while read proj; do
-            sed -i '' 's/CODE_SIGN_STYLE = Manual;/CODE_SIGN_STYLE = Automatic;/g' "$proj"
+            sed -i '' 's/CODE_SIGN_STYLE = Automatic;/CODE_SIGN_STYLE = Manual;/g' "$proj"
+            sed -i '' 's/DEVELOPMENT_TEAM = .*;/DEVELOPMENT_TEAM = '"$APPLE_TEAM_ID"';/g' "$proj"
+            sed -i '' 's/CODE_SIGN_IDENTITY = .*;/CODE_SIGN_IDENTITY = Apple Distribution;/g' "$proj"
           done
           
       - name: Preparar certificado e configurar keychain
@@ -82,11 +84,18 @@ jobs:
           <plist version="1.0">
           <dict>
             <key>method</key>
-            <string>app-store-connect</string>
+            <string>app-store</string>
             <key>teamID</key>
             <string>${APPLE_TEAM_ID}</string>
             <key>signingStyle</key>
-            <string>automatic</string>
+            <string>manual</string>
+            <key>teamID</key>
+            <string>${APPLE_TEAM_ID}</string>
+            <key>provisioningProfiles</key>
+            <dict>
+              <key>com.prosoccerapp.prohealthapp</key>
+              <string>${{ secrets.PROVISIONING_PROFILE_NAME }}</string>
+            </dict>
           </dict>
           </plist>
           EOF
@@ -113,7 +122,8 @@ jobs:
             -allowProvisioningDeviceRegistration \
             -destination 'generic/platform=iOS' \
             DEVELOPMENT_TEAM=$APPLE_TEAM_ID \
-            CODE_SIGN_STYLE=Automatic \
+            CODE_SIGN_STYLE=Manual \
+            CODE_SIGN_IDENTITY="Apple Distribution" \
             archive
 
       - name: Verificar Info.plist dos frameworks
