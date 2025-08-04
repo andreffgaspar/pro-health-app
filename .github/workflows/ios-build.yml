@@ -108,6 +108,7 @@ jobs:
         run: |
           find ios/App/Pods -name "project.pbxproj" | while read proj; do
             sed -i '' 's/PROVISIONING_PROFILE_SPECIFIER = .*;/PROVISIONING_PROFILE_SPECIFIER = "";/g' "$proj"
+            sed -i '' 's/PROVISIONING_PROFILE = .*;/PROVISIONING_PROFILE = "";/g' "$proj"
             sed -i '' 's/CODE_SIGN_STYLE = Manual;/CODE_SIGN_STYLE = Automatic;/g' "$proj"
             sed -i '' 's/CODE_SIGN_IDENTITY = .*;/CODE_SIGN_IDENTITY = "";/g' "$proj"
           done
