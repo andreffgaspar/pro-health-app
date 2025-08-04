@@ -79,25 +79,23 @@ jobs:
       - name: Criar exportOptions.plist
         run: |
           cat <<EOF > ios/App/exportOptions.plist
-          <?xml version="1.0" encoding="UTF-8"?>
-          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-          <plist version="1.0">
-          <dict>
-            <key>method</key>
-            <string>app-store</string>
-            <key>teamID</key>
-            <string>${APPLE_TEAM_ID}</string>
-            <key>signingStyle</key>
-            <string>manual</string>
-            <key>teamID</key>
-            <string>${APPLE_TEAM_ID}</string>
-            <key>provisioningProfiles</key>
-            <dict>
-              <key>com.prosoccerapp.prohealthapp</key>
-              <string>${{ secrets.PROVISIONING_PROFILE_NAME }}</string>
-            </dict>
-          </dict>
-          </plist>
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>method</key>
+  <string>app-store</string>
+  <key>signingStyle</key>
+  <string>manual</string>
+  <key>teamID</key>
+  <string>${APPLE_TEAM_ID}</string>
+  <key>provisioningProfiles</key>
+  <dict>
+    <key>com.prosoccerapp.prohealthapp</key>
+    <string>${{ secrets.PROVISIONING_PROFILE_NAME }}</string>
+  </dict>
+</dict>
+</plist>
           EOF
 
       - name: Verificar Schemes disponíveis
@@ -110,6 +108,9 @@ jobs:
           cd ios/App
           xcodebuild -showBuildSettings -scheme App | grep -E "DEVELOPMENT_TEAM|CODE_SIGN|PROVISIONING"
 
+      - name: Verificar nome do provisioning profile
+        run: echo "Usando profile: ${{ secrets.PROVISIONING_PROFILE_NAME }}"
+  
       - name: Build com Xcode
         run: |
           cd ios/App
@@ -124,6 +125,7 @@ jobs:
             DEVELOPMENT_TEAM=$APPLE_TEAM_ID \
             CODE_SIGN_STYLE=Manual \
             CODE_SIGN_IDENTITY="Apple Distribution" \
+            PROVISIONING_PROFILE_SPECIFIER="${{ secrets.PROVISIONING_PROFILE_NAME }}" \
             archive
 
       - name: Verificar Info.plist dos frameworks
