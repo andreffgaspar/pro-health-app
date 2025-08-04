@@ -72,7 +72,7 @@ jobs:
                 xcargs: "DEVELOPMENT_TEAM=#{ENV["APPLE_TEAM_ID"]}",
                 export_options: {
                   provisioningProfiles: {
-                    ENV["APP_IDENTIFIER"] => "match AppStore #{ENV["APP_IDENTIFIER"]}"
+                    "#{ENV["APP_IDENTIFIER"]}" => "match AppStore #{ENV["APP_IDENTIFIER"]}"
                   },
                   signingStyle: "manual",
                   signingCertificate: "Apple Distribution",
