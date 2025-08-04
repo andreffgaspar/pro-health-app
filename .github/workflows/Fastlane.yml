@@ -8,11 +8,13 @@ jobs:
     runs-on: macos-latest
 
     env:
-      FASTLANE_SESSION: ${{ secrets.FASTLANE_SESSION }}
-      FASTLANE_APPLE_APPLICATION_SPECIFIC_PASSWORD: ${{ secrets.APP_SPECIFIC_PASSWORD }}
-      APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
-      APP_STORE_EMAIL: ${{ secrets.APP_STORE_EMAIL }}
+      MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
+      MATCH_GIT_URL: ${{ secrets.MATCH_GIT_URL }}
       APP_IDENTIFIER: com.prosoccerapp.prohealthapp
+      APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+      APPLE_KEY_ID: ${{ secrets.APPLE_KEY_ID }}
+      APPLE_ISSUER_ID: ${{ secrets.APPLE_ISSUER_ID }}
+      APPLE_KEY_CONTENT: ${{ secrets.APPLE_KEY_CONTENT }}
 
     steps:
       - uses: actions/checkout@v3
@@ -28,11 +30,9 @@ jobs:
           node-version: 20
 
       - run: npm install --legacy-peer-deps
-
       - run: npm run build
 
       - run: rm -rf ios
-
       - run: |
           npx cap add ios
           npx cap sync
@@ -41,37 +41,46 @@ jobs:
           cd ios/App
           pod install
 
-      - run: |
+      - name: Generate Fastfile
+        run: |
           mkdir -p ios/App/fastlane
           cat <<EOF > ios/App/fastlane/Fastfile
           default_platform(:ios)
-      
+
           platform :ios do
-            desc "Build and upload to TestFlight using Apple ID login"
             lane :release do
+              api_key = app_store_connect_api_key(
+                key_id: ENV["APPLE_KEY_ID"],
+                issuer_id: ENV["APPLE_ISSUER_ID"],
+                key: ENV["APPLE_KEY_CONTENT"],
+                is_key_content_base64: false
+              )
+
+              match(
+                type: "appstore",
+                readonly: false, # <- ALTERADO AQUI PARA CRIAR CERTIFICADOS NA PRIMEIRA VEZ
+                git_url: ENV["MATCH_GIT_URL"],
+                app_identifier: ENV["APP_IDENTIFIER"],
+                api_key: api_key
+              )
+
               build_app(
                 scheme: "App",
                 export_method: "app-store",
                 export_team_id: ENV["APPLE_TEAM_ID"],
-                xcargs: "DEVELOPMENT_TEAM=#{ENV['APPLE_TEAM_ID']} -allowProvisioningUpdates",
-                clean: true,
-                silent: false,
-                export_options: {
-                  provisioningProfiles: {
-                    ENV["APP_IDENTIFIER"] => "match AppStore #{ENV["APP_IDENTIFIER"]}"
-                  }
-                }
+                clean: true
               )
-            
+
               upload_to_testflight(
-                username: ENV["APP_STORE_EMAIL"],
+                api_key: api_key,
                 app_identifier: ENV["APP_IDENTIFIER"]
               )
             end
           end
           EOF
 
-      - run: |
+      - name: Run Fastlane
+        run: |
           cd ios/App
           fastlane release
 
