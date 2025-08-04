@@ -46,7 +46,7 @@ jobs:
           mkdir -p ios/App/fastlane
           cat <<EOF > ios/App/fastlane/Fastfile
           default_platform(:ios)
-
+      
           platform :ios do
             lane :release do
               api_key = app_store_connect_api_key(
@@ -55,31 +55,15 @@ jobs:
                 key_content: ENV["APPLE_KEY_CONTENT"],
                 is_key_content_base64: false
               )
-
-              match(
-                type: "appstore",
-                readonly: true,
-                git_url: ENV["MATCH_GIT_URL"],
-                app_identifier: ENV["APP_IDENTIFIER"],
-                api_key: api_key
-              )
-
+      
               build_app(
                 scheme: "App",
                 clean: true,
                 export_method: "app-store",
                 export_team_id: ENV["APPLE_TEAM_ID"],
-                xcargs: "DEVELOPMENT_TEAM=#{ENV["APPLE_TEAM_ID"]}",
-                export_options: {
-                  provisioningProfiles: {
-                    "#{ENV["APP_IDENTIFIER"]}" => "match AppStore #{ENV["APP_IDENTIFIER"]}"
-                  },
-                  signingStyle: "manual",
-                  signingCertificate: "Apple Distribution",
-                  teamID: ENV["APPLE_TEAM_ID"]
-                }
+                xcargs: "DEVELOPMENT_TEAM=#{ENV["APPLE_TEAM_ID"]} -allowProvisioningUpdates"
               )
-
+      
               upload_to_testflight(
                 api_key: api_key,
                 app_identifier: ENV["APP_IDENTIFIER"]
@@ -87,6 +71,7 @@ jobs:
             end
           end
           EOF
+      
 
       - name: Run Fastlane
         run: |
