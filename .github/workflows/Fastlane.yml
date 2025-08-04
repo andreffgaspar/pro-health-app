@@ -54,8 +54,8 @@ jobs:
                 export_method: "app-store",
                 export_team_id: ENV["APPLE_TEAM_ID"],
                 xcargs: "DEVELOPMENT_TEAM=#{ENV['APPLE_TEAM_ID']}" -allowProvisioningUpdates",
-                clean: true,                          # força limpeza
-                silent: false,                        # garante logs completos
+                clean: true,
+                silent: false,
                 export_options: {
                   provisioningProfiles: {
                     ENV["APP_IDENTIFIER"] => "match AppStore #{ENV["APP_IDENTIFIER"]}"
