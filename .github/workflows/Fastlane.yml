@@ -110,7 +110,7 @@ jobs:
       - name: Run Fastlane
         run: |
           cd ios/App
-          fastlane release
+          fastlane release -verbose
 
       - uses: actions/upload-artifact@v4
         with:
