@@ -1,0 +1,94 @@
+name: Build iOS App - Automatic
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build-ios:
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout código
+        uses: actions/checkout@v3
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Instalar dependências
+        run: npm install --legacy-peer-deps
+
+      - name: Build Vite
+        run: npm run build
+
+      - name: Instalar Capacitor
+        run: npm install -g @capacitor/cli
+
+      - name: Limpar pasta iOS (caso exista)
+        run: rm -rf ios
+
+      - name: Adicionar iOS
+        run: npx cap add ios
+
+      - name: Sincronizar Capacitor
+        run: npx cap sync
+
+      - name: Instalar dependências nativas iOS (CocoaPods)
+        run: |
+          cd ios/App
+          pod install
+
+      - name: Verificar Schemes disponíveis
+        run: |
+          cd ios/App
+          xcodebuild -list
+
+      - name: Build e export IPA com assinatura automática
+        run: |
+          cd ios/App
+          
+          xcodebuild -workspace App.xcworkspace \
+            -scheme App \
+            -configuration Release \
+            -sdk iphoneos \
+            -archivePath $PWD/build/App.xcarchive \
+            -destination 'generic/platform=iOS' \
+            -allowProvisioningUpdates \
+            CODE_SIGN_STYLE=Automatic \
+            archive
+
+          xcodebuild -exportArchive \
+            -archivePath $PWD/build/App.xcarchive \
+            -exportPath $PWD/build \
+            -allowProvisioningUpdates \
+            -exportOptionsPlist <(cat <<EOF
+            <?xml version="1.0" encoding="UTF-8"?>
+            <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+            <plist version="1.0">
+            <dict>
+              <key>method</key>
+              <string>app-store</string>
+              <key>signingStyle</key>
+              <string>automatic</string>
+              <key>uploadBitcode</key>
+              <false/>
+              <key>compileBitcode</key>
+              <true/>
+              <key>destination</key>
+              <string>export</string>
+            </dict>
+            </plist>
+            EOF
+            )
+
+      - name: Upload do .ipa
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-ios
+          path: ios/App/build/*.ipa
+
+      - name: Enviar para TestFlight
+        run: |
+          xcrun altool --upload-app --type ios --file ios/App/build/App.ipa \
+            --username "$APPLE_ID" --password "$APP_SPECIFIC_PASSWORD"
