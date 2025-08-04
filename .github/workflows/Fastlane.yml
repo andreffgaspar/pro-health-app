@@ -69,13 +69,13 @@ jobs:
               )
 
               update_project_team(
-                path: "ios/App/App.xcodeproj",
+                path: "App.xcodeproj",
                 teamid: ENV["APPLE_TEAM_ID"]
               )
               
               update_code_signing_settings(
                 use_automatic_signing: false,
-                path: "ios/App/App.xcodeproj",
+                path: "App.xcodeproj",
                 code_sign_identity: "Apple Distribution",
                 profile_name: "match AppStore com.prosoccerapp.prohealthappv2",
                 team_id: ENV["APPLE_TEAM_ID"],
