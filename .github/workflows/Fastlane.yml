@@ -58,7 +58,7 @@ jobs:
 
               match(
                 type: "appstore",
-                readonly: true,
+                readonly: false,
                 git_url: ENV["MATCH_GIT_URL"],
                 app_identifier: ENV["APP_IDENTIFIER"],
                 api_key: api_key
