@@ -72,7 +72,9 @@ jobs:
                 xcargs: "DEVELOPMENT_TEAM=#{ENV["APPLE_TEAM_ID"]}",
                 export_options: {
                   provisioningProfiles: {
-                    "com.prosoccerapp.prohealthapp" => "AppStore_com.prosoccerapp.prohealthapp"
+                    provisioningProfiles: {
+                      "com.prosoccerapp.prohealthapp" => "match AppStore com.prosoccerapp.prohealthapp"
+                    }
                   },
                   signingStyle: "manual",
                   signingCertificate: "Apple Distribution",
