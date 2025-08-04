@@ -100,14 +100,18 @@ jobs:
         run: |
           find ios/App/Pods -name "project.pbxproj" | while read proj; do
             echo "Corrigindo $proj"
-            # Apaga completamente as linhas com essas chaves (não apenas edita o valor)
             sed -i '' '/PROVISIONING_PROFILE_SPECIFIER/d' "$proj"
             sed -i '' '/PROVISIONING_PROFILE =/d' "$proj"
             sed -i '' '/CODE_SIGN_IDENTITY =/d' "$proj"
-            sed -i '' 's/CODE_SIGN_STYLE = Manual;/CODE_SIGN_STYLE = Automatic;/g' "$proj"
+            sed -i '' '/CODE_SIGN_STYLE =/d' "$proj"
+            sed -i '' '/buildSettings = {/,/}/ s/^[[:space:]]*$/        CODE_SIGN_STYLE = Automatic;/' "$proj"
           done
 
-
+      - name: Verificar build settings de um Pod
+        run: |
+          cd ios/App
+          xcodebuild -target Capacitor -showBuildSettings | grep CODE_SIGN
+    
       - name: Build com Xcode
         run: |
           cd ios/App
