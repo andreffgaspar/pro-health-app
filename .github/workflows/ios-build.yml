@@ -107,10 +107,13 @@ jobs:
             sed -i '' '/buildSettings = {/,/}/ s/^[[:space:]]*$/        CODE_SIGN_STYLE = Automatic;/' "$proj"
           done
 
-      - name: Verificar build settings de um Pod
+      - name: Verificar CODE_SIGN dos Pods principais
         run: |
           cd ios/App
-          xcodebuild -target Capacitor -showBuildSettings | grep CODE_SIGN
+          for target in Capacitor CapacitorCordova CapacitorPushNotifications CapacitorLocalNotifications CordovaPlugins Pods-App; do
+            echo "===== $target ====="
+            xcodebuild -project Pods/Pods.xcodeproj -target "$target" -showBuildSettings | grep CODE_SIGN
+          done
     
       - name: Build com Xcode
         run: |
