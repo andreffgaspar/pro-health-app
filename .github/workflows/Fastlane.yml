@@ -112,4 +112,11 @@ jobs:
           fastlane release
 
       - uses: actions/upload-artifact@v4
-        wi
+        with:
+          name: app-ios
+          path: ios/App/*.ipa
+
+      - name: Show build log if failure
+        if: failure()
+        run: |
+          cat ~/Library/Logs/gym/App-App.log || echo "Log não encontrado"
