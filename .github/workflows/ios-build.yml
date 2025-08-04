@@ -96,6 +96,11 @@ jobs:
           cd ios/App
           xcodebuild -list
 
+      - name: Verificar configuração de assinatura
+        run: |
+          cd ios/App
+          xcodebuild -showBuildSettings -scheme App | grep -E "DEVELOPMENT_TEAM|CODE_SIGN|PROVISIONING"
+
       - name: Build com Xcode
         run: |
           cd ios/App
