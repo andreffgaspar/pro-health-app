@@ -107,9 +107,6 @@ jobs:
         run: |
           cd ios/App
           xcodebuild -showBuildSettings -scheme App | grep -E "DEVELOPMENT_TEAM|CODE_SIGN|PROVISIONING"
-
-      - name: Verificar nome do provisioning profile
-        run: echo "Usando profile: ${{ secrets.PROVISIONING_PROFILE_NAME }}"
   
       - name: Build com Xcode
         run: |
