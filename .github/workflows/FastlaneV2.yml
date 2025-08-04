@@ -1,0 +1,136 @@
+name: FastlaneV2
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build-ios:
+    runs-on: macos-latest
+
+    env:
+      MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
+      MATCH_GIT_URL: ${{ secrets.MATCH_GIT_URL }}
+      APP_IDENTIFIER: com.prosoccerapp.prohealthappv2
+      APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+      APPLE_KEY_ID: ${{ secrets.APPLE_KEY_ID }}
+      APPLE_ISSUER_ID: ${{ secrets.APPLE_ISSUER_ID }}
+      APPLE_KEY_CONTENT: ${{ secrets.APPLE_KEY_CONTENT }}
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: 3.2
+
+      - run: gem install fastlane
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - run: npm install --legacy-peer-deps
+      - run: npm run build
+
+      - run: rm -rf ios
+      - run: |
+          npx cap add ios
+          npx cap sync
+
+      - run: |
+          cd ios/App
+          pod install
+          
+      - name: Exibir Pods Instalados e Configurações
+        run: |
+          echo "📄 Conteúdo do Podfile.lock:"
+          cat ios/App/Podfile.lock || echo "Podfile.lock não encontrado"
+      
+          echo ""
+          echo "📂 Estrutura do diretório Pods:"
+          find ios/App/Pods -type f -name "*.podspec.json" || echo "Nenhum podspec encontrado"
+      
+          echo ""
+          echo "🔍 Build Settings (parciais) dos Pods:"
+          xcodebuild -workspace ios/App/App.xcworkspace -scheme App -showBuildSettings | grep -E "Pods-|PODS|SWIFT_VERSION|CODE_SIGN|FRAMEWORK" || echo "Não foi possível extrair build settings"
+
+      - name: Patch Bundle Identifier
+        run: |
+          sed -i '' 's/com.prosoccerapp.prohealthapp/com.prosoccerapp.prohealthappv2/g' ios/App/App.xcodeproj/project.pbxproj
+
+      - name: Generate Fastfile
+        run: |
+          mkdir -p ios/App/fastlane
+          cat <<EOF > ios/App/fastlane/Fastfile
+          default_platform(:ios)
+
+          platform :ios do
+            lane :release do
+              api_key = app_store_connect_api_key(
+                key_id: ENV["APPLE_KEY_ID"],
+                issuer_id: ENV["APPLE_ISSUER_ID"],
+                key_content: ENV["APPLE_KEY_CONTENT"],
+                is_key_content_base64: false
+              )
+
+              match(
+                type: "appstore",
+                readonly: false,
+                git_url: ENV["MATCH_GIT_URL"],
+                app_identifier: ENV["APP_IDENTIFIER"],
+                api_key: api_key
+              )
+
+              update_project_team(
+                path: "App.xcodeproj",
+                teamid: ENV["APPLE_TEAM_ID"]
+              )
+              
+              update_code_signing_settings(
+                use_automatic_signing: false,
+                path: "App.xcodeproj",
+                code_sign_identity: "Apple Distribution",
+                profile_name: "match AppStore com.prosoccerapp.prohealthappv2",
+                team_id: ENV["APPLE_TEAM_ID"],
+                bundle_identifier: ENV["APP_IDENTIFIER"]
+              )
+
+
+              build_app(
+                scheme: "App",
+                clean: true,
+                export_method: "app-store",
+                export_team_id: ENV["APPLE_TEAM_ID"],
+                xcargs: "DEVELOPMENT_TEAM=#{ENV["APPLE_TEAM_ID"]}",
+                export_options: {
+                  provisioningProfiles: {
+                    "com.prosoccerapp.prohealthappv2" => "match AppStore com.prosoccerapp.prohealthappv2"
+                  },
+                  signingStyle: "manual",
+                  signingCertificate: "Apple Distribution",
+                  teamID: ENV["APPLE_TEAM_ID"]
+                }
+              )
+
+              upload_to_testflight(
+                api_key: api_key,
+                app_identifier: ENV["APP_IDENTIFIER"]
+              )
+            end
+          end
+          EOF
+
+      - name: Run Fastlane
+        run: |
+          cd ios/App
+          fastlane release
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: app-ios
+          path: ios/App/*.ipa
+
+      - name: Show build log if failure
+        if: failure()
+        run: |
+          cat ~/Library/Logs/gym/App-App.log || echo "Log não encontrado"
