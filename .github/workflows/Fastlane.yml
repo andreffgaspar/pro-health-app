@@ -73,7 +73,7 @@ jobs:
                 export_options: {
                   provisioningProfiles: {
                     provisioningProfiles: {
-                      "AppStore_com.prosoccerapp.prohealthapp" => "match AppStore AppStore_com.prosoccerapp.prohealthapp"
+                      "com.prosoccerapp.prohealthapp" => "match AppStore com.prosoccerapp.prohealthapp"
                     }
                   },
                   signingStyle: "manual",
