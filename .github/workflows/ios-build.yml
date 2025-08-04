@@ -43,14 +43,6 @@ jobs:
         run: |
           cd ios/App
           pod install
-
-      - name: Corrigir assinatura dos Pods para Automática
-        run: |
-          find ios/App/Pods -name "project.pbxproj" | while read proj; do
-            sed -i '' 's/CODE_SIGN_STYLE = Automatic;/CODE_SIGN_STYLE = Manual;/g' "$proj"
-            sed -i '' 's/DEVELOPMENT_TEAM = .*;/DEVELOPMENT_TEAM = '"$APPLE_TEAM_ID"';/g' "$proj"
-            sed -i '' 's/CODE_SIGN_IDENTITY = .*;/CODE_SIGN_IDENTITY = Apple Distribution;/g' "$proj"
-          done
           
       - name: Preparar certificado e configurar keychain
         run: |
