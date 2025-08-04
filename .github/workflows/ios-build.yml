@@ -107,11 +107,14 @@ jobs:
       - name: Corrigir assinatura dos Pods para automático
         run: |
           find ios/App/Pods -name "project.pbxproj" | while read proj; do
-            sed -i '' 's/PROVISIONING_PROFILE_SPECIFIER = .*;/PROVISIONING_PROFILE_SPECIFIER = "";/g' "$proj"
-            sed -i '' 's/PROVISIONING_PROFILE = .*;/PROVISIONING_PROFILE = "";/g' "$proj"
+            echo "Corrigindo $proj"
+            # Apaga completamente as linhas com essas chaves (não apenas edita o valor)
+            sed -i '' '/PROVISIONING_PROFILE_SPECIFIER/d' "$proj"
+            sed -i '' '/PROVISIONING_PROFILE =/d' "$proj"
+            sed -i '' '/CODE_SIGN_IDENTITY =/d' "$proj"
             sed -i '' 's/CODE_SIGN_STYLE = Manual;/CODE_SIGN_STYLE = Automatic;/g' "$proj"
-            sed -i '' 's/CODE_SIGN_IDENTITY = .*;/CODE_SIGN_IDENTITY = "";/g' "$proj"
           done
+
 
       - name: Build com Xcode
         run: |
