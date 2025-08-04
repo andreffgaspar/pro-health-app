@@ -13,6 +13,7 @@ jobs:
       APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
       APP_STORE_EMAIL: ${{ secrets.APP_STORE_EMAIL }}
       APP_IDENTIFIER: com.prosoccerapp.prohealthapp
+      FASTLANE_FASTFILE: ${{ secrets.FASTLANE_FASTFILE }}
 
     steps:
       - uses: actions/checkout@v3
