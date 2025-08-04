@@ -45,7 +45,6 @@ jobs:
         run: |
           sed -i '' 's/com.prosoccerapp.prohealthapp/com.prosoccerapp.prohealthappv2/g' ios/App/App.xcodeproj/project.pbxproj
 
-
       - name: Generate Fastfile
         run: |
           mkdir -p ios/App/fastlane
@@ -69,6 +68,20 @@ jobs:
                 api_key: api_key
               )
 
+              update_project_team(
+                path: "ios/App",
+                teamid: ENV["APPLE_TEAM_ID"]
+              )
+
+              update_code_signing_settings(
+                use_automatic_signing: false,
+                path: "ios/App",
+                code_sign_identity: "Apple Distribution",
+                profile_name: "match AppStore com.prosoccerapp.prohealthappv2",
+                team_id: ENV["APPLE_TEAM_ID"],
+                bundle_identifier: ENV["APP_IDENTIFIER"]
+              )
+
               build_app(
                 scheme: "App",
                 clean: true,
@@ -85,7 +98,6 @@ jobs:
                 }
               )
 
-
               upload_to_testflight(
                 api_key: api_key,
                 app_identifier: ENV["APP_IDENTIFIER"]
@@ -100,11 +112,4 @@ jobs:
           fastlane release
 
       - uses: actions/upload-artifact@v4
-        with:
-          name: app-ios
-          path: ios/App/*.ipa
-
-      - name: Show build log if failure
-        if: failure()
-        run: |
-          cat ~/Library/Logs/gym/App-App.log || echo "Log não encontrado"
+        wi
