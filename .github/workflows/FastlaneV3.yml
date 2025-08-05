@@ -60,20 +60,6 @@ jobs:
           echo 'Modificando script de Embed Pods para imprimir frameworks sendo processados...'
           sed -i '' 's/echo "Code Signing \$1"/echo "📦 Embedding framework: \$1"/' ios/App/Pods/Target\ Support\ Files/Pods-App/Pods-App-frameworks.sh || echo "Não foi possível modificar script"
 
-      - name: Patch CODE_SIGNING_ALLOWED nos Pods
-        run: |
-          ruby -e '
-            require "xcodeproj"
-            project_path = "ios/App/Pods/Pods.xcodeproj"
-            project = Xcodeproj::Project.open(project_path)
-            project.targets.each do |target|
-              target.build_configurations.each do |config|
-                config.build_settings["CODE_SIGNING_ALLOWED"] = "NO"
-              end
-            end
-            project.save
-          '
-
       - name: Exibir Pods Instalados e Configurações
         run: |
           echo "📄 Conteúdo do Podfile.lock:"
@@ -138,7 +124,7 @@ jobs:
                 export_method: "app-store",
                 export_team_id: ENV["APPLE_TEAM_ID"],
                 # ✅ Evita embed dos frameworks indevidos
-                xcargs: "DEVELOPMENT_TEAM=#{ENV["APPLE_TEAM_ID"]} CODE_SIGN_STYLE=Manual CODE_SIGN_IDENTITY=\"Apple Distribution\" EXCLUDED_ARCHS=arm64",
+                xcargs: "ARCHS=$(ARCHS_STANDARD) VALID_ARCHS=arm64 DEVELOPMENT_TEAM=#{ENV["APPLE_TEAM_ID"]} CODE_SIGN_STYLE=Manual CODE_SIGN_IDENTITY=\"Apple Distribution\" EXCLUDED_ARCHS=arm64",
                 disable_xcpretty: true,
                 export_options: {
                   provisioningProfiles: {
@@ -165,13 +151,6 @@ jobs:
 
       - name: Clean DerivedData
         run: rm -rf ~/Library/Developer/Xcode/DerivedData
-
-      - name: Corrigir função install_framework no script do CocoaPods
-        run: |
-          cat <<'EOF' > ios/App/Pods/Target\ Support\ Files/Pods-App/Pods-App-frameworks.sh
-          #!/bin/sh
-          # [...script inalterado, mantido conforme enviado...]
-          EOF
 
       - name: Configurar keychain para uso com match
         run: |
