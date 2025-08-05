@@ -171,6 +171,11 @@ jobs:
           echo "MATCH_KEYCHAIN_NAME=build.keychain" >> $GITHUB_ENV
           echo "MATCH_KEYCHAIN_PASSWORD=buildpass" >> $GITHUB_ENV
 
+      - name: Adicionar NSHealthUsage ao Info.plist
+        run: |
+          /usr/libexec/PlistBuddy -c "Add :NSHealthShareUsageDescription string 'Este app pode utilizar bibliotecas que acessam dados de saúde. Nenhuma informação será usada sem sua permissão.'" ios/App/App/Info.plist
+          /usr/libexec/PlistBuddy -c "Add :NSHealthUpdateUsageDescription string 'Este app pode utilizar bibliotecas que atualizam dados de saúde. Nenhuma informação será usada sem sua permissão.'" ios/App/App/Info.plist
+
       - name: Pré-build
         run: echo "🏗️ Iniciando build..."
 
