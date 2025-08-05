@@ -51,7 +51,11 @@ jobs:
         run: |
           sed -e "s|require_relative '../../node_modules/@capacitor/ios/scripts/pods_helpers'|require_relative '../node_modules/@capacitor/ios/scripts/pods_helpers'|" ios/Podfile > ios/Podfile.tmp
           mv ios/Podfile.tmp ios/Podfile
-          
+
+      - name: Adicionar caminho do projeto no Podfile
+        run: |
+          echo "project 'App/App.xcodeproj'" >> ios/Podfile
+    
       - run: |
           cd ios
           pod install
