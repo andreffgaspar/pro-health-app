@@ -22,4 +22,7 @@ export default defineConfig(({ mode }) => ({
   build: {
     outDir: isCapacitor ? "www" : "build",
   },
+  define: {
+    'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV || 'development'),
+  },
 }));

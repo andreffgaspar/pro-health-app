@@ -1,15 +1,19 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const isCI = process.env.CI === 'true'; // Detecta se está rodando no GitHub Actions
+const isProduction = process.env.NODE_ENV === 'production' || isCI;
 
 const config: CapacitorConfig = {
   appId: isCI ? 'com.prosoccerapp.prohealthapp' : 'app.lovable.7bde27a9721845aaa0217e78cef04596',
   appName: 'pro-health-app',
   webDir: 'www',
-  server: {
-    url: 'https://7bde27a9-7218-45aa-a021-7e78cef04596.lovableproject.com?forceHideBadge=true',
-    cleartext: true
-  },
+  // Only use server config in development mode
+  ...(isProduction ? {} : {
+    server: {
+      url: 'https://7bde27a9-7218-45aa-a021-7e78cef04596.lovableproject.com?forceHideBadge=true',
+      cleartext: true
+    }
+  }),
   plugins: {
     SplashScreen: {
       launchShowDuration: 2000,
