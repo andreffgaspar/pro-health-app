@@ -51,6 +51,8 @@ jobs:
       - run: |
           cd ios/App
           pod install
+          npx cap sync ios
+
 
       - name: Ensure scripts are executable
         run: chmod +x ios/App/Pods/Target\ Support\ Files/Pods-App/Pods-App-frameworks.sh
@@ -103,13 +105,13 @@ jobs:
               sh("security set-key-partition-list -S apple-tool:,apple: -s -k buildpass build.keychain")
 
               update_project_team(
-                path: "App.xcodeproj",
+                path: "ios/App/App.xcodeproj",
                 teamid: ENV["APPLE_TEAM_ID"]
               )
               
               update_code_signing_settings(
                 use_automatic_signing: false,
-                path: "App.xcodeproj",
+                path: "ios/App/App.xcodeproj",
                 code_sign_identity: "Apple Distribution",
                 profile_name: "match AppStore com.prosoccerapp.prohealthappv2",
                 team_id: ENV["APPLE_TEAM_ID"],
@@ -124,7 +126,7 @@ jobs:
                 export_method: "app-store",
                 export_team_id: ENV["APPLE_TEAM_ID"],
                 # ✅ Evita embed dos frameworks indevidos
-                xcargs: "ARCHS=$(ARCHS_STANDARD) VALID_ARCHS=arm64 DEVELOPMENT_TEAM=#{ENV["APPLE_TEAM_ID"]} CODE_SIGN_STYLE=Manual CODE_SIGN_IDENTITY=\"Apple Distribution\" EXCLUDED_ARCHS=arm64",
+                xcargs: "ARCHS=$(ARCHS_STANDARD) DEVELOPMENT_TEAM=#{ENV["APPLE_TEAM_ID"]} CODE_SIGN_STYLE=Manual CODE_SIGN_IDENTITY=\"Apple Distribution\"",
                 disable_xcpretty: true,
                 export_options: {
                   provisioningProfiles: {
