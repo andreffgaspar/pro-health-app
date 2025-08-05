@@ -180,7 +180,9 @@ jobs:
         run: |
           BUILD_NUMBER=$(date +%s) # ou algum outro sistema, como contador no repositório
           /usr/libexec/PlistBuddy -c "Set :CFBundleVersion $BUILD_NUMBER" ios/App/App/Info.plist
-          
+
+      - run: npx cap copy ios
+      
       - name: Pré-build
         run: echo "🏗️ Iniciando build..."
 
