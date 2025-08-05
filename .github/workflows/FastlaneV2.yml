@@ -47,6 +47,10 @@ jobs:
           mv ios/App/Podfile ios/
           mv ios/App/Podfile.lock ios/ || true
 
+      - name: Corrigir caminho do require no Podfile
+        run: |
+          sed -i '' 's|require_relative ../../node_modules/@capacitor/ios/scripts/pods_helpers|require_relative ../node_modules/@capacitor/ios/scripts/pods_helpers|' ios/Podfile
+          
       - run: |
           cd ios
           pod install
