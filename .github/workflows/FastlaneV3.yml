@@ -176,6 +176,11 @@ jobs:
           /usr/libexec/PlistBuddy -c "Add :NSHealthShareUsageDescription string 'Este app pode utilizar bibliotecas que acessam dados de saúde. Nenhuma informação será usada sem sua permissão.'" ios/App/App/Info.plist
           /usr/libexec/PlistBuddy -c "Add :NSHealthUpdateUsageDescription string 'Este app pode utilizar bibliotecas que atualizam dados de saúde. Nenhuma informação será usada sem sua permissão.'" ios/App/App/Info.plist
 
+      - name: Aumentar build number automaticamente
+        run: |
+          BUILD_NUMBER=$(date +%s) # ou algum outro sistema, como contador no repositório
+          /usr/libexec/PlistBuddy -c "Set :CFBundleVersion $BUILD_NUMBER" ios/App/App/Info.plist
+          
       - name: Pré-build
         run: echo "🏗️ Iniciando build..."
 
