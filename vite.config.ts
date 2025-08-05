@@ -3,7 +3,8 @@ import react from "@vitejs/plugin-react-swc";
 import path from "path";
 import { componentTagger } from "lovable-tagger";
 
-// https://vitejs.dev/config/
+const isCapacitor = process.env.BUILD_TARGET === "capacitor";
+
 export default defineConfig(({ mode }) => ({
   server: {
     host: "::",
@@ -11,12 +12,14 @@ export default defineConfig(({ mode }) => ({
   },
   plugins: [
     react(),
-    mode === 'development' &&
-    componentTagger(),
+    mode === "development" && componentTagger(),
   ].filter(Boolean),
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
     },
+  },
+  build: {
+    outDir: isCapacitor ? "www" : "build",
   },
 }));
