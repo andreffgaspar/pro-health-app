@@ -238,10 +238,16 @@ jobs:
           fi
           EOF
 
+      - name: Pré-build
+        run: echo "🏗️ Iniciando build..."
+      
       - name: Run Fastlane
         run: |
-          cd ios/App
+          cd ios
           fastlane release
+      
+      - name: Pós-build
+        run: echo "✅ Build finalizado com sucesso"
 
       - uses: actions/upload-artifact@v4
         with:
