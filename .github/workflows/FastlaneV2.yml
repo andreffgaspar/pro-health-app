@@ -108,6 +108,8 @@ jobs:
                 api_key: api_key
               )
 
+              sh("security set-key-partition-list -S apple-tool:,apple: -s -k buildpass build.keychain")
+
               update_project_team(
                 path: "App.xcodeproj",
                 teamid: ENV["APPLE_TEAM_ID"]
