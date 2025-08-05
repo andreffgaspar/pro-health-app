@@ -99,7 +99,7 @@ jobs:
                 key_content: ENV["APPLE_KEY_CONTENT"],
                 is_key_content_base64: false
               )
-
+            
               match(
                 type: "appstore",
                 readonly: false,
@@ -107,7 +107,7 @@ jobs:
                 app_identifier: ENV["APP_IDENTIFIER"],
                 api_key: api_key
               )
-
+            
               sh("security set-key-partition-list -S apple-tool:,apple: -s -k buildpass build.keychain")
 
               update_project_team(
@@ -254,6 +254,11 @@ jobs:
           echo "🔓 Desbloqueando keychain"
           security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_NAME"
 
+      - name: Exportar variáveis de keychain para o Fastlane
+        run: |
+          echo "MATCH_KEYCHAIN_NAME=build.keychain" >> $GITHUB_ENV
+          echo "MATCH_KEYCHAIN_PASSWORD=buildpass" >> $GITHUB_ENV
+          
       - name: Pré-build
         run: echo "🏗️ Iniciando build..."
       
