@@ -40,40 +40,25 @@ jobs:
 
       - name: Limpar cache do CocoaPods
         run: |
-          rm -rf ios/Pods ios/Podfile.lock ~/Library/Caches/CocoaPods
+          rm -rf ios/App/Pods ios/App/Podfile.lock ~/Library/Caches/CocoaPods
 
-      - name: Mover Podfile para o diretório ios/
-        run: |
-          mv ios/App/Podfile ios/
-          mv ios/App/Podfile.lock ios/ || true
-
-      - name: Corrigir caminho do require no Podfile
-        run: |
-          sed -e "s|require_relative '../../node_modules/@capacitor/ios/scripts/pods_helpers'|require_relative '../node_modules/@capacitor/ios/scripts/pods_helpers'|" ios/Podfile > ios/Podfile.tmp
-          mv ios/Podfile.tmp ios/Podfile
-
-      - name: Adicionar caminho do projeto no Podfile
-        run: |
-          echo "project 'App/App.xcodeproj'" >> ios/Podfile
-    
       - run: |
-          cd ios
+          cd ios/App
           pod install
 
       - name: Ensure scripts are executable
-        run: chmod +x ios/Pods/Target\ Support\ Files/Pods-App/Pods-App-frameworks.sh
-
+        run: chmod +x ios/App/Pods/Target\ Support\ Files/Pods-App/Pods-App-frameworks.sh
 
       - name: Debug Embed Frameworks Script
         run: |
           echo 'Modificando script de Embed Pods para imprimir frameworks sendo processados...'
-          sed -i '' 's/echo "Code Signing \$1"/echo "📦 Embedding framework: \$1"/' ios/Pods/Target\ Support\ Files/Pods-App/Pods-App-frameworks.sh || echo "Não foi possível modificar script"
+          sed -i '' 's/echo "Code Signing \$1"/echo "📦 Embedding framework: \$1"/' ios/App/Pods/Target\ Support\ Files/Pods-App/Pods-App-frameworks.sh || echo "Não foi possível modificar script"
 
       - name: Patch CODE_SIGNING_ALLOWED nos Pods
         run: |
           ruby -e '
             require "xcodeproj"
-            project_path = "ios/Pods/Pods.xcodeproj"
+            project_path = "ios/App/Pods/Pods.xcodeproj"
             project = Xcodeproj::Project.open(project_path)
             project.targets.each do |target|
               target.build_configurations.each do |config|
@@ -82,15 +67,15 @@ jobs:
             end
             project.save
           '
-          
+
       - name: Exibir Pods Instalados e Configurações
         run: |
           echo "📄 Conteúdo do Podfile.lock:"
-          cat ios/Podfile.lock || echo "Podfile.lock não encontrado"
+          cat ios/App/Podfile.lock || echo "Podfile.lock não encontrado"
       
           echo ""
           echo "📂 Estrutura do diretório Pods:"
-          find ios/Pods -type f -name "*.podspec.json" || echo "Nenhum podspec encontrado"
+          find ios/App/Pods -type f -name "*.podspec.json" || echo "Nenhum podspec encontrado"
       
           echo ""
           echo "🔍 Build Settings (parciais) dos Pods:"
@@ -102,8 +87,8 @@ jobs:
 
       - name: Generate Fastfile
         run: |
-          mkdir -p ios/fastlane
-          cat <<EOF > ios/fastlane/Fastfile
+          mkdir -p ios/App/fastlane
+          cat <<EOF > ios/App/fastlane/Fastfile
           default_platform(:ios)
 
           platform :ios do
@@ -167,20 +152,20 @@ jobs:
       - name: Verificar script Embed Pods Frameworks
         run: |
           echo "📜 Conteúdo do script [CP] Embed Pods Frameworks:"
-          cat ios/Pods/Target\ Support\ Files/Pods-App/Pods-App-frameworks.sh || echo "Script não encontrado"
+          cat ios/App/Pods/Target\ Support\ Files/Pods-App/Pods-App-frameworks.sh || echo "Script não encontrado"
 
       - name: Clean DerivedData
         run: rm -rf ~/Library/Developer/Xcode/DerivedData
-  
+
       - name: Run Fastlane
         run: |
-          cd ios
+          cd ios/App
           fastlane release
 
       - uses: actions/upload-artifact@v4
         with:
           name: app-ios
-          path: ios/*.ipa
+          path: ios/App/*.ipa
 
       - name: Show build log if failure
         if: failure()
