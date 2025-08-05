@@ -119,7 +119,7 @@ jobs:
                 clean: true,
                 export_method: "app-store",
                 export_team_id: ENV["APPLE_TEAM_ID"],
-                xcargs: "DEVELOPMENT_TEAM=#{ENV["APPLE_TEAM_ID"]} CODE_SIGN_STYLE=Manual CODE_SIGN_IDENTITY=\"Apple Distribution\" CODE_SIGNING_ALLOWED=NO",
+                xcargs: "DEVELOPMENT_TEAM=#{ENV["APPLE_TEAM_ID"]} CODE_SIGN_STYLE=Manual CODE_SIGN_IDENTITY=\"Apple Distribution\"",
                 disable_xcpretty: true,
                 export_options: {
                   provisioningProfiles: {
