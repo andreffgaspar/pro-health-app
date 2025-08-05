@@ -238,16 +238,22 @@ jobs:
           fi
           EOF
 
-      - name: Configurar keychain
+      - name: Configurar keychain para uso com match
         run: |
           KEYCHAIN_NAME=build.keychain
           KEYCHAIN_PASSWORD=buildpass
 
+          echo "🔐 Criando keychain"
           security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_NAME"
-          security default-keychain -s "$KEYCHAIN_NAME"
-          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_NAME"
-          security set-key-partition-list -S apple-tool:,apple: -s -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN_NAME"
 
+          echo "📂 Definindo como keychain default"
+          security default-keychain -s "$KEYCHAIN_NAME"
+
+          echo "🔓 Desbloqueando keychain"
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_NAME"
+
+          echo "🔑 Configurando permissões para uso automático"
+          security set-key-partition-list -S apple-tool:,apple: -s -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN_NAME"
 
       - name: Pré-build
         run: echo "🏗️ Iniciando build..."
