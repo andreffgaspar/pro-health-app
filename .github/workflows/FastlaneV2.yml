@@ -49,7 +49,8 @@ jobs:
 
       - name: Corrigir caminho do require no Podfile
         run: |
-          sed -i '' 's|require_relative ../../node_modules/@capacitor/ios/scripts/pods_helpers|require_relative ../node_modules/@capacitor/ios/scripts/pods_helpers|' ios/Podfile
+          sed -e "s|require_relative '../../node_modules/@capacitor/ios/scripts/pods_helpers'|require_relative '../node_modules/@capacitor/ios/scripts/pods_helpers'|" ios/Podfile > ios/Podfile.tmp
+          mv ios/Podfile.tmp ios/Podfile
           
       - run: |
           cd ios
