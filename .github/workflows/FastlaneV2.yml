@@ -6,6 +6,7 @@ on:
 jobs:
   build-ios:
     runs-on: macos-latest
+    timeout-minutes: 60
 
     env:
       MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
@@ -44,6 +45,14 @@ jobs:
       - run: |
           cd ios/App
           pod install
+
+      - name: Ensure scripts are executable
+        run: chmod +x ios/Pods/Target\ Support\ Files/Pods-App/Pods-App-frameworks.sh
+
+      - name: Debug Embed Frameworks Script
+        run: |
+          echo 'Modificando script de Embed Pods para imprimir frameworks sendo processados...'
+          sed -i '' 's/echo "Code Signing $1"/echo "📦 Embedding framework: $1"/' ios/App/Pods/Target\ Support\ Files/Pods-App/Pods-App-frameworks.sh || echo "Não foi possível modificar script"
 
       - name: Patch CODE_SIGNING_ALLOWED nos Pods
         run: |
@@ -113,7 +122,8 @@ jobs:
                 bundle_identifier: ENV["APP_IDENTIFIER"]
               )
 
-
+              clear_derived_data
+              
               build_app(
                 scheme: "App",
                 clean: true,
@@ -143,7 +153,10 @@ jobs:
         run: |
           echo "📜 Conteúdo do script [CP] Embed Pods Frameworks:"
           cat ios/App/Pods/Target\ Support\ Files/Pods-App/Pods-App-frameworks.sh || echo "Script não encontrado"
-          
+
+      - name: Clean DerivedData
+        run: rm -rf ~/Library/Developer/Xcode/DerivedData
+  
       - name: Run Fastlane
         run: |
           cd ios/App
