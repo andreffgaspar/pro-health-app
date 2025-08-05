@@ -39,9 +39,7 @@ jobs:
 
       - name: Limpar cache do CocoaPods
         run: |
-          pod deintegrate --project-directory=ios/App || true
           rm -rf ios/App/Pods ios/App/Podfile.lock ~/Library/Caches/CocoaPods
-          pod install --repo-update
 
       - run: |
           cd ios/App
