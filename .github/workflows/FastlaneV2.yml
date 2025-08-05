@@ -254,9 +254,6 @@ jobs:
           echo "🔓 Desbloqueando keychain"
           security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_NAME"
 
-          echo "🔑 Configurando permissões para uso automático"
-          security set-key-partition-list -S apple-tool:,apple: -s -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN_NAME"
-
       - name: Pré-build
         run: echo "🏗️ Iniciando build..."
       
