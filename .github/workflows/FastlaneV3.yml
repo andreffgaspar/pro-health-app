@@ -51,8 +51,6 @@ jobs:
       - run: |
           cd ios/App
           pod install
-          npx cap sync ios
-
 
       - name: Ensure scripts are executable
         run: chmod +x ios/App/Pods/Target\ Support\ Files/Pods-App/Pods-App-frameworks.sh
