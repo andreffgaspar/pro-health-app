@@ -1,11 +1,12 @@
-name: Fastlane
+name: FastlaneV3
 
 on:
   workflow_dispatch:
 
 jobs:
   build-ios:
-    runs-on: macos-latest
+    runs-on: macos-14 # ✅ Xcode 16 requer macOS 14
+    timeout-minutes: 60
 
     env:
       MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
@@ -18,6 +19,12 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
+
+      - name: Setup Xcode 16.2
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: '16.2.0'
+
 
       - uses: ruby/setup-ruby@v1
         with:
@@ -37,10 +44,22 @@ jobs:
           npx cap add ios
           npx cap sync
 
+      - name: Limpar cache do CocoaPods
+        run: |
+          rm -rf ios/App/Pods ios/App/Podfile.lock ~/Library/Caches/CocoaPods
+
       - run: |
           cd ios/App
           pod install
-          
+
+      - name: Ensure scripts are executable
+        run: chmod +x ios/App/Pods/Target\ Support\ Files/Pods-App/Pods-App-frameworks.sh
+
+      - name: Debug Embed Frameworks Script
+        run: |
+          echo 'Modificando script de Embed Pods para imprimir frameworks sendo processados...'
+          sed -i '' 's/echo "Code Signing \$1"/echo "📦 Embedding framework: \$1"/' ios/App/Pods/Target\ Support\ Files/Pods-App/Pods-App-frameworks.sh || echo "Não foi possível modificar script"
+
       - name: Exibir Pods Instalados e Configurações
         run: |
           echo "📄 Conteúdo do Podfile.lock:"
@@ -72,7 +91,7 @@ jobs:
                 key_content: ENV["APPLE_KEY_CONTENT"],
                 is_key_content_base64: false
               )
-
+            
               match(
                 type: "appstore",
                 readonly: false,
@@ -80,6 +99,8 @@ jobs:
                 app_identifier: ENV["APP_IDENTIFIER"],
                 api_key: api_key
               )
+            
+              sh("security set-key-partition-list -S apple-tool:,apple: -s -k buildpass build.keychain")
 
               update_project_team(
                 path: "App.xcodeproj",
@@ -95,13 +116,16 @@ jobs:
                 bundle_identifier: ENV["APP_IDENTIFIER"]
               )
 
-
+              clear_derived_data
+              
               build_app(
                 scheme: "App",
                 clean: true,
                 export_method: "app-store",
                 export_team_id: ENV["APPLE_TEAM_ID"],
-                xcargs: "DEVELOPMENT_TEAM=#{ENV["APPLE_TEAM_ID"]}",
+                # ✅ Evita embed dos frameworks indevidos
+                xcargs: "ARCHS=arm64 DEVELOPMENT_TEAM=#{ENV["APPLE_TEAM_ID"]} CODE_SIGN_STYLE=Manual CODE_SIGN_IDENTITY=\"Apple Distribution\"",
+                disable_xcpretty: true,
                 export_options: {
                   provisioningProfiles: {
                     "com.prosoccerapp.prohealthappv2" => "match AppStore com.prosoccerapp.prohealthappv2"
@@ -120,10 +144,57 @@ jobs:
           end
           EOF
 
+      - name: Verificar script Embed Pods Frameworks
+        run: |
+          echo "📜 Conteúdo do script [CP] Embed Pods Frameworks:"
+          cat ios/App/Pods/Target\ Support\ Files/Pods-App/Pods-App-frameworks.sh || echo "Script não encontrado"
+
+      - name: Clean DerivedData
+        run: rm -rf ~/Library/Developer/Xcode/DerivedData
+
+      - name: Configurar keychain para uso com match
+        run: |
+          KEYCHAIN_NAME=build.keychain
+          KEYCHAIN_PASSWORD=buildpass
+
+          echo "🔐 Criando keychain"
+          security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_NAME"
+
+          echo "📂 Definindo como keychain default"
+          security default-keychain -s "$KEYCHAIN_NAME"
+
+          echo "🔓 Desbloqueando keychain"
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_NAME"
+
+      - name: Exportar variáveis de keychain para o Fastlane
+        run: |
+          echo "MATCH_KEYCHAIN_NAME=build.keychain" >> $GITHUB_ENV
+          echo "MATCH_KEYCHAIN_PASSWORD=buildpass" >> $GITHUB_ENV
+
+      - name: Adicionar NSHealthUsage ao Info.plist
+        run: |
+          /usr/libexec/PlistBuddy -c "Add :NSHealthShareUsageDescription string 'Este app pode utilizar bibliotecas que acessam dados de saúde. Nenhuma informação será usada sem sua permissão.'" ios/App/App/Info.plist
+          /usr/libexec/PlistBuddy -c "Add :NSHealthUpdateUsageDescription string 'Este app pode utilizar bibliotecas que atualizam dados de saúde. Nenhuma informação será usada sem sua permissão.'" ios/App/App/Info.plist
+
+      - name: Aumentar build number automaticamente
+        run: |
+          BUILD_NUMBER=$(date +%s) # ou algum outro sistema, como contador no repositório
+          /usr/libexec/PlistBuddy -c "Set :CFBundleVersion $BUILD_NUMBER" ios/App/App/Info.plist
+
+      - run: ls -l build
+      
+      - run: npx cap copy ios
+      
+      - name: Pré-build
+        run: echo "🏗️ Iniciando build..."
+
       - name: Run Fastlane
         run: |
           cd ios/App
           fastlane release
+
+      - name: Pós-build
+        run: echo "✅ Build finalizado com sucesso"
 
       - uses: actions/upload-artifact@v4
         with:

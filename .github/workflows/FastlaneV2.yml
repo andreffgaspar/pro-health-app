@@ -1,0 +1,281 @@
+name: FastlaneV2
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build-ios:
+    runs-on: macos-latest
+    timeout-minutes: 60
+
+    env:
+      MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
+      MATCH_GIT_URL: ${{ secrets.MATCH_GIT_URL }}
+      APP_IDENTIFIER: com.prosoccerapp.prohealthappv2
+      APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+      APPLE_KEY_ID: ${{ secrets.APPLE_KEY_ID }}
+      APPLE_ISSUER_ID: ${{ secrets.APPLE_ISSUER_ID }}
+      APPLE_KEY_CONTENT: ${{ secrets.APPLE_KEY_CONTENT }}
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: 3.2
+
+      - run: gem install fastlane
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - run: npm install --legacy-peer-deps
+      - run: npm run build
+
+      - run: rm -rf ios
+      - run: |
+          npx cap add ios
+          npx cap sync
+
+      - name: Limpar cache do CocoaPods
+        run: |
+          rm -rf ios/App/Pods ios/App/Podfile.lock ~/Library/Caches/CocoaPods
+
+      - run: |
+          cd ios/App
+          pod install
+
+      - name: Ensure scripts are executable
+        run: chmod +x ios/App/Pods/Target\ Support\ Files/Pods-App/Pods-App-frameworks.sh
+
+      - name: Debug Embed Frameworks Script
+        run: |
+          echo 'Modificando script de Embed Pods para imprimir frameworks sendo processados...'
+          sed -i '' 's/echo "Code Signing \$1"/echo "📦 Embedding framework: \$1"/' ios/App/Pods/Target\ Support\ Files/Pods-App/Pods-App-frameworks.sh || echo "Não foi possível modificar script"
+
+      - name: Patch CODE_SIGNING_ALLOWED nos Pods
+        run: |
+          ruby -e '
+            require "xcodeproj"
+            project_path = "ios/App/Pods/Pods.xcodeproj"
+            project = Xcodeproj::Project.open(project_path)
+            project.targets.each do |target|
+              target.build_configurations.each do |config|
+                config.build_settings["CODE_SIGNING_ALLOWED"] = "NO"
+              end
+            end
+            project.save
+          '
+
+      - name: Exibir Pods Instalados e Configurações
+        run: |
+          echo "📄 Conteúdo do Podfile.lock:"
+          cat ios/App/Podfile.lock || echo "Podfile.lock não encontrado"
+      
+          echo ""
+          echo "📂 Estrutura do diretório Pods:"
+          find ios/App/Pods -type f -name "*.podspec.json" || echo "Nenhum podspec encontrado"
+      
+          echo ""
+          echo "🔍 Build Settings (parciais) dos Pods:"
+          xcodebuild -workspace ios/App/App.xcworkspace -scheme App -showBuildSettings | grep -E "Pods-|PODS|SWIFT_VERSION|CODE_SIGN|FRAMEWORK" || echo "Não foi possível extrair build settings"
+
+      - name: Patch Bundle Identifier
+        run: |
+          sed -i '' 's/com.prosoccerapp.prohealthapp/com.prosoccerapp.prohealthappv2/g' ios/App/App.xcodeproj/project.pbxproj
+
+      - name: Generate Fastfile
+        run: |
+          mkdir -p ios/App/fastlane
+          cat <<EOF > ios/App/fastlane/Fastfile
+          default_platform(:ios)
+
+          platform :ios do
+            lane :release do
+              api_key = app_store_connect_api_key(
+                key_id: ENV["APPLE_KEY_ID"],
+                issuer_id: ENV["APPLE_ISSUER_ID"],
+                key_content: ENV["APPLE_KEY_CONTENT"],
+                is_key_content_base64: false
+              )
+            
+              match(
+                type: "appstore",
+                readonly: false,
+                git_url: ENV["MATCH_GIT_URL"],
+                app_identifier: ENV["APP_IDENTIFIER"],
+                api_key: api_key
+              )
+            
+              sh("security set-key-partition-list -S apple-tool:,apple: -s -k buildpass build.keychain")
+
+              update_project_team(
+                path: "App.xcodeproj",
+                teamid: ENV["APPLE_TEAM_ID"]
+              )
+              
+              update_code_signing_settings(
+                use_automatic_signing: false,
+                path: "App.xcodeproj",
+                code_sign_identity: "Apple Distribution",
+                profile_name: "match AppStore com.prosoccerapp.prohealthappv2",
+                team_id: ENV["APPLE_TEAM_ID"],
+                bundle_identifier: ENV["APP_IDENTIFIER"]
+              )
+
+              clear_derived_data
+              
+              build_app(
+                scheme: "App",
+                clean: true,
+                export_method: "app-store",
+                export_team_id: ENV["APPLE_TEAM_ID"],
+                xcargs: "DEVELOPMENT_TEAM=#{ENV["APPLE_TEAM_ID"]} CODE_SIGN_STYLE=Manual CODE_SIGN_IDENTITY=\"Apple Distribution\"",
+                disable_xcpretty: true,
+                export_options: {
+                  provisioningProfiles: {
+                    "com.prosoccerapp.prohealthappv2" => "match AppStore com.prosoccerapp.prohealthappv2"
+                  },
+                  signingStyle: "manual",
+                  signingCertificate: "Apple Distribution",
+                  teamID: ENV["APPLE_TEAM_ID"]
+                }
+              )
+
+              upload_to_testflight(
+                api_key: api_key,
+                app_identifier: ENV["APP_IDENTIFIER"]
+              )
+            end
+          end
+          EOF
+
+      - name: Verificar script Embed Pods Frameworks
+        run: |
+          echo "📜 Conteúdo do script [CP] Embed Pods Frameworks:"
+          cat ios/App/Pods/Target\ Support\ Files/Pods-App/Pods-App-frameworks.sh || echo "Script não encontrado"
+
+      - name: Clean DerivedData
+        run: rm -rf ~/Library/Developer/Xcode/DerivedData
+
+      - name: Corrigir função install_framework no script do CocoaPods
+        run: |
+          cat <<'EOF' > ios/App/Pods/Target\ Support\ Files/Pods-App/Pods-App-frameworks.sh
+          #!/bin/sh
+          set -e
+          set -u
+          set -o pipefail
+      
+          function on_error {
+            echo "$(realpath -mq "${0}"):$1: error: Unexpected failure"
+          }
+          trap 'on_error $LINENO' ERR
+      
+          if [ -z ${FRAMEWORKS_FOLDER_PATH+x} ]; then
+            exit 0
+          fi
+      
+          echo "mkdir -p ${CONFIGURATION_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}"
+          mkdir -p "${CONFIGURATION_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}"
+      
+          COCOAPODS_PARALLEL_CODE_SIGN="${COCOAPODS_PARALLEL_CODE_SIGN:-false}"
+          SWIFT_STDLIB_PATH="${TOOLCHAIN_DIR}/usr/lib/swift/${PLATFORM_NAME}"
+          RSYNC_PROTECT_TMP_FILES=(--filter "P .*.??????")
+      
+          install_framework()
+          {
+            echo "📦 Embedding framework: $1"
+      
+            if [ -r "${BUILT_PRODUCTS_DIR}/$1" ]; then
+              local source="${BUILT_PRODUCTS_DIR}/$1"
+            elif [ -r "${BUILT_PRODUCTS_DIR}/$(basename "$1")" ]; then
+              local source="${BUILT_PRODUCTS_DIR}/$(basename "$1")"
+            elif [ -r "$1" ]; then
+              local source="$1"
+            else
+              echo "❌ Framework $1 not found"
+              return
+            fi
+      
+            local destination="${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}"
+            echo "📁 Copying from $source to $destination"
+      
+            rsync --delete -av "${RSYNC_PROTECT_TMP_FILES[@]}" \
+              --filter "- CVS/" --filter "- .svn/" --filter "- .git/" --filter "- .hg/" \
+              --filter "- Headers" --filter "- PrivateHeaders" --filter "- Modules" \
+              "$source" "$destination"
+      
+            local basename
+            basename="$(basename -s .framework "$1")"
+            binary="$destination/$basename.framework/$basename"
+      
+            if [ -r "$binary" ]; then
+              code_sign_if_enabled "$binary"
+            fi
+          }
+      
+          code_sign_if_enabled() {
+            if [ -n "${EXPANDED_CODE_SIGN_IDENTITY:-}" -a "${CODE_SIGNING_REQUIRED:-}" != "NO" -a "${CODE_SIGNING_ALLOWED}" != "NO" ]; then
+              echo "🔏 Code Signing $1 with Identity ${EXPANDED_CODE_SIGN_IDENTITY_NAME}"
+              local code_sign_cmd="/usr/bin/codesign --force --sign ${EXPANDED_CODE_SIGN_IDENTITY} ${OTHER_CODE_SIGN_FLAGS:-} --preserve-metadata=identifier,entitlements '$1'"
+              if [ "${COCOAPODS_PARALLEL_CODE_SIGN}" == "true" ]; then
+                code_sign_cmd="$code_sign_cmd &"
+              fi
+              echo "$code_sign_cmd"
+              eval "$code_sign_cmd"
+            fi
+          }
+      
+          if [[ "$CONFIGURATION" == "Debug" || "$CONFIGURATION" == "Release" ]]; then
+            install_framework "${BUILT_PRODUCTS_DIR}/Capacitor/Capacitor.framework"
+            install_framework "${BUILT_PRODUCTS_DIR}/CapacitorCordova/Cordova.framework"
+            install_framework "${BUILT_PRODUCTS_DIR}/CapacitorLocalNotifications/CapacitorLocalNotifications.framework"
+            install_framework "${BUILT_PRODUCTS_DIR}/CapacitorPushNotifications/CapacitorPushNotifications.framework"
+            install_framework "${BUILT_PRODUCTS_DIR}/CordovaPlugins/CordovaPlugins.framework"
+          fi
+      
+          if [ "${COCOAPODS_PARALLEL_CODE_SIGN}" == "true" ]; then
+            wait
+          fi
+          EOF
+
+      - name: Configurar keychain para uso com match
+        run: |
+          KEYCHAIN_NAME=build.keychain
+          KEYCHAIN_PASSWORD=buildpass
+
+          echo "🔐 Criando keychain"
+          security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_NAME"
+
+          echo "📂 Definindo como keychain default"
+          security default-keychain -s "$KEYCHAIN_NAME"
+
+          echo "🔓 Desbloqueando keychain"
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_NAME"
+
+      - name: Exportar variáveis de keychain para o Fastlane
+        run: |
+          echo "MATCH_KEYCHAIN_NAME=build.keychain" >> $GITHUB_ENV
+          echo "MATCH_KEYCHAIN_PASSWORD=buildpass" >> $GITHUB_ENV
+          
+      - name: Pré-build
+        run: echo "🏗️ Iniciando build..."
+      
+      - name: Run Fastlane
+        run: |
+          cd ios/App
+          fastlane release
+      
+      - name: Pós-build
+        run: echo "✅ Build finalizado com sucesso"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: app-ios
+          path: ios/App/*.ipa
+
+      - name: Show build log if failure
+        if: failure()
+        run: |
+          cat ~/Library/Logs/gym/App-App.log || echo "Log não encontrado"
