@@ -6,7 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
-import AthleteDashboard from "./pages/AthleteDashboard";
+import AthleterDashboard from "./pages/AthleteDashboard";
 import AthleteSettings from "./pages/AthleteSettings";
 import ProfessionalDashboard from "./pages/ProfessionalDashboard";
 import NotFound from "./pages/NotFound";
@@ -26,7 +26,7 @@ const App = () => (
           <Route path="/register" element={<Register />} />
           <Route path="/athlete-dashboard" element={
             <ProtectedRoute requiredUserType="athlete">
-              <AthleteDashboard />
+              <AthleterDashboard />
             </ProtectedRoute>
           } />
           <Route path="/athlete-settings" element={
