@@ -44,6 +44,19 @@ jobs:
           npx cap add ios
           npx cap sync
 
+      - name: Criar arquivo de Entitlements com suporte ao HealthKit
+        run: |
+          cat <<EOF > ios/App/App/App.entitlements
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+            <key>com.apple.developer.healthkit</key>
+            <true/>
+          </dict>
+          </plist>
+          EOF
+          
       - name: Limpar cache do CocoaPods
         run: |
           rm -rf ios/App/Pods ios/App/Podfile.lock ~/Library/Caches/CocoaPods
@@ -114,6 +127,15 @@ jobs:
                 profile_name: "match AppStore com.prosoccerapp.prohealthappv2",
                 team_id: ENV["APPLE_TEAM_ID"],
                 bundle_identifier: ENV["APP_IDENTIFIER"]
+              )
+
+              update_project_provisioning(
+                xcodeproj: "App.xcodeproj",
+                target_filter: "App",
+                profile: "match AppStore com.prosoccerapp.prohealthappv2",
+                build_configuration: "Release",
+                code_signing_identity: "Apple Distribution",
+                entitlements_file: "App/App.entitlements"
               )
 
               clear_derived_data
