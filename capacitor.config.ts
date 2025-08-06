@@ -20,36 +20,6 @@ const config: CapacitorConfig = {
       backgroundColor: '#1a1a1a',
       showSpinner: true,
       spinnerColor: '#ffffff'
-    },
-    CordovaPluginHealth: {
-      permissions: {
-        read: [
-          'steps',
-          'distance',
-          'calories.active',
-          'calories.basal',
-          'heart_rate',
-          'heart_rate_variability',
-          'sleep',
-          'weight',
-          'height',
-          'body_fat_percentage',
-          'blood_pressure_systolic',
-          'blood_pressure_diastolic',
-          'respiratory_rate',
-          'oxygen_saturation',
-          'blood_glucose',
-          'water',
-          'workout'
-        ],
-        write: [
-          'steps',
-          'calories.active',
-          'heart_rate',
-          'water',
-          'workout'
-        ]
-      }
     }
   },
   cordova: {

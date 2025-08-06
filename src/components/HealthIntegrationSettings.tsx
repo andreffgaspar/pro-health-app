@@ -44,19 +44,11 @@ export const HealthIntegrationSettings: React.FC<HealthIntegrationSettingsProps>
       const allTypes = [
         HealthDataType.STEPS,
         HealthDataType.DISTANCE,
-        HealthDataType.CALORIES_ACTIVE,
-        HealthDataType.CALORIES_BASAL,
+        HealthDataType.CALORIES,
         HealthDataType.HEART_RATE,
-        HealthDataType.HEART_RATE_VARIABILITY,
         HealthDataType.SLEEP,
         HealthDataType.WEIGHT,
         HealthDataType.HEIGHT,
-        HealthDataType.BODY_FAT_PERCENTAGE,
-        HealthDataType.BLOOD_PRESSURE_SYSTOLIC,
-        HealthDataType.BLOOD_PRESSURE_DIASTOLIC,
-        HealthDataType.RESPIRATORY_RATE,
-        HealthDataType.OXYGEN_SATURATION,
-        HealthDataType.BLOOD_GLUCOSE,
         HealthDataType.WATER,
         HealthDataType.WORKOUT
       ];
@@ -225,17 +217,13 @@ export const HealthIntegrationSettings: React.FC<HealthIntegrationSettingsProps>
                   <div className="grid grid-cols-2 gap-2">
                     {grantedPermissions.map((permission) => (
                       <div 
-                        key={permission.dataType}
+                        key={permission}
                         className="flex items-center justify-between p-2 rounded-lg border bg-muted/50"
                       >
                         <span className="text-sm capitalize">
-                          {permission.dataType.replace('_', ' ')}
+                          {permission.replace('_', ' ')}
                         </span>
-                        {permission.granted ? (
-                          <CheckCircle className="h-4 w-4 text-green-500" />
-                        ) : (
-                          <XCircle className="h-4 w-4 text-red-500" />
-                        )}
+                        <CheckCircle className="h-4 w-4 text-green-500" />
                       </div>
                     ))}
                   </div>
