@@ -193,7 +193,10 @@ jobs:
         run: |
           /usr/libexec/PlistBuddy -c "Add :NSHealthShareUsageDescription string 'Este app pode utilizar bibliotecas que acessam dados de saúde. Nenhuma informação será usada sem sua permissão.'" ios/App/App/Info.plist
           /usr/libexec/PlistBuddy -c "Add :NSHealthUpdateUsageDescription string 'Este app pode utilizar bibliotecas que atualizam dados de saúde. Nenhuma informação será usada sem sua permissão.'" ios/App/App/Info.plist
-
+          /usr/libexec/PlistBuddy -c "Delete :UIRequiredDeviceCapabilities" ios/App/App/Info.plist || true
+          /usr/libexec/PlistBuddy -c "Add :UIRequiredDeviceCapabilities array" ios/App/App/Info.plist
+          /usr/libexec/PlistBuddy -c "Add :UIRequiredDeviceCapabilities:0 string healthkit" ios/App/App/Info.plist
+              
       - name: Aumentar build number automaticamente
         run: |
           BUILD_NUMBER=$(date +%s) # ou algum outro sistema, como contador no repositório
