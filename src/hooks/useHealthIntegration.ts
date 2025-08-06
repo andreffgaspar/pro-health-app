@@ -45,17 +45,31 @@ export interface HealthIntegrationState {
 
 export const useHealthIntegration = () => {
   const { user } = useAuth();
+  const isNative = perfoodHealthService.getIsNative();
+  
   const [state, setState] = useState<HealthIntegrationState>({
     isAvailable: false,
-    isInitialized: false,
+    isInitialized: !isNative, // Initialize immediately on web since it's not available
     isConnected: false,
     grantedPermissions: [],
-    status: 'disconnected',
-    isNative: perfoodHealthService.getIsNative()
+    status: isNative ? 'disconnected' : 'error',
+    isNative
   });
 
   const initializeHealthIntegration = useCallback(async () => {
     console.log('🔧 useHealthIntegration.initializeHealthIntegration() - Starting initialization');
+    
+    // Skip initialization on web platform
+    if (!isNative) {
+      console.log('⚠️ useHealthIntegration.initializeHealthIntegration() - Web platform detected, skipping initialization');
+      setState(prev => ({
+        ...prev,
+        isAvailable: false,
+        isInitialized: true,
+        status: 'error'
+      }));
+      return;
+    }
     
     try {
       setState(prev => ({ ...prev, status: 'initializing' }));
@@ -68,7 +82,6 @@ export const useHealthIntegration = () => {
           ...prev,
           isAvailable: true,
           isInitialized: true,
-          isNative: perfoodHealthService.getIsNative(),
           status: 'disconnected'
         }));
         console.log('✅ useHealthIntegration.initializeHealthIntegration() - Successfully initialized');
@@ -76,8 +89,7 @@ export const useHealthIntegration = () => {
         setState(prev => ({
           ...prev,
           isAvailable: false,
-          isInitialized: false,
-          isNative: perfoodHealthService.getIsNative(),
+          isInitialized: true,
           status: 'error'
         }));
         console.log('❌ useHealthIntegration.initializeHealthIntegration() - Service not available');
@@ -91,7 +103,7 @@ export const useHealthIntegration = () => {
         status: 'error'
       }));
     }
-  }, []);
+  }, [isNative]);
 
   useEffect(() => {
     if (user) {
@@ -100,10 +112,10 @@ export const useHealthIntegration = () => {
   }, [user]);
 
   useEffect(() => {
-    if (!state.isInitialized) {
+    if (!state.isInitialized && isNative) {
       initializeHealthIntegration();
     }
-  }, [state.isInitialized, initializeHealthIntegration]);
+  }, [state.isInitialized, initializeHealthIntegration, isNative]);
 
   const requestPermissions = useCallback(async (dataTypes: HealthDataType[]): Promise<boolean> => {
     console.log('🔧 useHealthIntegration.requestPermissions() - Requesting permissions for:', dataTypes);

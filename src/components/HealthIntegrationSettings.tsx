@@ -107,12 +107,12 @@ export const HealthIntegrationSettings: React.FC<HealthIntegrationSettingsProps>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Smartphone className="h-5 w-5" />
-            Health Data Integration
+            Integração de Dados de Saúde
           </CardTitle>
           <CardDescription>
             {isNative 
-              ? "Connect to your device's health app to automatically sync health data"
-              : "Health data integration is only available on mobile devices"
+              ? "Conecte-se ao app Saúde do seu dispositivo para sincronizar dados automaticamente"
+              : "A integração de dados de saúde está disponível apenas em dispositivos móveis"
             }
           </CardDescription>
         </CardHeader>
@@ -120,31 +120,30 @@ export const HealthIntegrationSettings: React.FC<HealthIntegrationSettingsProps>
           {!isNative ? (
             <div className="text-center py-8 text-muted-foreground">
               <Smartphone className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <p>Health integration requires a mobile device</p>
-              <p className="text-sm">Please open this app on your phone or tablet</p>
+              <p>A integração de saúde requer um dispositivo móvel</p>
+              <p className="text-sm">Abra este aplicativo no seu celular ou tablet</p>
             </div>
           ) : !isAvailable ? (
             <div className="text-center py-8 space-y-4">
               <Shield className="h-12 w-12 mx-auto mb-4 opacity-50 text-muted-foreground" />
               <div>
-                <p className="text-muted-foreground">Health data is not available on this device</p>
-                <p className="text-sm text-muted-foreground">Make sure your device supports health data collection</p>
+                <p className="text-muted-foreground">Configure o HealthKit</p>
+                <p className="text-sm text-muted-foreground">Conecte-se ao app Saúde para sincronizar seus dados automaticamente</p>
               </div>
               <Button 
                 onClick={handleConnect}
-                variant="outline"
                 className="mt-4"
                 disabled={status === 'syncing'}
               >
                 {status === 'syncing' ? (
                   <>
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Requesting Permissions...
+                    Solicitando Permissões...
                   </>
                 ) : (
                   <>
                     <Shield className="h-4 w-4 mr-2" />
-                    Request HealthKit Permissions
+                    Configurar HealthKit
                   </>
                 )}
               </Button>
@@ -155,18 +154,18 @@ export const HealthIntegrationSettings: React.FC<HealthIntegrationSettingsProps>
               <div className="flex items-center justify-between">
                 <div className="space-y-1">
                   <div className="flex items-center gap-2">
-                    <span className="font-medium">Connection Status</span>
+                    <span className="font-medium">Status da Conexão</span>
                     <Badge 
                       variant={isConnected ? "default" : "secondary"}
                       className={`${getStatusColor()} text-white`}
                     >
                       {getStatusIcon()}
-                      {isConnected ? 'Connected' : 'Disconnected'}
+                      {isConnected ? 'Conectado' : 'Desconectado'}
                     </Badge>
                   </div>
                   {lastSyncTime && (
                     <p className="text-sm text-muted-foreground">
-                      Last sync: {formatDistanceToNow(lastSyncTime, { addSuffix: true })}
+                      Última sincronização: {formatDistanceToNow(lastSyncTime, { addSuffix: true })}
                     </p>
                   )}
                 </div>
@@ -179,10 +178,10 @@ export const HealthIntegrationSettings: React.FC<HealthIntegrationSettingsProps>
                     {status === 'syncing' ? (
                       <>
                         <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                        Connecting...
+                        Conectando...
                       </>
                     ) : (
-                      'Connect Health App'
+                      'Conectar ao HealthKit'
                     )}
                   </Button>
                 ) : (
@@ -204,7 +203,7 @@ export const HealthIntegrationSettings: React.FC<HealthIntegrationSettingsProps>
                       size="sm"
                       onClick={disconnect}
                     >
-                      Disconnect
+                      Desconectar
                     </Button>
                   </div>
                 )}
@@ -213,7 +212,7 @@ export const HealthIntegrationSettings: React.FC<HealthIntegrationSettingsProps>
               {/* Permissions */}
               {isConnected && grantedPermissions.length > 0 && (
                 <div className="space-y-3">
-                  <h4 className="font-medium">Data Permissions</h4>
+                  <h4 className="font-medium">Permissões de Dados</h4>
                   <div className="grid grid-cols-2 gap-2">
                     {grantedPermissions.map((permission) => (
                       <div 
@@ -237,10 +236,10 @@ export const HealthIntegrationSettings: React.FC<HealthIntegrationSettingsProps>
                     <div className="space-y-1">
                       <div className="flex items-center gap-2">
                         <Clock className="h-4 w-4" />
-                        <span className="font-medium">Background Sync</span>
+                        <span className="font-medium">Sincronização Automática</span>
                       </div>
                       <p className="text-sm text-muted-foreground">
-                        Automatically sync health data in the background
+                        Sincronizar dados de saúde automaticamente em segundo plano
                       </p>
                     </div>
                     <Switch 
@@ -253,12 +252,12 @@ export const HealthIntegrationSettings: React.FC<HealthIntegrationSettingsProps>
 
               {/* Information */}
               <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
-                <h4 className="font-medium text-blue-900 mb-2">How it works</h4>
+                <h4 className="font-medium text-blue-900 mb-2">Como funciona</h4>
                 <ul className="text-sm text-blue-800 space-y-1">
-                  <li>• Syncs data from your device's health app</li>
-                  <li>• Automatically updates your metrics daily</li>
-                  <li>• You can still manually input additional data</li>
-                  <li>• Your health data remains private and secure</li>
+                  <li>• Sincroniza dados do app Saúde do seu dispositivo</li>
+                  <li>• Atualiza suas métricas automaticamente</li>
+                  <li>• Você ainda pode inserir dados manualmente</li>
+                  <li>• Seus dados de saúde permanecem privados e seguros</li>
                 </ul>
               </div>
             </>
