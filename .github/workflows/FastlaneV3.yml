@@ -125,7 +125,6 @@ jobs:
                 export_team_id: ENV["APPLE_TEAM_ID"],
                 # ✅ Evita embed dos frameworks indevidos
                 xcargs: "ARCHS=arm64 DEVELOPMENT_TEAM=#{ENV["APPLE_TEAM_ID"]} CODE_SIGN_STYLE=Manual CODE_SIGN_IDENTITY=\"Apple Distribution\"",
-                entitlements: "App.entitlements",
                 disable_xcpretty: true,
                 export_options: {
                   provisioningProfiles: {
@@ -202,7 +201,15 @@ jobs:
           </dict>
           </plist>
           EOF
+
+      - name: Adicionar caminho do .entitlements ao projeto Xcode
+        run: |
+          sed -i '' 's/\/\* Entitlements \*\/ = {/\/* Entitlements \*\/ = {\n\t\t\t\tisa = PBXFileReference;\n\t\t\t\tlastKnownFileType = text.plist.entitlements;\n\t\t\t\tpath = App.entitlements;\n\t\t\t\tsourceTree = "<group>";\n\t\t\t};/' ios/App/App.xcodeproj/project.pbxproj
           
+          sed -i '' 's/CODE_SIGN_ENTITLEMENTS = .*;/CODE_SIGN_ENTITLEMENTS = App.entitlements;/' ios/App/App.xcodeproj/project.pbxproj || echo "⚠️ CODE_SIGN_ENTITLEMENTS não encontrado, tentando adicionar"
+
+          grep -q "CODE_SIGN_ENTITLEMENTS" ios/App/App.xcodeproj/project.pbxproj || \
+          echo '          CODE_SIGN_ENTITLEMENTS = App.entitlements;' >> ios/App/App.xcodeproj/project.pbxproj
       - name: Run Fastlane
         run: |
           cd ios/App
