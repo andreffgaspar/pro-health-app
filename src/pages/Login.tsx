@@ -32,11 +32,11 @@ const Login = () => {
 
   // Redirect if already logged in
   useEffect(() => {
-    if (user && profile) {
+    if (user && profile && !loading) {
       const redirectTo = profile.user_type === 'athlete' ? '/athlete-dashboard' : '/professional-dashboard';
       navigate(redirectTo, { replace: true });
     }
-  }, [user, profile, navigate]);
+  }, [user, profile, loading, navigate]);
 
   const onSubmit = async (data: z.infer<typeof loginSchema>) => {
     setIsLoading(true);
