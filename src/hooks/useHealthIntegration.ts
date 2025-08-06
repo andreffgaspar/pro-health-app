@@ -4,35 +4,49 @@ import { useAuth } from './useAuth';
 import { toast } from 'sonner';
 import { cordovaHealthService, HealthDataPoint as CordovaHealthDataPoint, HealthPermissions } from '@/services/cordovaHealthService';
 
-export type HealthDataType = 
-  | 'sleep'
-  | 'heart_rate'
-  | 'calories'
-  | 'water'
-  | 'weight'
-  | 'blood_pressure'
-  | 'steps';
+export enum HealthDataType {
+  STEPS = 'steps',
+  DISTANCE = 'distance', 
+  CALORIES_ACTIVE = 'calories.active',
+  CALORIES_BASAL = 'calories.basal',
+  HEART_RATE = 'heart_rate',
+  HEART_RATE_VARIABILITY = 'heart_rate_variability',
+  SLEEP = 'sleep',
+  WEIGHT = 'weight',
+  HEIGHT = 'height',
+  BODY_FAT_PERCENTAGE = 'body_fat_percentage',
+  BLOOD_PRESSURE_SYSTOLIC = 'blood_pressure_systolic',
+  BLOOD_PRESSURE_DIASTOLIC = 'blood_pressure_diastolic',
+  RESPIRATORY_RATE = 'respiratory_rate',
+  OXYGEN_SATURATION = 'oxygen_saturation',
+  BLOOD_GLUCOSE = 'blood_glucose',
+  WATER = 'water',
+  WORKOUT = 'workout'
+}
 
 export interface HealthPermission {
-  type: HealthDataType;
+  dataType: string;
   granted: boolean;
 }
 
 export interface HealthDataPoint {
-  type: HealthDataType;
+  type: string;
   value: number;
   unit: string;
   timestamp: Date;
   source?: string;
+  syncedAt?: Date;
+  syncType?: 'manual' | 'auto';
+  daysCovered?: number;
 }
 
 export interface HealthIntegrationState {
   isAvailable: boolean;
   isInitialized: boolean;
-  permissions: HealthPermission[];
+  grantedPermissions: HealthPermission[];
   isConnected: boolean;
   lastSyncTime?: Date;
-  syncStatus: 'idle' | 'syncing' | 'success' | 'error';
+  status: 'idle' | 'initializing' | 'ready' | 'syncing' | 'connected' | 'error' | 'unavailable';
 }
 
 export const useHealthIntegration = () => {
@@ -40,128 +54,201 @@ export const useHealthIntegration = () => {
   const [state, setState] = useState<HealthIntegrationState>({
     isAvailable: false,
     isInitialized: false,
-    permissions: [],
+    grantedPermissions: [],
     isConnected: false,
-    syncStatus: 'idle'
+    status: 'idle'
   });
+
+  const setStatus = (status: HealthIntegrationState['status']) => {
+    setState(prev => ({ ...prev, status }));
+  };
 
   const isNative = cordovaHealthService.getIsNative();
 
   useEffect(() => {
-    initializeHealthIntegration();
-  }, []);
+    if (!state.isInitialized) {
+      initializeHealthIntegration();
+    }
+  }, [state.isInitialized]);
+
+  // Auto-request permissions when user is authenticated and service is available
+  useEffect(() => {
+    const autoRequestPermissions = async () => {
+      if (state.isInitialized && state.isAvailable && !state.isConnected && user) {
+        console.log('Auto-requesting health permissions for authenticated user...');
+        
+        // Define all comprehensive health data types
+        const allDataTypes = [
+          HealthDataType.STEPS,
+          HealthDataType.DISTANCE,
+          HealthDataType.CALORIES_ACTIVE,
+          HealthDataType.CALORIES_BASAL,
+          HealthDataType.HEART_RATE,
+          HealthDataType.HEART_RATE_VARIABILITY,
+          HealthDataType.SLEEP,
+          HealthDataType.WEIGHT,
+          HealthDataType.HEIGHT,
+          HealthDataType.BODY_FAT_PERCENTAGE,
+          HealthDataType.BLOOD_PRESSURE_SYSTOLIC,
+          HealthDataType.BLOOD_PRESSURE_DIASTOLIC,
+          HealthDataType.RESPIRATORY_RATE,
+          HealthDataType.OXYGEN_SATURATION,
+          HealthDataType.BLOOD_GLUCOSE,
+          HealthDataType.WATER,
+          HealthDataType.WORKOUT
+        ];
+
+        await requestPermissions(allDataTypes);
+      }
+    };
+
+    autoRequestPermissions();
+  }, [state.isInitialized, state.isAvailable, state.isConnected, user]);
 
   const initializeHealthIntegration = async () => {
     try {
-      const isAvailable = await cordovaHealthService.initialize();
-      setState(prev => ({ 
-        ...prev, 
-        isAvailable,
-        isInitialized: true 
+      setStatus('initializing');
+      console.log('Initializing health integration...');
+      
+      const available = await cordovaHealthService.initialize();
+      
+      setState(prev => ({
+        ...prev,
+        isAvailable: available,
+        isInitialized: true,
+        status: available ? 'ready' : 'unavailable'
       }));
     } catch (error) {
       console.error('Failed to initialize health integration:', error);
-      setState(prev => ({ 
-        ...prev, 
-        isInitialized: true, 
-        isAvailable: false 
+      setState(prev => ({
+        ...prev,
+        isAvailable: false,
+        isInitialized: true,
+        status: 'error'
       }));
     }
   };
 
-  const requestPermissions = async (dataTypes: HealthDataType[] = ['sleep', 'heart_rate', 'calories', 'water', 'steps']) => {
+  const requestPermissions = async (dataTypes: HealthDataType[]) => {
     if (!state.isAvailable || !user) return false;
 
     try {
-      setState(prev => ({ ...prev, syncStatus: 'syncing' }));
+      setStatus('syncing');
+      console.log('Requesting permissions for:', dataTypes);
 
       const permissions: HealthPermissions = {
-        read: dataTypes,
-        write: ['steps', 'calories', 'heart_rate'] // Basic write permissions
+        read: dataTypes.map(dt => dt.toString()),
+        write: ['steps', 'calories.active', 'heart_rate', 'water'] // Basic write permissions
       };
 
       const granted = await cordovaHealthService.requestPermissions(permissions);
       
       if (granted) {
         const healthPermissions: HealthPermission[] = dataTypes.map(type => ({
-          type,
+          dataType: type.toString(),
           granted: true
         }));
 
         setState(prev => ({
           ...prev,
-          permissions: healthPermissions,
+          grantedPermissions: healthPermissions,
           isConnected: true,
-          syncStatus: 'success'
+          status: 'connected'
         }));
 
-        toast.success('Health data permissions granted');
+        const mode = isNative ? '' : ' (simulação)';
+        toast.success(`Permissões do HealthKit concedidas${mode}`);
         
         // Perform initial sync
         await syncHealthData();
         return true;
       } else {
-        setState(prev => ({ ...prev, syncStatus: 'error' }));
-        toast.error('Health permissions were denied');
+        setStatus('error');
+        toast.error('Permissões do HealthKit foram negadas');
         return false;
       }
     } catch (error) {
       console.error('Failed to request permissions:', error);
-      setState(prev => ({ ...prev, syncStatus: 'error' }));
-      toast.error('Failed to request health permissions');
+      setStatus('error');
+      toast.error('Falha ao solicitar permissões do HealthKit');
       return false;
     }
   };
 
-  const syncHealthData = async () => {
-    if (!state.isConnected || !user) return;
+  const syncHealthData = async (options?: { days?: number; showProgress?: boolean }) => {
+    if (!state.isConnected || !user) {
+      console.warn('Cannot sync: not connected or no user');
+      return;
+    }
 
     try {
-      setState(prev => ({ ...prev, syncStatus: 'syncing' }));
-      
+      setStatus('syncing');
+      console.log('Starting health data sync...');
+
       const endDate = new Date();
-      const startDate = new Date(endDate.getTime() - (7 * 24 * 60 * 60 * 1000)); // Last 7 days
+      const days = options?.days || 7;
+      const startDate = new Date(endDate.getTime() - (days * 24 * 60 * 60 * 1000));
       
-      const healthDataTypes = ['steps', 'calories', 'heart_rate', 'sleep', 'water'];
       const allHealthData: HealthDataPoint[] = [];
 
-      // Fetch data for each type
-      for (const dataType of healthDataTypes) {
+      // Fetch data for each granted permission with progress tracking
+      for (let i = 0; i < state.grantedPermissions.length; i++) {
+        const permission = state.grantedPermissions[i];
+        
+        if (options?.showProgress) {
+          const progress = Math.round(((i + 1) / state.grantedPermissions.length) * 100);
+          console.log(`Syncing ${permission.dataType}... (${progress}%)`);
+        }
+
         try {
-          const data = await cordovaHealthService.queryHealthData(dataType, startDate, endDate);
+          const data = await cordovaHealthService.queryHealthData(permission.dataType, startDate, endDate);
           
-          // Convert to our format
-          const convertedData: HealthDataPoint[] = data.map(item => ({
-            type: dataType as HealthDataType,
-            value: item.value,
-            unit: item.unit,
-            timestamp: item.startDate,
-            source: item.source || 'health_app'
+          // Add metadata to each data point
+          const enrichedData = data.map(point => ({
+            type: permission.dataType,
+            value: point.value,
+            unit: point.unit,
+            timestamp: point.startDate,
+            source: point.source || 'health_app',
+            syncedAt: new Date(),
+            syncType: 'manual' as const,
+            daysCovered: days
           }));
           
-          allHealthData.push(...convertedData);
+          allHealthData.push(...enrichedData);
         } catch (error) {
-          console.error(`Failed to sync ${dataType}:`, error);
+          console.error(`Failed to fetch ${permission.dataType} data:`, error);
         }
       }
 
-      // Save to database
       if (allHealthData.length > 0) {
         await saveHealthDataToDatabase(allHealthData);
+        setState(prev => ({
+          ...prev,
+          lastSyncTime: new Date(),
+          status: 'connected'
+        }));
+        console.log(`Health sync completed: ${allHealthData.length} data points from ${days} days`);
+        
+        // Store sync info in localStorage for dashboard display
+        localStorage.setItem('lastHealthSync', JSON.stringify({
+          timestamp: new Date().toISOString(),
+          dataPointsCount: allHealthData.length,
+          daysCovered: days
+        }));
+
+        const mode = isNative ? '' : ' (simulação)';
+        toast.success(`${allHealthData.length} dados do HealthKit sincronizados${mode}`);
+      } else {
+        setStatus('connected');
+        console.log('No health data found to sync');
+        toast.info('Nenhum dado encontrado para sincronizar');
       }
-
-      setState(prev => ({
-        ...prev,
-        syncStatus: 'success',
-        lastSyncTime: new Date()
-      }));
-
-      const mode = isNative ? 'from device' : '(simulation)';
-      toast.success(`Synced ${allHealthData.length} health data points ${mode}`);
     } catch (error) {
-      console.error('Failed to sync health data:', error);
-      setState(prev => ({ ...prev, syncStatus: 'error' }));
-      toast.error('Failed to sync health data');
+      console.error('Health sync failed:', error);
+      setStatus('error');
+      toast.error('Falha na sincronização do HealthKit');
+      throw error; // Re-throw for caller to handle
     }
   };
 
@@ -198,25 +285,58 @@ export const useHealthIntegration = () => {
     setState(prev => ({
       ...prev,
       isConnected: false,
-      permissions: [],
-      lastSyncTime: undefined
+      grantedPermissions: [],
+      lastSyncTime: undefined,
+      status: 'ready'
     }));
-    toast.success('Disconnected from health data');
+    localStorage.removeItem('lastHealthSync');
+    toast.success('Desconectado do HealthKit');
   };
 
-  const enableBackgroundSync = async () => {
-    if (!state.isConnected) return false;
-
+  const enableBackgroundSync = async (enabled: boolean, config?: { 
+    interval?: number; 
+    dataTypes?: HealthDataType[]; 
+  }) => {
     try {
-      // Note: Background sync would require additional native configuration
-      // For now, this enables periodic sync when app is active
-      const mode = isNative ? '' : '(simulation mode)';
-      toast.success(`Background sync enabled ${mode}`);
+      if (enabled && config) {
+        const syncConfig = {
+          enabledDataTypes: config.dataTypes?.map(dt => dt.toString()) || 
+                           state.grantedPermissions.map(p => p.dataType),
+          syncInterval: config.interval || 60, // minutes
+          enableBackgroundSync: true,
+          lastSyncTime: state.lastSyncTime
+        };
+
+        // Import and start the background sync service
+        const { healthSyncService } = await import('@/services/healthSyncService');
+        await healthSyncService.startBackgroundSync(syncConfig);
+        
+        const mode = isNative ? '' : ' (simulação)';
+        toast.success(`Sincronização em background ativada${mode}`);
+        console.log('Background sync enabled with config:', syncConfig);
+      } else {
+        // Stop background sync
+        const { healthSyncService } = await import('@/services/healthSyncService');
+        healthSyncService.stopBackgroundSync();
+        
+        toast.info('Sincronização em background desativada');
+        console.log('Background sync disabled');
+      }
       return true;
     } catch (error) {
-      console.error('Failed to enable background sync:', error);
-      toast.error('Failed to enable background sync');
+      console.error('Failed to configure background sync:', error);
+      toast.error('Falha ao configurar sincronização em background');
       return false;
+    }
+  };
+
+  const getLastSyncInfo = () => {
+    try {
+      const stored = localStorage.getItem('lastHealthSync');
+      return stored ? JSON.parse(stored) : null;
+    } catch (error) {
+      console.error('Failed to get last sync info:', error);
+      return null;
     }
   };
 
@@ -226,6 +346,7 @@ export const useHealthIntegration = () => {
     syncHealthData,
     disconnect,
     enableBackgroundSync,
+    getLastSyncInfo,
     isNative
   };
 };

@@ -16,9 +16,9 @@ export const HealthIntegrationSettings: React.FC<HealthIntegrationSettingsProps>
     isAvailable,
     isInitialized,
     isConnected,
-    permissions,
+    grantedPermissions,
     lastSyncTime,
-    syncStatus,
+    status,
     requestPermissions,
     syncHealthData,
     disconnect,
@@ -27,28 +27,34 @@ export const HealthIntegrationSettings: React.FC<HealthIntegrationSettingsProps>
   } = useHealthIntegration();
 
   const handleConnect = async () => {
-    await requestPermissions();
+    const { HealthDataType } = await import('@/hooks/useHealthIntegration');
+    const allTypes = Object.values(HealthDataType);
+    await requestPermissions(allTypes);
   };
 
   const handleSync = async () => {
-    await syncHealthData();
+    await syncHealthData({ days: 7, showProgress: true });
   };
 
-  const handleEnableBackgroundSync = async () => {
-    await enableBackgroundSync();
+  const handleEnableBackgroundSync = async (enabled: boolean) => {
+    const { HealthDataType } = await import('@/hooks/useHealthIntegration');
+    await enableBackgroundSync(enabled, {
+      interval: 60,
+      dataTypes: Object.values(HealthDataType)
+    });
   };
 
   const getStatusColor = () => {
-    if (syncStatus === 'syncing') return 'bg-blue-500';
-    if (syncStatus === 'success') return 'bg-green-500';
-    if (syncStatus === 'error') return 'bg-red-500';
+    if (status === 'syncing') return 'bg-blue-500';
+    if (status === 'connected') return 'bg-green-500';
+    if (status === 'error') return 'bg-red-500';
     return 'bg-gray-500';
   };
 
   const getStatusIcon = () => {
-    if (syncStatus === 'syncing') return <Loader2 className="h-4 w-4 animate-spin" />;
-    if (syncStatus === 'success') return <CheckCircle className="h-4 w-4" />;
-    if (syncStatus === 'error') return <XCircle className="h-4 w-4" />;
+    if (status === 'syncing') return <Loader2 className="h-4 w-4 animate-spin" />;
+    if (status === 'connected') return <CheckCircle className="h-4 w-4" />;
+    if (status === 'error') return <XCircle className="h-4 w-4" />;
     return null;
   };
 
@@ -115,10 +121,10 @@ export const HealthIntegrationSettings: React.FC<HealthIntegrationSettingsProps>
                 {!isConnected ? (
                   <Button 
                     onClick={handleConnect} 
-                    disabled={syncStatus === 'syncing'}
+                    disabled={status === 'syncing'}
                     className="min-w-[120px]"
                   >
-                    {syncStatus === 'syncing' ? (
+                    {status === 'syncing' ? (
                       <>
                         <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                         Connecting...
@@ -133,9 +139,9 @@ export const HealthIntegrationSettings: React.FC<HealthIntegrationSettingsProps>
                       variant="outline" 
                       size="sm"
                       onClick={handleSync}
-                      disabled={syncStatus === 'syncing'}
+                      disabled={status === 'syncing'}
                     >
-                      {syncStatus === 'syncing' ? (
+                      {status === 'syncing' ? (
                         <Loader2 className="h-4 w-4 animate-spin" />
                       ) : (
                         <RefreshCw className="h-4 w-4" />
@@ -153,17 +159,17 @@ export const HealthIntegrationSettings: React.FC<HealthIntegrationSettingsProps>
               </div>
 
               {/* Permissions */}
-              {isConnected && permissions.length > 0 && (
+              {isConnected && grantedPermissions.length > 0 && (
                 <div className="space-y-3">
                   <h4 className="font-medium">Data Permissions</h4>
                   <div className="grid grid-cols-2 gap-2">
-                    {permissions.map((permission) => (
+                    {grantedPermissions.map((permission) => (
                       <div 
-                        key={permission.type}
+                        key={permission.dataType}
                         className="flex items-center justify-between p-2 rounded-lg border bg-muted/50"
                       >
                         <span className="text-sm capitalize">
-                          {permission.type.replace('_', ' ')}
+                          {permission.dataType.replace('_', ' ')}
                         </span>
                         {permission.granted ? (
                           <CheckCircle className="h-4 w-4 text-green-500" />

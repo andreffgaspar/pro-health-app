@@ -10,6 +10,7 @@ import DataInputModal from "@/components/DataInputModal";
 import DataVisualization from "@/components/DataVisualization";
 import AthleteProfileSettings from "@/components/AthleteProfileSettings";
 import CommunicationCenter from "@/components/CommunicationCenter";
+import { HealthKitSyncCard } from "@/components/HealthKitSyncCard";
 import SessionScheduler from "@/components/SessionScheduler";
 import { Link, useNavigate } from "react-router-dom";
 import { LineChart, Line, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from "recharts";
@@ -272,6 +273,9 @@ const AthleterDashboard = () => {
                 </div>}
             </CardContent>
           </Card>
+
+          {/* HealthKit Sync Card */}
+          <HealthKitSyncCard />
 
           {/* Today's Goals */}
           <Card>
