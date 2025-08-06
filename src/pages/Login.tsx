@@ -33,8 +33,13 @@ const Login = () => {
   // Redirect if already logged in
   useEffect(() => {
     if (user && profile && !loading) {
+      console.log('Redirecting user after login:', { userType: profile.user_type, userId: user.id });
       const redirectTo = profile.user_type === 'athlete' ? '/athlete-dashboard' : '/professional-dashboard';
-      navigate(redirectTo, { replace: true });
+      
+      // Add a small delay to ensure state is properly set before navigation
+      setTimeout(() => {
+        navigate(redirectTo, { replace: true });
+      }, 100);
     }
   }, [user, profile, loading, navigate]);
 

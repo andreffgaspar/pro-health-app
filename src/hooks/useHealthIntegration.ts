@@ -101,14 +101,21 @@ export const useHealthIntegration = () => {
     try {
       setStatus('initializing');
       console.log('Initializing health integration...');
-      console.log('Platform details:', {
+      
+      await debugLogger.log('useHealthIntegration', 'Starting initialization', {
         isNative,
-        userAgent: navigator.userAgent,
+        userAgent: navigator.userAgent.substring(0, 100),
         platform: navigator.platform
       });
       
       const available = await cordovaHealthService.initialize();
       console.log('Health service initialization result:', available);
+      
+      await debugLogger.log('useHealthIntegration', 'Initialization completed', {
+        available,
+        isNative,
+        cordovaPluginPresent: !!(window as any).plugins?.healthkit
+      });
       
       setState(prev => ({
         ...prev,
@@ -119,9 +126,16 @@ export const useHealthIntegration = () => {
       
       if (!available && isNative) {
         console.warn('Health integration failed on native platform - check plugin installation');
+        await debugLogger.warn('useHealthIntegration', 'Health integration unavailable on native platform', {
+          isNative,
+          cordovaPresent: !!(window as any).cordova,
+          healthKitPluginPresent: !!(window as any).plugins?.healthkit,
+          healthPluginPresent: !!(window as any).navigator?.health
+        });
       }
     } catch (error) {
       console.error('Failed to initialize health integration:', error);
+      await debugLogger.error('useHealthIntegration', 'Initialization failed', { error: error.message });
       setState(prev => ({
         ...prev,
         isAvailable: false,
