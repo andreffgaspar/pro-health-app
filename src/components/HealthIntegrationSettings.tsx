@@ -28,7 +28,28 @@ export const HealthIntegrationSettings: React.FC<HealthIntegrationSettingsProps>
 
   const handleConnect = async () => {
     const { HealthDataType } = await import('@/hooks/useHealthIntegration');
-    const allTypes = Object.values(HealthDataType);
+    
+    // Define all comprehensive health data types
+    const allTypes = [
+      HealthDataType.STEPS,
+      HealthDataType.DISTANCE,
+      HealthDataType.CALORIES_ACTIVE,
+      HealthDataType.CALORIES_BASAL,
+      HealthDataType.HEART_RATE,
+      HealthDataType.HEART_RATE_VARIABILITY,
+      HealthDataType.SLEEP,
+      HealthDataType.WEIGHT,
+      HealthDataType.HEIGHT,
+      HealthDataType.BODY_FAT_PERCENTAGE,
+      HealthDataType.BLOOD_PRESSURE_SYSTOLIC,
+      HealthDataType.BLOOD_PRESSURE_DIASTOLIC,
+      HealthDataType.RESPIRATORY_RATE,
+      HealthDataType.OXYGEN_SATURATION,
+      HealthDataType.BLOOD_GLUCOSE,
+      HealthDataType.WATER,
+      HealthDataType.WORKOUT
+    ];
+    
     await requestPermissions(allTypes);
   };
 
@@ -92,10 +113,30 @@ export const HealthIntegrationSettings: React.FC<HealthIntegrationSettingsProps>
               <p className="text-sm">Please open this app on your phone or tablet</p>
             </div>
           ) : !isAvailable ? (
-            <div className="text-center py-8 text-muted-foreground">
-              <Shield className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <p>Health data is not available on this device</p>
-              <p className="text-sm">Make sure your device supports health data collection</p>
+            <div className="text-center py-8 space-y-4">
+              <Shield className="h-12 w-12 mx-auto mb-4 opacity-50 text-muted-foreground" />
+              <div>
+                <p className="text-muted-foreground">Health data is not available on this device</p>
+                <p className="text-sm text-muted-foreground">Make sure your device supports health data collection</p>
+              </div>
+              <Button 
+                onClick={handleConnect}
+                variant="outline"
+                className="mt-4"
+                disabled={status === 'syncing'}
+              >
+                {status === 'syncing' ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Requesting Permissions...
+                  </>
+                ) : (
+                  <>
+                    <Shield className="h-4 w-4 mr-2" />
+                    Request HealthKit Permissions
+                  </>
+                )}
+              </Button>
             </div>
           ) : (
             <>

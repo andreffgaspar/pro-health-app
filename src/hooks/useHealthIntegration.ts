@@ -71,38 +71,23 @@ export const useHealthIntegration = () => {
     }
   }, [state.isInitialized]);
 
-  // Auto-request permissions when user is authenticated and service is available
+  // Check for existing permissions when service becomes available
   useEffect(() => {
-    const autoRequestPermissions = async () => {
+    const checkExistingPermissions = async () => {
       if (state.isInitialized && state.isAvailable && !state.isConnected && user) {
-        console.log('Auto-requesting health permissions for authenticated user...');
+        console.log('Checking existing health permissions...');
         
-        // Define all comprehensive health data types
-        const allDataTypes = [
-          HealthDataType.STEPS,
-          HealthDataType.DISTANCE,
-          HealthDataType.CALORIES_ACTIVE,
-          HealthDataType.CALORIES_BASAL,
-          HealthDataType.HEART_RATE,
-          HealthDataType.HEART_RATE_VARIABILITY,
-          HealthDataType.SLEEP,
-          HealthDataType.WEIGHT,
-          HealthDataType.HEIGHT,
-          HealthDataType.BODY_FAT_PERCENTAGE,
-          HealthDataType.BLOOD_PRESSURE_SYSTOLIC,
-          HealthDataType.BLOOD_PRESSURE_DIASTOLIC,
-          HealthDataType.RESPIRATORY_RATE,
-          HealthDataType.OXYGEN_SATURATION,
-          HealthDataType.BLOOD_GLUCOSE,
-          HealthDataType.WATER,
-          HealthDataType.WORKOUT
-        ];
-
-        await requestPermissions(allDataTypes);
+        // Instead of auto-requesting, just check if we already have permissions
+        // This allows user to manually control when to request permissions
+        const lastSync = getLastSyncInfo();
+        if (lastSync) {
+          console.log('Found previous sync data, user likely has permissions');
+          // You could optionally check specific permissions here
+        }
       }
     };
 
-    autoRequestPermissions();
+    checkExistingPermissions();
   }, [state.isInitialized, state.isAvailable, state.isConnected, user]);
 
   const initializeHealthIntegration = async () => {
