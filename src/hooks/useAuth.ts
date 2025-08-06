@@ -30,12 +30,16 @@ export const useAuth = () => {
   const [currentSessionId] = useState(() => generateSessionId());
 
   useEffect(() => {
+    let isMounted = true;
+    
     logStart('auth_initialization', 'Initializing auth system', { sessionId: currentSessionId }, currentSessionId);
     
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        await logStart('auth_state_change', `Auth state changed: ${event}`, { 
+      (event, session) => {
+        if (!isMounted) return;
+        
+        logStart('auth_state_change', `Auth state changed: ${event}`, { 
           event, 
           hasSession: !!session, 
           hasUser: !!session?.user 
@@ -46,15 +50,18 @@ export const useAuth = () => {
         
         // Fetch profile when user logs in, or set loading to false if no user
         if (session?.user) {
-          await logStart('profile_fetch_trigger', 'Triggering profile fetch', { 
+          logStart('profile_fetch_trigger', 'Triggering profile fetch', { 
             userId: session.user.id 
           }, currentSessionId, session.user.id);
           
+          // Use a small delay to prevent race conditions
           setTimeout(() => {
-            fetchProfile(session.user.id);
-          }, 0);
+            if (isMounted) {
+              fetchProfile(session.user.id);
+            }
+          }, 100);
         } else {
-          await logSuccess('auth_state_cleared', 'User logged out, clearing state', {}, currentSessionId);
+          logSuccess('auth_state_cleared', 'User logged out, clearing state', {}, currentSessionId);
           setProfile(null);
           setLoading(false);
         }
@@ -63,30 +70,40 @@ export const useAuth = () => {
 
     // THEN check for existing session
     logStart('session_check', 'Checking for existing session', {}, currentSessionId);
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      await logSuccess('session_check', 'Session check completed', { 
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!isMounted) return;
+      
+      logSuccess('session_check', 'Session check completed', { 
         hasSession: !!session, 
         hasUser: !!session?.user 
       }, currentSessionId, session?.user?.id);
       
-      setSession(session);
-      setUser(session?.user ?? null);
-      
-      if (session?.user) {
-        await logStart('existing_session_profile_fetch', 'Fetching profile for existing session', { 
-          userId: session.user.id 
-        }, currentSessionId, session.user.id);
-        fetchProfile(session.user.id);
-      } else {
-        await logSuccess('no_existing_session', 'No existing session found', {}, currentSessionId);
+      // Only update state if this is the first check
+      if (!user && !profile) {
+        setSession(session);
+        setUser(session?.user ?? null);
+        
+        if (session?.user) {
+          logStart('existing_session_profile_fetch', 'Fetching profile for existing session', { 
+            userId: session.user.id 
+          }, currentSessionId, session.user.id);
+          fetchProfile(session.user.id);
+        } else {
+          logSuccess('no_existing_session', 'No existing session found', {}, currentSessionId);
+          setLoading(false);
+        }
+      }
+    }).catch((error) => {
+      if (isMounted) {
+        logError('session_check', error, currentSessionId);
         setLoading(false);
       }
-    }).catch(async (error) => {
-      await logError('session_check', error, currentSessionId);
-      setLoading(false);
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      isMounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   const fetchProfile = async (userId: string) => {

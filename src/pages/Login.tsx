@@ -36,10 +36,8 @@ const Login = () => {
       console.log('Redirecting user after login:', { userType: profile.user_type, userId: user.id });
       const redirectTo = profile.user_type === 'athlete' ? '/athlete-dashboard' : '/professional-dashboard';
       
-      // Add a small delay to ensure state is properly set before navigation
-      setTimeout(() => {
-        navigate(redirectTo, { replace: true });
-      }, 100);
+      // Immediate navigation for better mobile experience
+      navigate(redirectTo, { replace: true });
     }
   }, [user, profile, loading, navigate]);
 
