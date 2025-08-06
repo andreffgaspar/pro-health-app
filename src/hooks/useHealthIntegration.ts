@@ -353,10 +353,7 @@ export const useHealthIntegration = () => {
 
     const { error } = await supabase
       .from('athlete_data')
-      .upsert(records, { 
-        onConflict: 'athlete_id,data_type,recorded_at',
-        ignoreDuplicates: true 
-      });
+      .insert(records);
 
     if (error) {
       await healthKitLogger.error('useHealthIntegration', 'saveHealthDataToDatabase', 'Database error during save', error.message, { error, recordCount: records.length }, 'mobile', isNative);
