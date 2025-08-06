@@ -205,10 +205,6 @@ jobs:
       - run: ls -l www || echo "⚠️ Pasta 'www' não encontrada"
       
       - run: npx cap copy ios
-
-      - name: Verificar inclusão do cordova-plugin-health
-        run: |
-          ls -R ios/App/Plugins/cordova-plugin-health || echo "❌ Plugin não encontrado"
           
       - name: Pré-build
         run: echo "🏗️ Iniciando build..."
