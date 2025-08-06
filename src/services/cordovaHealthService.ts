@@ -128,19 +128,39 @@ export class CordovaHealthService {
   }
 
   async requestPermissions(permissions: HealthPermissions): Promise<boolean> {
-    if (!this.isNative || !window.plugins?.health) {
+    console.log('🔌 CordovaHealthService: requestPermissions called');
+    console.log('🔌 isNative:', this.isNative);
+    console.log('🔌 window.plugins exists:', !!window.plugins);
+    console.log('🔌 window.plugins.health exists:', !!window.plugins?.health);
+    console.log('🔌 Permissions to request:', permissions);
+    
+    if (!this.isNative) {
+      console.log('🔌 Not native platform - returning mock permission grant');
+      // On web/simulator, return success after delay to simulate native behavior
+      return new Promise((resolve) => {
+        setTimeout(() => {
+          console.log('🔌 Mock permission granted');
+          resolve(true);
+        }, 1000);
+      });
+    }
+    
+    if (!window.plugins?.health) {
+      console.error('🔌 Health plugin not available');
       return false;
     }
 
+    console.log('🔌 About to call window.plugins.health.requestAuthorization');
+    
     return new Promise((resolve) => {
       window.plugins.health.requestAuthorization(
         permissions,
         () => {
-          console.log('Health permissions granted');
+          console.log('🔌 Health permissions granted successfully');
           resolve(true);
         },
         (error: any) => {
-          console.error('Health permissions denied:', error);
+          console.error('🔌 Health permissions denied:', error);
           resolve(false);
         }
       );

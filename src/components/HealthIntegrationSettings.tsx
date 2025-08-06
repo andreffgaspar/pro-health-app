@@ -27,30 +27,40 @@ export const HealthIntegrationSettings: React.FC<HealthIntegrationSettingsProps>
   } = useHealthIntegration();
 
   const handleConnect = async () => {
-    const { HealthDataType } = await import('@/hooks/useHealthIntegration');
+    console.log('🔘 HealthIntegrationSettings: handleConnect button clicked');
+    console.log('🔘 Current integration state:', { isAvailable, isInitialized, isConnected, status });
     
-    // Define all comprehensive health data types
-    const allTypes = [
-      HealthDataType.STEPS,
-      HealthDataType.DISTANCE,
-      HealthDataType.CALORIES_ACTIVE,
-      HealthDataType.CALORIES_BASAL,
-      HealthDataType.HEART_RATE,
-      HealthDataType.HEART_RATE_VARIABILITY,
-      HealthDataType.SLEEP,
-      HealthDataType.WEIGHT,
-      HealthDataType.HEIGHT,
-      HealthDataType.BODY_FAT_PERCENTAGE,
-      HealthDataType.BLOOD_PRESSURE_SYSTOLIC,
-      HealthDataType.BLOOD_PRESSURE_DIASTOLIC,
-      HealthDataType.RESPIRATORY_RATE,
-      HealthDataType.OXYGEN_SATURATION,
-      HealthDataType.BLOOD_GLUCOSE,
-      HealthDataType.WATER,
-      HealthDataType.WORKOUT
-    ];
-    
-    await requestPermissions(allTypes);
+    try {
+      const { HealthDataType } = await import('@/hooks/useHealthIntegration');
+      console.log('🔘 HealthDataType imported successfully');
+      
+      // Define all comprehensive health data types
+      const allTypes = [
+        HealthDataType.STEPS,
+        HealthDataType.DISTANCE,
+        HealthDataType.CALORIES_ACTIVE,
+        HealthDataType.CALORIES_BASAL,
+        HealthDataType.HEART_RATE,
+        HealthDataType.HEART_RATE_VARIABILITY,
+        HealthDataType.SLEEP,
+        HealthDataType.WEIGHT,
+        HealthDataType.HEIGHT,
+        HealthDataType.BODY_FAT_PERCENTAGE,
+        HealthDataType.BLOOD_PRESSURE_SYSTOLIC,
+        HealthDataType.BLOOD_PRESSURE_DIASTOLIC,
+        HealthDataType.RESPIRATORY_RATE,
+        HealthDataType.OXYGEN_SATURATION,
+        HealthDataType.BLOOD_GLUCOSE,
+        HealthDataType.WATER,
+        HealthDataType.WORKOUT
+      ];
+      
+      console.log('🔘 About to request permissions for:', allTypes.length, 'data types');
+      const result = await requestPermissions(allTypes);
+      console.log('🔘 Permission request result:', result);
+    } catch (error) {
+      console.error('🔘 Error in handleConnect:', error);
+    }
   };
 
   const handleSync = async () => {

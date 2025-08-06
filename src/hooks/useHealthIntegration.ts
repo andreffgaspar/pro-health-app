@@ -125,17 +125,25 @@ export const useHealthIntegration = () => {
   };
 
   const requestPermissions = async (dataTypes: HealthDataType[]) => {
-    if (!state.isAvailable || !user) return false;
+    console.log('🏥 useHealthIntegration: requestPermissions called with:', dataTypes.length, 'types');
+    console.log('🏥 Current state:', { isAvailable: state.isAvailable, hasUser: !!user, status: state.status });
+    
+    if (!state.isAvailable || !user) {
+      console.log('🏥 Cannot request permissions: isAvailable =', state.isAvailable, 'hasUser =', !!user);
+      return false;
+    }
 
     try {
       setStatus('syncing');
-      console.log('Requesting permissions for:', dataTypes);
+      console.log('🏥 Requesting permissions for:', dataTypes);
+      console.log('🏥 Platform info:', { isNative, userAgent: navigator.userAgent.substring(0, 100) });
 
       const permissions: HealthPermissions = {
         read: dataTypes.map(dt => dt.toString()),
         write: ['steps', 'calories.active', 'heart_rate', 'water'] // Basic write permissions
       };
 
+      console.log('🏥 About to call cordovaHealthService.requestPermissions with:', permissions);
       const granted = await cordovaHealthService.requestPermissions(permissions);
       
       if (granted) {
