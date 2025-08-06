@@ -278,6 +278,48 @@ export type Database = {
           },
         ]
       }
+      healthkit_logs: {
+        Row: {
+          action: string
+          component: string
+          created_at: string
+          data: Json | null
+          error_details: string | null
+          id: string
+          is_native: boolean | null
+          level: string
+          message: string
+          platform: string | null
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          component: string
+          created_at?: string
+          data?: Json | null
+          error_details?: string | null
+          id?: string
+          is_native?: boolean | null
+          level?: string
+          message: string
+          platform?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          component?: string
+          created_at?: string
+          data?: Json | null
+          error_details?: string | null
+          id?: string
+          is_native?: boolean | null
+          level?: string
+          message?: string
+          platform?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       login_logs: {
         Row: {
           data: Json | null

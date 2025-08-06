@@ -1,5 +1,6 @@
 import { CapacitorHealthkit } from '@perfood/capacitor-healthkit';
 import { Capacitor } from '@capacitor/core';
+import { healthKitLogger } from './healthKitLogger';
 
 // Types matching the @perfood/capacitor-healthkit plugin
 export interface HealthDataType {
@@ -62,43 +63,42 @@ class PerfoodHealthService {
 
   constructor() {
     this.isNative = Capacitor.isNativePlatform();
-    console.log('🔧 PerfoodHealthService - Platform:', { 
+    const platform = Capacitor.getPlatform();
+    healthKitLogger.info('PerfoodHealthService', 'constructor', 'Platform detected', { 
       isNative: this.isNative,
-      platform: Capacitor.getPlatform() 
+      platform: platform 
     });
   }
 
   async initialize(): Promise<boolean> {
-    console.log('🔧 PerfoodHealthService.initialize() - Starting initialization');
+    await healthKitLogger.info('PerfoodHealthService', 'initialize', 'Starting initialization');
     
     if (!this.isNative) {
-      console.log('🔧 PerfoodHealthService.initialize() - Not native platform, skipping');
+      await healthKitLogger.info('PerfoodHealthService', 'initialize', 'Not native platform, skipping');
       this.initialized = false;
       return false;
     }
 
     try {
-      console.log('🔧 PerfoodHealthService.initialize() - Checking HealthKit availability...');
+      await healthKitLogger.info('PerfoodHealthService', 'initialize', 'Checking HealthKit availability...');
       
       // Check if the plugin is available
       if (!CapacitorHealthkit) {
-        console.error('❌ PerfoodHealthService.initialize() - CapacitorHealthkit plugin not found');
+        await healthKitLogger.error('PerfoodHealthService', 'initialize', 'CapacitorHealthkit plugin not found');
         return false;
       }
 
       // Check if HealthKit is available on device
       const availability = await CapacitorHealthkit.isAvailable();
-      console.log('🔧 PerfoodHealthService.initialize() - HealthKit availability check result:', availability);
+      await healthKitLogger.info('PerfoodHealthService', 'initialize', 'HealthKit availability check result', { availability });
       
       this.initialized = true;
-      console.log('✅ PerfoodHealthService.initialize() - HealthKit is available');
+      await healthKitLogger.info('PerfoodHealthService', 'initialize', 'HealthKit is available');
       return true;
     } catch (error) {
-      console.error('❌ PerfoodHealthService.initialize() - Error details:', {
-        message: error.message,
-        name: error.name,
-        stack: error.stack,
-        error: error
+      await healthKitLogger.error('PerfoodHealthService', 'initialize', 'Error during initialization', error.message, {
+        errorName: error.name,
+        errorStack: error.stack
       });
       this.initialized = false;
       return false;
@@ -106,51 +106,49 @@ class PerfoodHealthService {
   }
 
   async requestPermissions(permissions: HealthPermissions): Promise<boolean> {
-    console.log('🔧 PerfoodHealthService.requestPermissions() - Requesting permissions:', permissions);
+    await healthKitLogger.info('PerfoodHealthService', 'requestPermissions', 'Requesting permissions', { permissions });
     
     if (!this.isNative) {
-      console.log('🔧 PerfoodHealthService.requestPermissions() - Not a native platform');
+      await healthKitLogger.info('PerfoodHealthService', 'requestPermissions', 'Not a native platform');
       return false;
     }
 
     if (!this.initialized) {
-      console.log('🔧 PerfoodHealthService.requestPermissions() - Service not initialized, attempting to initialize...');
+      await healthKitLogger.info('PerfoodHealthService', 'requestPermissions', 'Service not initialized, attempting to initialize...');
       const initialized = await this.initialize();
       if (!initialized) {
-        console.log('❌ PerfoodHealthService.requestPermissions() - Failed to initialize');
+        await healthKitLogger.error('PerfoodHealthService', 'requestPermissions', 'Failed to initialize');
         return false;
       }
     }
 
     try {
-      console.log('🔧 PerfoodHealthService.requestPermissions() - Calling CapacitorHealthkit.requestAuthorization...');
+      await healthKitLogger.info('PerfoodHealthService', 'requestPermissions', 'Calling CapacitorHealthkit.requestAuthorization...');
       const result = await CapacitorHealthkit.requestAuthorization({
         read: permissions.read || [],
         write: permissions.write || [],
         all: permissions.all || []
       });
-      console.log('✅ PerfoodHealthService.requestPermissions() - Success:', result);
+      await healthKitLogger.info('PerfoodHealthService', 'requestPermissions', 'Authorization request completed', { result });
       return true;
     } catch (error) {
-      console.error('❌ PerfoodHealthService.requestPermissions() - Error details:', {
-        message: error.message,
-        name: error.name,
-        stack: error.stack,
-        error: error
+      await healthKitLogger.error('PerfoodHealthService', 'requestPermissions', 'Error during permission request', error.message, {
+        errorName: error.name,
+        errorStack: error.stack
       });
       return false;
     }
   }
 
   async queryHealthData(dataType: string, startDate: Date, endDate: Date): Promise<HealthDataPoint[]> {
-    console.log('🔧 PerfoodHealthService.queryHealthData() - Query:', { 
+    await healthKitLogger.info('PerfoodHealthService', 'queryHealthData', 'Query health data', { 
       dataType, 
       startDate: startDate.toISOString(), 
       endDate: endDate.toISOString() 
     });
 
     if (!this.isNative || !this.initialized) {
-      console.log('🔧 PerfoodHealthService.queryHealthData() - Not available, returning mock data');
+      await healthKitLogger.info('PerfoodHealthService', 'queryHealthData', 'Not available, returning mock data');
       return this.generateMockData(dataType, startDate, endDate);
     }
 
@@ -163,7 +161,7 @@ class PerfoodHealthService {
       };
 
       const result: QueryResult = await CapacitorHealthkit.queryHKitSampleType(queryOptions);
-      console.log('✅ PerfoodHealthService.queryHealthData() - Success:', { 
+      await healthKitLogger.info('PerfoodHealthService', 'queryHealthData', 'Query completed successfully', { 
         count: result.countReturn, 
         dataPoints: result.resultData.length 
       });
@@ -179,7 +177,7 @@ class PerfoodHealthService {
         sourceVersion: item.sourceVersion || '1.0'
       }));
     } catch (error) {
-      console.error('❌ PerfoodHealthService.queryHealthData() - Error:', error);
+      await healthKitLogger.error('PerfoodHealthService', 'queryHealthData', 'Error during query', error.message, { dataType, error });
       // Return mock data on error for development
       return this.generateMockData(dataType, startDate, endDate);
     }
@@ -217,7 +215,7 @@ class PerfoodHealthService {
   }
 
   private generateMockData(dataType: string, startDate: Date, endDate: Date): HealthDataPoint[] {
-    console.log('🔧 PerfoodHealthService.generateMockData() - Generating mock data for:', dataType);
+    healthKitLogger.info('PerfoodHealthService', 'generateMockData', 'Generating mock data', { dataType });
     
     const mockData: HealthDataPoint[] = [];
     const daysDiff = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
@@ -265,7 +263,10 @@ class PerfoodHealthService {
       });
     }
     
-    console.log(`✅ PerfoodHealthService.generateMockData() - Generated ${mockData.length} mock data points`);
+    healthKitLogger.info('PerfoodHealthService', 'generateMockData', 'Generated mock data points', { 
+      dataType, 
+      count: mockData.length 
+    });
     return mockData;
   }
 

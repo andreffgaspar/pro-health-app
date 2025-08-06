@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from './useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { perfoodHealthService, SampleNames } from '@/services/perfoodHealthService';
+import { healthKitLogger } from '@/services/healthKitLogger';
 import { toast } from 'sonner';
 
 // Health data types enum matching perfood plugin
@@ -57,11 +58,11 @@ export const useHealthIntegration = () => {
   });
 
   const initializeHealthIntegration = useCallback(async () => {
-    console.log('🔧 useHealthIntegration.initializeHealthIntegration() - Starting initialization');
+    await healthKitLogger.info('useHealthIntegration', 'initializeHealthIntegration', 'Starting initialization', {}, perfoodHealthService.getIsNative() ? 'mobile' : 'web', isNative);
     
     // Skip initialization on web platform
     if (!isNative) {
-      console.log('⚠️ useHealthIntegration.initializeHealthIntegration() - Web platform detected, skipping initialization');
+      await healthKitLogger.warning('useHealthIntegration', 'initializeHealthIntegration', 'Web platform detected, skipping initialization', {}, 'web', false);
       setState(prev => ({
         ...prev,
         isAvailable: false,
@@ -73,10 +74,10 @@ export const useHealthIntegration = () => {
     
     try {
       setState(prev => ({ ...prev, status: 'initializing' }));
-      console.log('🔧 useHealthIntegration.initializeHealthIntegration() - Calling perfoodHealthService.initialize()...');
+      await healthKitLogger.info('useHealthIntegration', 'initializeHealthIntegration', 'Calling perfoodHealthService.initialize...', {}, 'mobile', isNative);
       
       const available = await perfoodHealthService.initialize();
-      console.log('🔧 useHealthIntegration.initializeHealthIntegration() - Service initialized:', available);
+      await healthKitLogger.info('useHealthIntegration', 'initializeHealthIntegration', 'Service initialized', { available }, 'mobile', isNative);
       
       if (available) {
         setState(prev => ({
@@ -85,9 +86,9 @@ export const useHealthIntegration = () => {
           isInitialized: true,
           status: 'disconnected'
         }));
-        console.log('✅ useHealthIntegration.initializeHealthIntegration() - Successfully initialized');
+        await healthKitLogger.info('useHealthIntegration', 'initializeHealthIntegration', 'Successfully initialized', {}, 'mobile', isNative);
       } else {
-        console.log('❌ useHealthIntegration.initializeHealthIntegration() - Service not available, but marking as initialized');
+        await healthKitLogger.warning('useHealthIntegration', 'initializeHealthIntegration', 'Service not available, but marking as initialized', {}, 'mobile', isNative);
         setState(prev => ({
           ...prev,
           isAvailable: false,
@@ -96,12 +97,10 @@ export const useHealthIntegration = () => {
         }));
       }
     } catch (error) {
-      console.error('❌ useHealthIntegration.initializeHealthIntegration() - Error details:', {
-        message: error.message,
-        name: error.name,
-        stack: error.stack,
-        error: error
-      });
+      await healthKitLogger.error('useHealthIntegration', 'initializeHealthIntegration', 'Error during initialization', error.message, {
+        errorName: error.name,
+        errorStack: error.stack
+      }, 'mobile', isNative);
       setState(prev => ({
         ...prev,
         isAvailable: false,
@@ -113,9 +112,9 @@ export const useHealthIntegration = () => {
 
   useEffect(() => {
     if (user) {
-      console.log('🔧 useHealthIntegration - User detected, userId:', user.id);
+      healthKitLogger.info('useHealthIntegration', 'userDetected', 'User detected', { userId: user.id }, 'mobile', isNative);
     }
-  }, [user]);
+  }, [user, isNative]);
 
   useEffect(() => {
     if (!state.isInitialized && isNative) {
@@ -124,21 +123,21 @@ export const useHealthIntegration = () => {
   }, [state.isInitialized, initializeHealthIntegration, isNative]);
 
   const requestPermissions = useCallback(async (dataTypes: HealthDataType[]): Promise<boolean> => {
-    console.log('🔧 useHealthIntegration.requestPermissions() - Requesting permissions for:', dataTypes);
+    await healthKitLogger.info('useHealthIntegration', 'requestPermissions', 'Requesting permissions', { dataTypes }, 'mobile', isNative);
     
     if (!state.isNative) {
-      console.log('❌ useHealthIntegration.requestPermissions() - Not a native platform');
+      await healthKitLogger.error('useHealthIntegration', 'requestPermissions', 'Not a native platform', '', {}, 'web', false);
       return false;
     }
 
     if (!state.isInitialized) {
-      console.log('❌ useHealthIntegration.requestPermissions() - Health integration not initialized');
+      await healthKitLogger.error('useHealthIntegration', 'requestPermissions', 'Health integration not initialized', '', { state }, 'mobile', isNative);
       return false;
     }
 
     // Try to request permissions even if isAvailable is false, as the plugin might still work
     if (!state.isAvailable) {
-      console.log('⚠️ useHealthIntegration.requestPermissions() - Health integration marked as unavailable, but attempting anyway...');
+      await healthKitLogger.warning('useHealthIntegration', 'requestPermissions', 'Health integration marked as unavailable, but attempting anyway', {}, 'mobile', isNative);
     }
 
     try {
@@ -175,9 +174,9 @@ export const useHealthIntegration = () => {
         all: []
       };
 
-      console.log('🔧 useHealthIntegration.requestPermissions() - About to call perfoodHealthService.requestPermissions with:', permissions);
+      await healthKitLogger.info('useHealthIntegration', 'requestPermissions', 'About to call perfoodHealthService.requestPermissions', { permissions }, 'mobile', isNative);
       const success = await perfoodHealthService.requestPermissions(permissions);
-      console.log('🔧 useHealthIntegration.requestPermissions() - perfoodHealthService.requestPermissions returned:', success);
+      await healthKitLogger.info('useHealthIntegration', 'requestPermissions', 'perfoodHealthService.requestPermissions completed', { success }, 'mobile', isNative);
       
       if (success) {
         setState(prev => ({
@@ -189,17 +188,17 @@ export const useHealthIntegration = () => {
           lastSyncTime: new Date()
         }));
         
-        console.log('✅ useHealthIntegration.requestPermissions() - Permissions granted successfully, state updated');
+        await healthKitLogger.info('useHealthIntegration', 'requestPermissions', 'Permissions granted successfully, state updated', { dataTypes }, 'mobile', isNative);
         toast.success('Permissões do HealthKit concedidas com sucesso!');
         return true;
       } else {
         setState(prev => ({ ...prev, status: 'error' }));
-        console.log('❌ useHealthIntegration.requestPermissions() - Failed to get permissions');
+        await healthKitLogger.error('useHealthIntegration', 'requestPermissions', 'Failed to get permissions', '', {}, 'mobile', isNative);
         toast.error('Falha ao obter permissões do HealthKit');
         return false;
       }
     } catch (error) {
-      console.error('❌ useHealthIntegration.requestPermissions() - Error:', error);
+      await healthKitLogger.error('useHealthIntegration', 'requestPermissions', 'Error during permission request', error.message, { error }, 'mobile', isNative);
       setState(prev => ({ ...prev, status: 'error' }));
       toast.error('Erro ao solicitar permissões do HealthKit');
       return false;
@@ -207,46 +206,54 @@ export const useHealthIntegration = () => {
   }, [state.isNative, state.isInitialized]);
 
   const syncHealthData = useCallback(async (options?: { days?: number; showProgress?: boolean }): Promise<void> => {
-    console.log('🔧 useHealthIntegration.syncHealthData() - Starting sync', options);
+    await healthKitLogger.info('useHealthIntegration', 'syncHealthData', 'Starting sync', { options }, 'mobile', isNative);
     
     if (!state.isConnected || !user) {
-      console.log('❌ useHealthIntegration.syncHealthData() - Not connected or no user', { 
+      await healthKitLogger.error('useHealthIntegration', 'syncHealthData', 'Not connected or no user', '', { 
         isConnected: state.isConnected,
         hasUser: !!user,
         status: state.status 
-      });
+      }, 'mobile', isNative);
       return;
     }
 
     try {
       setState(prev => ({ ...prev, status: 'syncing' }));
-      console.log('🔧 useHealthIntegration.syncHealthData() - Set status to syncing');
+      await healthKitLogger.info('useHealthIntegration', 'syncHealthData', 'Set status to syncing', {}, 'mobile', isNative);
 
       const endDate = new Date();
       const days = options?.days || 7;
       const startDate = new Date(endDate.getTime() - (days * 24 * 60 * 60 * 1000));
       
-      console.log(`🔧 useHealthIntegration.syncHealthData() - Fetching data from ${startDate.toISOString()} to ${endDate.toISOString()}`);
-      console.log(`🔧 useHealthIntegration.syncHealthData() - Granted permissions:`, state.grantedPermissions);
+      await healthKitLogger.info('useHealthIntegration', 'syncHealthData', 'Date range configured', {
+        startDate: startDate.toISOString(),
+        endDate: endDate.toISOString(),
+        days,
+        grantedPermissions: state.grantedPermissions
+      }, 'mobile', isNative);
 
       const allHealthData: HealthDataPoint[] = [];
 
       // Fetch data for each granted permission
       for (const permission of state.grantedPermissions) {
-        console.log(`🔧 useHealthIntegration.syncHealthData() - Processing permission: ${permission}`);
+        await healthKitLogger.info('useHealthIntegration', 'syncHealthData', 'Processing permission', { permission }, 'mobile', isNative);
         const dataType = getDataTypeForPermission(permission);
-        console.log(`🔧 useHealthIntegration.syncHealthData() - Mapped to dataType: ${dataType}`);
+        await healthKitLogger.info('useHealthIntegration', 'syncHealthData', 'Mapped to dataType', { permission, dataType }, 'mobile', isNative);
         
         if (!dataType) {
-          console.log(`⚠️ useHealthIntegration.syncHealthData() - No dataType mapping for permission: ${permission}`);
+          await healthKitLogger.warning('useHealthIntegration', 'syncHealthData', 'No dataType mapping for permission', { permission });
           continue;
         }
 
-        console.log(`🔧 useHealthIntegration.syncHealthData() - About to fetch data for: ${dataType}`);
+        await healthKitLogger.info('useHealthIntegration', 'syncHealthData', 'About to fetch data', { dataType }, 'mobile', isNative);
         
         try {
           const data = await perfoodHealthService.queryHealthData(dataType, startDate, endDate);
-          console.log(`✅ useHealthIntegration.syncHealthData() - Fetched ${data.length} data points for ${dataType}`, data);
+          await healthKitLogger.info('useHealthIntegration', 'syncHealthData', 'Fetched data points', { 
+            dataType, 
+            count: data.length,
+            sampleData: data.slice(0, 2) // Log first 2 items as sample
+          }, 'mobile', isNative);
           
           // Convert to our HealthDataPoint format
           const convertedData = data.map(point => ({
@@ -260,27 +267,34 @@ export const useHealthIntegration = () => {
             daysCovered: days
           }));
           
-          console.log(`🔧 useHealthIntegration.syncHealthData() - Converted ${convertedData.length} data points for ${permission}`);
+          await healthKitLogger.info('useHealthIntegration', 'syncHealthData', 'Converted data points', { 
+            permission, 
+            convertedCount: convertedData.length 
+          }, 'mobile', isNative);
           allHealthData.push(...convertedData);
         } catch (dataError) {
-          console.error(`❌ useHealthIntegration.syncHealthData() - Error fetching data for ${dataType}:`, dataError);
+          await healthKitLogger.error('useHealthIntegration', 'syncHealthData', `Error fetching data for ${dataType}`, dataError.message, { dataType, error: dataError }, 'mobile', isNative);
         }
       }
 
-      console.log(`🔧 useHealthIntegration.syncHealthData() - Total health data points collected: ${allHealthData.length}`);
+      await healthKitLogger.info('useHealthIntegration', 'syncHealthData', 'Total health data points collected', { 
+        totalCount: allHealthData.length,
+        breakdown: allHealthData.reduce((acc, point) => {
+          acc[point.type] = (acc[point.type] || 0) + 1;
+          return acc;
+        }, {} as Record<string, number>)
+      }, 'mobile', isNative);
       
       if (allHealthData.length > 0) {
-        console.log('🔧 useHealthIntegration.syncHealthData() - About to save to database...');
+        await healthKitLogger.info('useHealthIntegration', 'syncHealthData', 'About to save to database', { count: allHealthData.length }, 'mobile', isNative);
         await saveHealthDataToDatabase(allHealthData);
-        console.log('✅ useHealthIntegration.syncHealthData() - Successfully saved to database');
+        await healthKitLogger.info('useHealthIntegration', 'syncHealthData', 'Successfully saved to database', { count: allHealthData.length }, 'mobile', isNative);
         
         setState(prev => ({
           ...prev,
           lastSyncTime: new Date(),
           status: 'connected'
         }));
-        
-        console.log(`✅ useHealthIntegration.syncHealthData() - Sync completed: ${allHealthData.length} data points from ${days} days`);
         
         // Store sync info in localStorage for dashboard display
         localStorage.setItem('lastHealthSync', JSON.stringify({
@@ -291,13 +305,17 @@ export const useHealthIntegration = () => {
 
         const mode = state.isNative ? '' : ' (simulação)';
         toast.success(`${allHealthData.length} dados do HealthKit sincronizados${mode}`);
+        await healthKitLogger.info('useHealthIntegration', 'syncHealthData', 'Sync completed successfully', { 
+          dataPointsCount: allHealthData.length, 
+          days 
+        }, 'mobile', isNative);
       } else {
         setState(prev => ({ ...prev, status: 'connected' }));
-        console.log('⚠️ useHealthIntegration.syncHealthData() - No health data found to sync');
+        await healthKitLogger.warning('useHealthIntegration', 'syncHealthData', 'No health data found to sync');
         toast.info('Nenhum dado encontrado para sincronizar');
       }
     } catch (error) {
-      console.error('❌ useHealthIntegration.syncHealthData() - Error:', error);
+      await healthKitLogger.error('useHealthIntegration', 'syncHealthData', 'Error during sync', error.message, { error }, 'mobile', isNative);
       setState(prev => ({ ...prev, status: 'error' }));
       toast.error('Falha na sincronização do HealthKit');
       throw error;
@@ -305,13 +323,16 @@ export const useHealthIntegration = () => {
   }, [state.isConnected, state.grantedPermissions, state.isNative, user]);
 
   const saveHealthDataToDatabase = async (data: HealthDataPoint[]): Promise<void> => {
-    console.log('🔧 saveHealthDataToDatabase - Starting database save...');
+    await healthKitLogger.info('useHealthIntegration', 'saveHealthDataToDatabase', 'Starting database save', { count: data.length }, 'mobile', isNative);
     if (!user) {
-      console.log('❌ saveHealthDataToDatabase - No user found');
+      await healthKitLogger.error('useHealthIntegration', 'saveHealthDataToDatabase', 'No user found', '', {}, 'mobile', isNative);
       return;
     }
 
-    console.log(`🔧 saveHealthDataToDatabase - User ID: ${user.id}, Data points: ${data.length}`);
+    await healthKitLogger.info('useHealthIntegration', 'saveHealthDataToDatabase', 'User and data validated', { 
+      userId: user.id, 
+      dataPointsCount: data.length 
+    }, 'mobile', isNative);
 
     const records = data.map(point => ({
       athlete_id: user.id,
@@ -325,7 +346,10 @@ export const useHealthIntegration = () => {
       recorded_at: point.timestamp.toISOString()
     }));
 
-    console.log('🔧 saveHealthDataToDatabase - Records prepared:', records.slice(0, 2)); // Log first 2 records for debugging
+    await healthKitLogger.info('useHealthIntegration', 'saveHealthDataToDatabase', 'Records prepared for database', { 
+      recordCount: records.length,
+      sampleRecords: records.slice(0, 2) // Log first 2 records for debugging
+    }, 'mobile', isNative);
 
     const { error } = await supabase
       .from('athlete_data')
@@ -335,11 +359,11 @@ export const useHealthIntegration = () => {
       });
 
     if (error) {
-      console.error('❌ saveHealthDataToDatabase - Database error:', error);
+      await healthKitLogger.error('useHealthIntegration', 'saveHealthDataToDatabase', 'Database error during save', error.message, { error, recordCount: records.length }, 'mobile', isNative);
       throw error;
     }
     
-    console.log('✅ saveHealthDataToDatabase - Successfully saved to database');
+    await healthKitLogger.info('useHealthIntegration', 'saveHealthDataToDatabase', 'Successfully saved to database', { recordCount: records.length }, 'mobile', isNative);
   };
 
   const getDataTypeForPermission = (permission: HealthDataType): string | null => {
