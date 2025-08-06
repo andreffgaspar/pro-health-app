@@ -242,6 +242,48 @@ export type Database = {
           },
         ]
       }
+      login_logs: {
+        Row: {
+          data: Json | null
+          error_details: string | null
+          id: string
+          message: string | null
+          platform: string | null
+          session_id: string | null
+          status: string
+          step: string
+          timestamp: string
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          data?: Json | null
+          error_details?: string | null
+          id?: string
+          message?: string | null
+          platform?: string | null
+          session_id?: string | null
+          status: string
+          step: string
+          timestamp?: string
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          data?: Json | null
+          error_details?: string | null
+          id?: string
+          message?: string | null
+          platform?: string | null
+          session_id?: string | null
+          status?: string
+          step?: string
+          timestamp?: string
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       messages: {
         Row: {
           content: string

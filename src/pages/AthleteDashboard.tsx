@@ -17,6 +17,7 @@ import { LineChart, Line, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip,
 import { useAuth } from "@/hooks/useAuth";
 import { useAthleteData } from "@/hooks/useAthleteData";
 import { useRealtimeCommunication } from "@/hooks/useRealtimeCommunication";
+import { useLoginLogger } from "@/hooks/useLoginLogger";
 const AthleterDashboard = () => {
   const navigate = useNavigate();
   const {
@@ -31,11 +32,44 @@ const AthleterDashboard = () => {
     loading
   } = useAthleteData();
   
+  const { 
+    generateSessionId, 
+    logStart, 
+    logSuccess, 
+    logError, 
+    logTimeout 
+  } = useLoginLogger();
+  
+  const [dashboardSessionId] = useState(() => generateSessionId());
+  
+  // Log dashboard initialization
+  useEffect(() => {
+    logStart('dashboard_initialization', 'AthleteDashboard component mounted', {
+      hasUser: !!user,
+      hasProfile: !!profile,
+      loading,
+      pathname: window.location.pathname
+    }, dashboardSessionId, user?.id);
+  }, []);
+  
+  // Log loading state changes
+  useEffect(() => {
+    logStart('dashboard_loading_state', `Dashboard loading state changed to: ${loading}`, {
+      loading,
+      hasUser: !!user,
+      hasProfile: !!profile,
+      todaysMetricsLoaded: !!todaysMetrics,
+      weeklyDataLoaded: weeklyData.length > 0,
+      performanceDataLoaded: performanceData.length > 0
+    }, dashboardSessionId, user?.id);
+  }, [loading, user, profile, todaysMetrics, weeklyData, performanceData]);
+  
   // Add safety timeout to prevent infinite loading
   const [forceReady, setForceReady] = useState(false);
   useEffect(() => {
     const timeoutId = setTimeout(() => {
       if (loading) {
+        logTimeout('dashboard_loading_timeout', 15000, dashboardSessionId, user?.id);
         console.log('⚠️ Dashboard loading timeout reached, forcing ready state');
         setForceReady(true);
       }

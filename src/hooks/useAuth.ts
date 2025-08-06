@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useLoginLogger } from '@/hooks/useLoginLogger';
 
 interface Profile {
   id: string;
@@ -18,20 +19,42 @@ export const useAuth = () => {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
+  const { 
+    generateSessionId, 
+    logStart, 
+    logSuccess, 
+    logError, 
+    logTimeout 
+  } = useLoginLogger();
+  
+  const [currentSessionId] = useState(() => generateSessionId());
 
   useEffect(() => {
+    logStart('auth_initialization', 'Initializing auth system', { sessionId: currentSessionId }, currentSessionId);
+    
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
+      async (event, session) => {
+        await logStart('auth_state_change', `Auth state changed: ${event}`, { 
+          event, 
+          hasSession: !!session, 
+          hasUser: !!session?.user 
+        }, currentSessionId, session?.user?.id);
+        
         setSession(session);
         setUser(session?.user ?? null);
         
         // Fetch profile when user logs in, or set loading to false if no user
         if (session?.user) {
+          await logStart('profile_fetch_trigger', 'Triggering profile fetch', { 
+            userId: session.user.id 
+          }, currentSessionId, session.user.id);
+          
           setTimeout(() => {
             fetchProfile(session.user.id);
           }, 0);
         } else {
+          await logSuccess('auth_state_cleared', 'User logged out, clearing state', {}, currentSessionId);
           setProfile(null);
           setLoading(false);
         }
@@ -39,21 +62,37 @@ export const useAuth = () => {
     );
 
     // THEN check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    logStart('session_check', 'Checking for existing session', {}, currentSessionId);
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      await logSuccess('session_check', 'Session check completed', { 
+        hasSession: !!session, 
+        hasUser: !!session?.user 
+      }, currentSessionId, session?.user?.id);
+      
       setSession(session);
       setUser(session?.user ?? null);
       
       if (session?.user) {
+        await logStart('existing_session_profile_fetch', 'Fetching profile for existing session', { 
+          userId: session.user.id 
+        }, currentSessionId, session.user.id);
         fetchProfile(session.user.id);
       } else {
+        await logSuccess('no_existing_session', 'No existing session found', {}, currentSessionId);
         setLoading(false);
       }
+    }).catch(async (error) => {
+      await logError('session_check', error, currentSessionId);
+      setLoading(false);
     });
 
     return () => subscription.unsubscribe();
   }, []);
 
   const fetchProfile = async (userId: string) => {
+    const stepStart = Date.now();
+    await logStart('fetch_profile', 'Starting profile fetch', { userId }, currentSessionId, userId);
+    
     try {
       const { data, error } = await supabase
         .from('profiles')
@@ -62,14 +101,27 @@ export const useAuth = () => {
         .single();
 
       if (error) {
+        await logError('fetch_profile', error, currentSessionId, userId);
         console.error('Error fetching profile:', error);
         setLoading(false);
         return;
       }
 
+      const duration = Date.now() - stepStart;
+      await logSuccess('fetch_profile', 'Profile fetched successfully', { 
+        profile: data, 
+        duration 
+      }, currentSessionId, userId);
+      
       setProfile(data as Profile);
       setLoading(false);
+      
+      await logSuccess('loading_completed', 'Auth loading completed successfully', { 
+        totalDuration: Date.now() - stepStart,
+        hasProfile: true 
+      }, currentSessionId, userId);
     } catch (error) {
+      await logError('fetch_profile', error, currentSessionId, userId);
       console.error('Error fetching profile:', error);
       setLoading(false);
     }
@@ -118,13 +170,24 @@ export const useAuth = () => {
   };
 
   const signIn = async (email: string, password: string) => {
+    const loginSessionId = generateSessionId();
+    const loginStart = Date.now();
+    
+    await logStart('sign_in_attempt', 'Starting sign in process', { 
+      email: email.substring(0, 3) + '***', // Hide email for privacy
+      timestamp: new Date().toISOString() 
+    }, loginSessionId);
+    
     try {
+      await logStart('auth_signin_call', 'Calling Supabase signInWithPassword', {}, loginSessionId);
+      
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password
       });
 
       if (error) {
+        await logError('auth_signin_call', error, loginSessionId);
         toast({
           title: "Erro no login",
           description: error.message,
@@ -133,13 +196,26 @@ export const useAuth = () => {
         return { error };
       }
 
+      const loginDuration = Date.now() - loginStart;
+      await logSuccess('auth_signin_call', 'Supabase signIn successful', { 
+        userId: data.user?.id,
+        hasSession: !!data.session,
+        duration: loginDuration 
+      }, loginSessionId, data.user?.id);
+
       toast({
         title: "Login realizado!",
         description: "Bem-vindo de volta!"
       });
 
+      await logSuccess('sign_in_completed', 'Sign in process completed', { 
+        totalDuration: loginDuration,
+        userId: data.user?.id 
+      }, loginSessionId, data.user?.id);
+
       return { data, error: null };
     } catch (error) {
+      await logError('sign_in_attempt', error, loginSessionId);
       const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
       toast({
         title: "Erro no login",

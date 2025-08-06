@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
+import { useLoginLogger } from './useLoginLogger';
 
 interface AthleteDataRecord {
   id: string;
@@ -41,6 +42,15 @@ interface PerformanceData {
 
 export const useAthleteData = () => {
   const { user } = useAuth();
+  const { 
+    generateSessionId, 
+    logStart, 
+    logSuccess, 
+    logError, 
+    logTimeout 
+  } = useLoginLogger();
+  
+  const [dataSessionId] = useState(() => generateSessionId());
   const [athleteData, setAthleteData] = useState<AthleteDataRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [todaysMetrics, setTodaysMetrics] = useState<ProcessedMetrics>({
@@ -56,15 +66,23 @@ export const useAthleteData = () => {
   const [performanceData, setPerformanceData] = useState<PerformanceData[]>([]);
 
   const fetchAthleteData = async () => {
+    const fetchStart = Date.now();
+    
     if (!user?.id) {
+      await logError('athlete_data_fetch', 'No user ID available for fetching athlete data', dataSessionId);
       console.log('❌ No user ID available for fetching athlete data');
       setLoading(false);
       return;
     }
 
+    await logStart('athlete_data_fetch', 'Starting to fetch athlete data', { 
+      userId: user.id 
+    }, dataSessionId, user.id);
+
     try {
       console.log('🔄 Starting to fetch athlete data for user:', user.id);
       setLoading(true);
+      
       const { data, error } = await supabase
         .from('athlete_data')
         .select('*')
@@ -72,19 +90,42 @@ export const useAthleteData = () => {
         .order('recorded_at', { ascending: false });
 
       if (error) {
+        await logError('athlete_data_fetch', error, dataSessionId, user.id);
         console.error('❌ Error fetching athlete data:', error);
         setLoading(false);
         return;
       }
 
+      const fetchDuration = Date.now() - fetchStart;
+      await logSuccess('athlete_data_fetch', 'Successfully fetched athlete data', { 
+        recordCount: data?.length || 0,
+        duration: fetchDuration 
+      }, dataSessionId, user.id);
+
       console.log('✅ Successfully fetched athlete data:', data?.length, 'records');
       setAthleteData(data || []);
+      
+      await logStart('athlete_data_process', 'Starting to process athlete data', { 
+        recordCount: data?.length || 0 
+      }, dataSessionId, user.id);
+      
       processData(data || []);
+      
+      const totalDuration = Date.now() - fetchStart;
+      await logSuccess('athlete_data_process', 'Athlete data processing completed', { 
+        totalDuration 
+      }, dataSessionId, user.id);
     } catch (error) {
+      await logError('athlete_data_fetch', error, dataSessionId, user.id);
       console.error('❌ Error fetching athlete data:', error);
     } finally {
       console.log('🏁 Finished fetching athlete data, setting loading to false');
       setLoading(false);
+      
+      const totalTime = Date.now() - fetchStart;
+      await logSuccess('athlete_data_loading_complete', 'Athlete data loading completed', { 
+        totalTime 
+      }, dataSessionId, user.id);
     }
   };
 

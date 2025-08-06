@@ -9,6 +9,7 @@ import Register from "./pages/Register";
 import AthleterDashboard from "./pages/AthleteDashboard";
 import AthleteSettings from "./pages/AthleteSettings";
 import ProfessionalDashboard from "./pages/ProfessionalDashboard";
+import LoginLogs from "./pages/LoginLogs";
 import NotFound from "./pages/NotFound";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 
@@ -32,6 +33,11 @@ const App = () => (
           <Route path="/athlete-settings" element={
             <ProtectedRoute requiredUserType="athlete">
               <AthleteSettings />
+            </ProtectedRoute>
+          } />
+          <Route path="/login-logs" element={
+            <ProtectedRoute requiredUserType="athlete">
+              <LoginLogs />
             </ProtectedRoute>
           } />
           <Route path="/professional-dashboard" element={
