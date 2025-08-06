@@ -1,0 +1,17 @@
+// This file documents the required Xcode project modifications
+// Apply these changes manually to ios/App/App.xcodeproj/project.pbxproj
+
+// 1. Add HealthKit framework to the project
+// Find the "frameworks" section and add:
+/* Begin PBXFrameworksBuildPhase section */
+	/* Add this line to the frameworks build phase: */
+	/* HealthKit.framework */
+
+// 2. Set Code Signing Entitlements
+// Find the build configuration and add:
+	CODE_SIGN_ENTITLEMENTS = App/App.entitlements;
+
+// 3. Enable HealthKit capability
+// Find PRODUCT_BUNDLE_IDENTIFIER and ensure UIRequiredDeviceCapabilities includes healthkit
+
+// This patch file is for reference - manual Xcode configuration required

@@ -81,30 +81,50 @@ export class CordovaHealthService {
 
   async initialize(): Promise<boolean> {
     if (!this.isNative) {
+      console.log('Health plugin not available on web platform');
       this.isInitialized = true;
-      return false; // Not available on web
+      return false;
     }
 
-    return new Promise((resolve) => {
+    try {
+      // Add debug logging for plugin detection
+      console.log('Checking for health plugin...');
+      console.log('window.plugins:', window.plugins);
+      console.log('window.plugins.health:', window.plugins?.health);
+      
       if (!window.plugins?.health) {
-        console.warn('Cordova Health plugin not available');
+        console.error('Health plugin not found - ensure cordova-plugin-health is installed');
+        console.log('Available plugins:', Object.keys(window.plugins || {}));
         this.isInitialized = true;
-        resolve(false);
-        return;
+        return false;
       }
 
-      window.plugins.health.isAvailable(
-        (available: boolean) => {
-          this.isInitialized = true;
-          resolve(available);
-        },
-        (error: any) => {
-          console.error('Health plugin availability check failed:', error);
-          this.isInitialized = true;
-          resolve(false);
-        }
-      );
-    });
+      const available = await new Promise<boolean>((resolve) => {
+        window.plugins.health.isAvailable(
+          (result: boolean) => {
+            console.log('Health plugin: isAvailable = true', result);
+            resolve(result);
+          },
+          (error: any) => {
+            console.log('Health plugin: isAvailable = false', error);
+            resolve(false);
+          }
+        );
+      });
+
+      this.isInitialized = true;
+      if (available) {
+        console.log('Health plugin initialized successfully');
+      } else {
+        console.log('Health data not available on this device');
+      }
+
+      return available;
+    } catch (error) {
+      console.error('Failed to initialize health plugin:', error);
+      this.isInitialized = true;
+      return false;
+    }
   }
 
   async requestPermissions(permissions: HealthPermissions): Promise<boolean> {
