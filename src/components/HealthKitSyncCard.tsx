@@ -105,8 +105,8 @@ export const HealthKitSyncCard: React.FC<HealthKitSyncCardProps> = ({ className 
     return 'Desconectado';
   };
 
-  // Don't show card if not on mobile or health not available
-  if (!isNative || !isAvailable || !isInitialized) {
+  // Don't show card if not on mobile
+  if (!isNative || !isInitialized) {
     return null;
   }
 

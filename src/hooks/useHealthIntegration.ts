@@ -175,18 +175,21 @@ export const useHealthIntegration = () => {
         all: []
       };
 
+      console.log('🔧 useHealthIntegration.requestPermissions() - About to call perfoodHealthService.requestPermissions with:', permissions);
       const success = await perfoodHealthService.requestPermissions(permissions);
+      console.log('🔧 useHealthIntegration.requestPermissions() - perfoodHealthService.requestPermissions returned:', success);
       
       if (success) {
         setState(prev => ({
           ...prev,
           isConnected: true,
+          isAvailable: true, // Mark as available if permissions work
           grantedPermissions: dataTypes,
           status: 'connected',
           lastSyncTime: new Date()
         }));
         
-        console.log('✅ useHealthIntegration.requestPermissions() - Permissions granted successfully');
+        console.log('✅ useHealthIntegration.requestPermissions() - Permissions granted successfully, state updated');
         toast.success('Permissões do HealthKit concedidas com sucesso!');
         return true;
       } else {
@@ -207,48 +210,69 @@ export const useHealthIntegration = () => {
     console.log('🔧 useHealthIntegration.syncHealthData() - Starting sync', options);
     
     if (!state.isConnected || !user) {
-      console.log('❌ useHealthIntegration.syncHealthData() - Not connected or no user');
+      console.log('❌ useHealthIntegration.syncHealthData() - Not connected or no user', { 
+        isConnected: state.isConnected,
+        hasUser: !!user,
+        status: state.status 
+      });
       return;
     }
 
     try {
       setState(prev => ({ ...prev, status: 'syncing' }));
+      console.log('🔧 useHealthIntegration.syncHealthData() - Set status to syncing');
 
       const endDate = new Date();
       const days = options?.days || 7;
       const startDate = new Date(endDate.getTime() - (days * 24 * 60 * 60 * 1000));
       
       console.log(`🔧 useHealthIntegration.syncHealthData() - Fetching data from ${startDate.toISOString()} to ${endDate.toISOString()}`);
+      console.log(`🔧 useHealthIntegration.syncHealthData() - Granted permissions:`, state.grantedPermissions);
 
       const allHealthData: HealthDataPoint[] = [];
 
       // Fetch data for each granted permission
       for (const permission of state.grantedPermissions) {
+        console.log(`🔧 useHealthIntegration.syncHealthData() - Processing permission: ${permission}`);
         const dataType = getDataTypeForPermission(permission);
-        if (!dataType) continue;
+        console.log(`🔧 useHealthIntegration.syncHealthData() - Mapped to dataType: ${dataType}`);
+        
+        if (!dataType) {
+          console.log(`⚠️ useHealthIntegration.syncHealthData() - No dataType mapping for permission: ${permission}`);
+          continue;
+        }
 
-        console.log(`🔧 useHealthIntegration.syncHealthData() - Fetching data for: ${dataType}`);
+        console.log(`🔧 useHealthIntegration.syncHealthData() - About to fetch data for: ${dataType}`);
         
-        const data = await perfoodHealthService.queryHealthData(dataType, startDate, endDate);
-        console.log(`✅ useHealthIntegration.syncHealthData() - Fetched ${data.length} data points for ${dataType}`);
-        
-        // Convert to our HealthDataPoint format
-        const convertedData = data.map(point => ({
-          type: permission,
-          value: point.value,
-          unit: point.unit,
-          timestamp: point.startDate,
-          source: point.sourceName || 'health_app',
-          syncedAt: new Date(),
-          syncType: 'manual' as const,
-          daysCovered: days
-        }));
-        
-        allHealthData.push(...convertedData);
+        try {
+          const data = await perfoodHealthService.queryHealthData(dataType, startDate, endDate);
+          console.log(`✅ useHealthIntegration.syncHealthData() - Fetched ${data.length} data points for ${dataType}`, data);
+          
+          // Convert to our HealthDataPoint format
+          const convertedData = data.map(point => ({
+            type: permission,
+            value: point.value,
+            unit: point.unit,
+            timestamp: point.startDate,
+            source: point.sourceName || 'health_app',
+            syncedAt: new Date(),
+            syncType: 'manual' as const,
+            daysCovered: days
+          }));
+          
+          console.log(`🔧 useHealthIntegration.syncHealthData() - Converted ${convertedData.length} data points for ${permission}`);
+          allHealthData.push(...convertedData);
+        } catch (dataError) {
+          console.error(`❌ useHealthIntegration.syncHealthData() - Error fetching data for ${dataType}:`, dataError);
+        }
       }
 
+      console.log(`🔧 useHealthIntegration.syncHealthData() - Total health data points collected: ${allHealthData.length}`);
+      
       if (allHealthData.length > 0) {
+        console.log('🔧 useHealthIntegration.syncHealthData() - About to save to database...');
         await saveHealthDataToDatabase(allHealthData);
+        console.log('✅ useHealthIntegration.syncHealthData() - Successfully saved to database');
         
         setState(prev => ({
           ...prev,
@@ -281,7 +305,13 @@ export const useHealthIntegration = () => {
   }, [state.isConnected, state.grantedPermissions, state.isNative, user]);
 
   const saveHealthDataToDatabase = async (data: HealthDataPoint[]): Promise<void> => {
-    if (!user) return;
+    console.log('🔧 saveHealthDataToDatabase - Starting database save...');
+    if (!user) {
+      console.log('❌ saveHealthDataToDatabase - No user found');
+      return;
+    }
+
+    console.log(`🔧 saveHealthDataToDatabase - User ID: ${user.id}, Data points: ${data.length}`);
 
     const records = data.map(point => ({
       athlete_id: user.id,
@@ -295,6 +325,8 @@ export const useHealthIntegration = () => {
       recorded_at: point.timestamp.toISOString()
     }));
 
+    console.log('🔧 saveHealthDataToDatabase - Records prepared:', records.slice(0, 2)); // Log first 2 records for debugging
+
     const { error } = await supabase
       .from('athlete_data')
       .upsert(records, { 
@@ -303,9 +335,11 @@ export const useHealthIntegration = () => {
       });
 
     if (error) {
-      console.error('❌ saveHealthDataToDatabase - Error:', error);
+      console.error('❌ saveHealthDataToDatabase - Database error:', error);
       throw error;
     }
+    
+    console.log('✅ saveHealthDataToDatabase - Successfully saved to database');
   };
 
   const getDataTypeForPermission = (permission: HealthDataType): string | null => {
