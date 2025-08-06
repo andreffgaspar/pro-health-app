@@ -123,12 +123,15 @@ export const HealthIntegrationSettings: React.FC<HealthIntegrationSettingsProps>
               <p>A integração de saúde requer um dispositivo móvel</p>
               <p className="text-sm">Abra este aplicativo no seu celular ou tablet</p>
             </div>
-          ) : !isAvailable ? (
+          ) : !isConnected ? (
             <div className="text-center py-8 space-y-4">
               <Shield className="h-12 w-12 mx-auto mb-4 opacity-50 text-muted-foreground" />
               <div>
                 <p className="text-muted-foreground">Configure o HealthKit</p>
                 <p className="text-sm text-muted-foreground">Conecte-se ao app Saúde para sincronizar seus dados automaticamente</p>
+                {!isAvailable && (
+                  <p className="text-xs text-yellow-600 mt-2">⚠️ Detectado problema na verificação inicial. Tentando conexão...</p>
+                )}
               </div>
               <Button 
                 onClick={handleConnect}

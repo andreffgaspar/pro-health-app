@@ -78,13 +78,28 @@ class PerfoodHealthService {
     }
 
     try {
-      // Check if HealthKit is available
-      await CapacitorHealthkit.isAvailable();
+      console.log('🔧 PerfoodHealthService.initialize() - Checking HealthKit availability...');
+      
+      // Check if the plugin is available
+      if (!CapacitorHealthkit) {
+        console.error('❌ PerfoodHealthService.initialize() - CapacitorHealthkit plugin not found');
+        return false;
+      }
+
+      // Check if HealthKit is available on device
+      const availability = await CapacitorHealthkit.isAvailable();
+      console.log('🔧 PerfoodHealthService.initialize() - HealthKit availability check result:', availability);
+      
       this.initialized = true;
       console.log('✅ PerfoodHealthService.initialize() - HealthKit is available');
       return true;
     } catch (error) {
-      console.error('❌ PerfoodHealthService.initialize() - Error:', error);
+      console.error('❌ PerfoodHealthService.initialize() - Error details:', {
+        message: error.message,
+        name: error.name,
+        stack: error.stack,
+        error: error
+      });
       this.initialized = false;
       return false;
     }
@@ -93,21 +108,36 @@ class PerfoodHealthService {
   async requestPermissions(permissions: HealthPermissions): Promise<boolean> {
     console.log('🔧 PerfoodHealthService.requestPermissions() - Requesting permissions:', permissions);
     
-    if (!this.isNative || !this.initialized) {
-      console.log('🔧 PerfoodHealthService.requestPermissions() - Not available');
+    if (!this.isNative) {
+      console.log('🔧 PerfoodHealthService.requestPermissions() - Not a native platform');
       return false;
     }
 
+    if (!this.initialized) {
+      console.log('🔧 PerfoodHealthService.requestPermissions() - Service not initialized, attempting to initialize...');
+      const initialized = await this.initialize();
+      if (!initialized) {
+        console.log('❌ PerfoodHealthService.requestPermissions() - Failed to initialize');
+        return false;
+      }
+    }
+
     try {
-      await CapacitorHealthkit.requestAuthorization({
+      console.log('🔧 PerfoodHealthService.requestPermissions() - Calling CapacitorHealthkit.requestAuthorization...');
+      const result = await CapacitorHealthkit.requestAuthorization({
         read: permissions.read || [],
         write: permissions.write || [],
         all: permissions.all || []
       });
-      console.log('✅ PerfoodHealthService.requestPermissions() - Success');
+      console.log('✅ PerfoodHealthService.requestPermissions() - Success:', result);
       return true;
     } catch (error) {
-      console.error('❌ PerfoodHealthService.requestPermissions() - Error:', error);
+      console.error('❌ PerfoodHealthService.requestPermissions() - Error details:', {
+        message: error.message,
+        name: error.name,
+        stack: error.stack,
+        error: error
+      });
       return false;
     }
   }

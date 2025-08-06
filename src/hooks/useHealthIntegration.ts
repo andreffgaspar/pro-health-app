@@ -73,6 +73,7 @@ export const useHealthIntegration = () => {
     
     try {
       setState(prev => ({ ...prev, status: 'initializing' }));
+      console.log('🔧 useHealthIntegration.initializeHealthIntegration() - Calling perfoodHealthService.initialize()...');
       
       const available = await perfoodHealthService.initialize();
       console.log('🔧 useHealthIntegration.initializeHealthIntegration() - Service initialized:', available);
@@ -86,16 +87,21 @@ export const useHealthIntegration = () => {
         }));
         console.log('✅ useHealthIntegration.initializeHealthIntegration() - Successfully initialized');
       } else {
+        console.log('❌ useHealthIntegration.initializeHealthIntegration() - Service not available, but marking as initialized');
         setState(prev => ({
           ...prev,
           isAvailable: false,
           isInitialized: true,
           status: 'error'
         }));
-        console.log('❌ useHealthIntegration.initializeHealthIntegration() - Service not available');
       }
     } catch (error) {
-      console.error('❌ useHealthIntegration.initializeHealthIntegration() - Error:', error);
+      console.error('❌ useHealthIntegration.initializeHealthIntegration() - Error details:', {
+        message: error.message,
+        name: error.name,
+        stack: error.stack,
+        error: error
+      });
       setState(prev => ({
         ...prev,
         isAvailable: false,
@@ -120,9 +126,19 @@ export const useHealthIntegration = () => {
   const requestPermissions = useCallback(async (dataTypes: HealthDataType[]): Promise<boolean> => {
     console.log('🔧 useHealthIntegration.requestPermissions() - Requesting permissions for:', dataTypes);
     
-    if (!state.isAvailable || !state.isInitialized) {
-      console.log('❌ useHealthIntegration.requestPermissions() - Health integration not available');
+    if (!state.isNative) {
+      console.log('❌ useHealthIntegration.requestPermissions() - Not a native platform');
       return false;
+    }
+
+    if (!state.isInitialized) {
+      console.log('❌ useHealthIntegration.requestPermissions() - Health integration not initialized');
+      return false;
+    }
+
+    // Try to request permissions even if isAvailable is false, as the plugin might still work
+    if (!state.isAvailable) {
+      console.log('⚠️ useHealthIntegration.requestPermissions() - Health integration marked as unavailable, but attempting anyway...');
     }
 
     try {
@@ -185,7 +201,7 @@ export const useHealthIntegration = () => {
       toast.error('Erro ao solicitar permissões do HealthKit');
       return false;
     }
-  }, [state.isAvailable, state.isInitialized]);
+  }, [state.isNative, state.isInitialized]);
 
   const syncHealthData = useCallback(async (options?: { days?: number; showProgress?: boolean }): Promise<void> => {
     console.log('🔧 useHealthIntegration.syncHealthData() - Starting sync', options);
