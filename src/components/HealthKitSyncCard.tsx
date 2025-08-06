@@ -73,11 +73,11 @@ export const HealthKitSyncCard: React.FC<HealthKitSyncCardProps> = ({ className 
     }
   };
 
-  const getStatusColor = () => {
-    if (status === 'syncing' || syncInProgress) return 'text-blue-600';
-    if (status === 'connected') return 'text-green-600';
-    if (status === 'error') return 'text-red-600';
-    return 'text-gray-600';
+  const getStatusBadgeColor = () => {
+    if (status === 'syncing' || syncInProgress) return 'bg-blue-500';
+    if (status === 'connected') return 'bg-green-500';
+    if (status === 'error') return 'bg-red-500';
+    return 'bg-muted-foreground';
   };
 
   const getStatusIcon = () => {
@@ -117,13 +117,13 @@ export const HealthKitSyncCard: React.FC<HealthKitSyncCardProps> = ({ className 
         {/* Status */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className={`w-2 h-2 rounded-full ${getStatusColor().replace('text-', 'bg-')}`} />
+            <div className={`w-2 h-2 rounded-full ${getStatusBadgeColor()}`} />
             <span className="text-sm font-medium">Status:</span>
-            <span className={`text-sm ${getStatusColor()}`}>
+            <span className="text-sm text-foreground">
               {getStatusText()}
             </span>
           </div>
-          <div className={getStatusColor()}>
+          <div className="text-muted-foreground">
             {getStatusIcon()}
           </div>
         </div>
