@@ -145,6 +145,42 @@ export type Database = {
           },
         ]
       }
+      debug_logs: {
+        Row: {
+          component: string
+          context: Json | null
+          created_at: string
+          id: string
+          level: string
+          message: string
+          platform: string | null
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          component: string
+          context?: Json | null
+          created_at?: string
+          id?: string
+          level?: string
+          message: string
+          platform?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          component?: string
+          context?: Json | null
+          created_at?: string
+          id?: string
+          level?: string
+          message?: string
+          platform?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       group_conversations: {
         Row: {
           created_at: string

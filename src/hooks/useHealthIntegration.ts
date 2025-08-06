@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { toast } from 'sonner';
 import { cordovaHealthService, HealthDataPoint as CordovaHealthDataPoint, HealthPermissions } from '@/services/cordovaHealthService';
+import { debugLogger } from '@/services/debugLogger';
 
 export enum HealthDataType {
   STEPS = 'steps',
@@ -66,6 +67,12 @@ export const useHealthIntegration = () => {
   const isNative = cordovaHealthService.getIsNative();
 
   useEffect(() => {
+    if (user) {
+      debugLogger.setUserId(user.id);
+    }
+  }, [user]);
+
+  useEffect(() => {
     if (!state.isInitialized) {
       initializeHealthIntegration();
     }
@@ -125,25 +132,33 @@ export const useHealthIntegration = () => {
   };
 
   const requestPermissions = async (dataTypes: HealthDataType[]) => {
-    console.log('🏥 useHealthIntegration: requestPermissions called with:', dataTypes.length, 'types');
-    console.log('🏥 Current state:', { isAvailable: state.isAvailable, hasUser: !!user, status: state.status });
+    await debugLogger.log('useHealthIntegration', 'requestPermissions called', {
+      dataTypesCount: dataTypes.length,
+      isAvailable: state.isAvailable,
+      hasUser: !!user,
+      status: state.status,
+      isNative,
+      userAgent: navigator.userAgent.substring(0, 100)
+    });
     
     if (!state.isAvailable || !user) {
-      console.log('🏥 Cannot request permissions: isAvailable =', state.isAvailable, 'hasUser =', !!user);
+      await debugLogger.warn('useHealthIntegration', 'Cannot request permissions', {
+        isAvailable: state.isAvailable,
+        hasUser: !!user
+      });
       return false;
     }
 
     try {
       setStatus('syncing');
-      console.log('🏥 Requesting permissions for:', dataTypes);
-      console.log('🏥 Platform info:', { isNative, userAgent: navigator.userAgent.substring(0, 100) });
+      await debugLogger.log('useHealthIntegration', 'Requesting permissions', { dataTypes });
 
       const permissions: HealthPermissions = {
         read: dataTypes.map(dt => dt.toString()),
         write: ['steps', 'calories.active', 'heart_rate', 'water'] // Basic write permissions
       };
 
-      console.log('🏥 About to call cordovaHealthService.requestPermissions with:', permissions);
+      await debugLogger.log('useHealthIntegration', 'About to call cordovaHealthService.requestPermissions', { permissions });
       const granted = await cordovaHealthService.requestPermissions(permissions);
       
       if (granted) {

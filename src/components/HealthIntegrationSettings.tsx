@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { useHealthIntegration } from '@/hooks/useHealthIntegration';
 import { Smartphone, RefreshCw, Shield, Clock, CheckCircle, XCircle, Loader2 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
+import { debugLogger } from '@/services/debugLogger';
 
 interface HealthIntegrationSettingsProps {
   onClose?: () => void;
@@ -27,12 +28,17 @@ export const HealthIntegrationSettings: React.FC<HealthIntegrationSettingsProps>
   } = useHealthIntegration();
 
   const handleConnect = async () => {
-    console.log('🔘 HealthIntegrationSettings: handleConnect button clicked');
-    console.log('🔘 Current integration state:', { isAvailable, isInitialized, isConnected, status });
+    await debugLogger.log('HealthIntegrationSettings', 'handleConnect button clicked', {
+      isAvailable,
+      isInitialized,
+      isConnected,
+      status,
+      isNative
+    });
     
     try {
       const { HealthDataType } = await import('@/hooks/useHealthIntegration');
-      console.log('🔘 HealthDataType imported successfully');
+      await debugLogger.log('HealthIntegrationSettings', 'HealthDataType imported successfully');
       
       // Define all comprehensive health data types
       const allTypes = [
@@ -55,11 +61,14 @@ export const HealthIntegrationSettings: React.FC<HealthIntegrationSettingsProps>
         HealthDataType.WORKOUT
       ];
       
-      console.log('🔘 About to request permissions for:', allTypes.length, 'data types');
+      await debugLogger.log('HealthIntegrationSettings', 'About to request permissions', {
+        dataTypesCount: allTypes.length,
+        dataTypes: allTypes
+      });
       const result = await requestPermissions(allTypes);
-      console.log('🔘 Permission request result:', result);
+      await debugLogger.log('HealthIntegrationSettings', 'Permission request completed', { result });
     } catch (error) {
-      console.error('🔘 Error in handleConnect:', error);
+      await debugLogger.error('HealthIntegrationSettings', 'Error in handleConnect', { error: error.message });
     }
   };
 

@@ -10,6 +10,7 @@ import AthleterDashboard from "./pages/AthleteDashboard";
 import AthleteSettings from "./pages/AthleteSettings";
 import ProfessionalDashboard from "./pages/ProfessionalDashboard";
 import LoginLogs from "./pages/LoginLogs";
+import { DebugLogs } from "./pages/DebugLogs";
 import NotFound from "./pages/NotFound";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 
@@ -38,6 +39,11 @@ const App = () => (
           <Route path="/login-logs" element={
             <ProtectedRoute requiredUserType="athlete">
               <LoginLogs />
+            </ProtectedRoute>
+          } />
+          <Route path="/debug-logs" element={
+            <ProtectedRoute requiredUserType="athlete">
+              <DebugLogs />
             </ProtectedRoute>
           } />
           <Route path="/professional-dashboard" element={

@@ -1,4 +1,5 @@
 import { Capacitor } from '@capacitor/core';
+import { debugLogger } from './debugLogger';
 
 declare global {
   interface Window {
@@ -128,39 +129,40 @@ export class CordovaHealthService {
   }
 
   async requestPermissions(permissions: HealthPermissions): Promise<boolean> {
-    console.log('🔌 CordovaHealthService: requestPermissions called');
-    console.log('🔌 isNative:', this.isNative);
-    console.log('🔌 window.plugins exists:', !!window.plugins);
-    console.log('🔌 window.plugins.health exists:', !!window.plugins?.health);
-    console.log('🔌 Permissions to request:', permissions);
+    await debugLogger.log('CordovaHealthService', 'requestPermissions called', {
+      isNative: this.isNative,
+      hasWindowPlugins: !!window.plugins,
+      hasHealthPlugin: !!window.plugins?.health,
+      permissions
+    });
     
     if (!this.isNative) {
-      console.log('🔌 Not native platform - returning mock permission grant');
+      await debugLogger.log('CordovaHealthService', 'Not native platform - returning mock permission grant');
       // On web/simulator, return success after delay to simulate native behavior
       return new Promise((resolve) => {
-        setTimeout(() => {
-          console.log('🔌 Mock permission granted');
+        setTimeout(async () => {
+          await debugLogger.log('CordovaHealthService', 'Mock permission granted');
           resolve(true);
         }, 1000);
       });
     }
     
     if (!window.plugins?.health) {
-      console.error('🔌 Health plugin not available');
+      await debugLogger.error('CordovaHealthService', 'Health plugin not available');
       return false;
     }
 
-    console.log('🔌 About to call window.plugins.health.requestAuthorization');
+    await debugLogger.log('CordovaHealthService', 'About to call window.plugins.health.requestAuthorization');
     
     return new Promise((resolve) => {
       window.plugins.health.requestAuthorization(
         permissions,
-        () => {
-          console.log('🔌 Health permissions granted successfully');
+        async () => {
+          await debugLogger.log('CordovaHealthService', 'Health permissions granted successfully');
           resolve(true);
         },
-        (error: any) => {
-          console.error('🔌 Health permissions denied:', error);
+        async (error: any) => {
+          await debugLogger.error('CordovaHealthService', 'Health permissions denied', { error });
           resolve(false);
         }
       );
