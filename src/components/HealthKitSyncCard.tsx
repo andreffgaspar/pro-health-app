@@ -30,12 +30,21 @@ export const HealthKitSyncCard: React.FC<HealthKitSyncCardProps> = ({ className 
     lastSyncTime,
     status,
     syncHealthData,
-    getLastSyncInfo,
     isNative
   } = useHealthIntegration();
 
   const [syncInProgress, setSyncInProgress] = useState(false);
   const [syncProgress, setSyncProgress] = useState(0);
+
+  const getLastSyncInfo = () => {
+    try {
+      const stored = localStorage.getItem('lastHealthSync');
+      return stored ? JSON.parse(stored) : null;
+    } catch (error) {
+      console.error('Failed to get last sync info:', error);
+      return null;
+    }
+  };
 
   const lastSyncInfo = getLastSyncInfo();
 
