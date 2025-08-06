@@ -37,7 +37,7 @@ jobs:
           node-version: 20
 
       - run: npm install --legacy-peer-deps
-      - run: NODE_ENV=production npm run build:cap
+      - run: npm run build:cap
 
       - run: rm -rf ios
       - run: |
@@ -125,6 +125,7 @@ jobs:
                 export_team_id: ENV["APPLE_TEAM_ID"],
                 # ✅ Evita embed dos frameworks indevidos
                 xcargs: "ARCHS=arm64 DEVELOPMENT_TEAM=#{ENV["APPLE_TEAM_ID"]} CODE_SIGN_STYLE=Manual CODE_SIGN_IDENTITY=\"Apple Distribution\"",
+                entitlements: "App.entitlements",
                 disable_xcpretty: true,
                 export_options: {
                   provisioningProfiles: {
@@ -188,6 +189,20 @@ jobs:
       - name: Pré-build
         run: echo "🏗️ Iniciando build..."
 
+      - name: Criar App.entitlements com permissões do HealthKit
+        run: |
+          cat <<EOF > ios/App/App.entitlements
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+           "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+            <key>com.apple.developer.healthkit</key>
+            <true/>
+          </dict>
+          </plist>
+          EOF
+          
       - name: Run Fastlane
         run: |
           cd ios/App
