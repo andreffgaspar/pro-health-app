@@ -56,9 +56,14 @@ export const useAthleteData = () => {
   const [performanceData, setPerformanceData] = useState<PerformanceData[]>([]);
 
   const fetchAthleteData = async () => {
-    if (!user?.id) return;
+    if (!user?.id) {
+      console.log('❌ No user ID available for fetching athlete data');
+      setLoading(false);
+      return;
+    }
 
     try {
+      console.log('🔄 Starting to fetch athlete data for user:', user.id);
       setLoading(true);
       const { data, error } = await supabase
         .from('athlete_data')
@@ -67,15 +72,18 @@ export const useAthleteData = () => {
         .order('recorded_at', { ascending: false });
 
       if (error) {
-        console.error('Error fetching athlete data:', error);
+        console.error('❌ Error fetching athlete data:', error);
+        setLoading(false);
         return;
       }
 
+      console.log('✅ Successfully fetched athlete data:', data?.length, 'records');
       setAthleteData(data || []);
       processData(data || []);
     } catch (error) {
-      console.error('Error:', error);
+      console.error('❌ Error fetching athlete data:', error);
     } finally {
+      console.log('🏁 Finished fetching athlete data, setting loading to false');
       setLoading(false);
     }
   };

@@ -30,6 +30,21 @@ const AthleterDashboard = () => {
     performanceData,
     loading
   } = useAthleteData();
+  
+  // Add safety timeout to prevent infinite loading
+  const [forceReady, setForceReady] = useState(false);
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      if (loading) {
+        console.log('⚠️ Dashboard loading timeout reached, forcing ready state');
+        setForceReady(true);
+      }
+    }, 15000); // 15 second timeout
+    
+    return () => clearTimeout(timeoutId);
+  }, [loading]);
+  
+  const isActuallyLoading = loading && !forceReady;
   const {
     unreadCount
   } = useRealtimeCommunication();
@@ -247,7 +262,7 @@ const AthleterDashboard = () => {
               </div>
             </CardHeader>
             <CardContent>
-              {loading ? <div className="h-[300px] flex items-center justify-center">
+              {isActuallyLoading ? <div className="h-[300px] flex items-center justify-center">
                   <div className="text-center">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
                     <p className="text-sm text-muted-foreground">Carregando dados...</p>
@@ -350,7 +365,7 @@ const AthleterDashboard = () => {
               </TabsList>
               
               <TabsContent value="training" className="mt-6">
-                {loading ? <div className="h-[250px] flex items-center justify-center">
+                {isActuallyLoading ? <div className="h-[250px] flex items-center justify-center">
                     <div className="text-center">
                       <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
                       <p className="text-sm text-muted-foreground">Carregando dados...</p>
@@ -377,7 +392,7 @@ const AthleterDashboard = () => {
               </TabsContent>
               
               <TabsContent value="nutrition" className="mt-6">
-                {loading ? <div className="h-[250px] flex items-center justify-center">
+                {isActuallyLoading ? <div className="h-[250px] flex items-center justify-center">
                     <div className="text-center">
                       <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
                       <p className="text-sm text-muted-foreground">Carregando dados...</p>
@@ -404,7 +419,7 @@ const AthleterDashboard = () => {
               </TabsContent>
               
               <TabsContent value="hydration" className="mt-6">
-                {loading ? <div className="h-[250px] flex items-center justify-center">
+                {isActuallyLoading ? <div className="h-[250px] flex items-center justify-center">
                     <div className="text-center">
                       <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
                       <p className="text-sm text-muted-foreground">Carregando dados...</p>
