@@ -39,66 +39,77 @@ export const useAuth = () => {
       (event, session) => {
         if (!isMounted) return;
         
-        logStart('auth_state_change', `Auth state changed: ${event}`, { 
-          event, 
-          hasSession: !!session, 
-          hasUser: !!session?.user 
-        }, currentSessionId, session?.user?.id);
-        
-        setSession(session);
-        setUser(session?.user ?? null);
-        
-        // Fetch profile when user logs in, or set loading to false if no user
-        if (session?.user) {
-          logStart('profile_fetch_trigger', 'Triggering profile fetch', { 
-            userId: session.user.id 
-          }, currentSessionId, session.user.id);
+        // Use setTimeout to avoid blocking the auth state change callback
+        setTimeout(async () => {
+          if (!isMounted) return;
           
-          // Use a small delay to prevent race conditions
-          setTimeout(() => {
-            if (isMounted) {
-              fetchProfile(session.user.id);
-            }
-          }, 100);
-        } else {
-          logSuccess('auth_state_cleared', 'User logged out, clearing state', {}, currentSessionId);
-          setProfile(null);
-          setLoading(false);
-        }
+          await logStart('auth_state_change', `Auth state changed: ${event}`, { 
+            event, 
+            hasSession: !!session, 
+            hasUser: !!session?.user 
+          }, currentSessionId, session?.user?.id);
+          
+          setSession(session);
+          setUser(session?.user ?? null);
+          
+          // Fetch profile when user logs in, or set loading to false if no user
+          if (session?.user) {
+            await logStart('profile_fetch_trigger', 'Triggering profile fetch', { 
+              userId: session.user.id 
+            }, currentSessionId, session.user.id);
+            
+            setTimeout(() => {
+              if (isMounted) {
+                fetchProfile(session.user.id);
+              }
+            }, 100);
+          } else {
+            await logSuccess('auth_state_cleared', 'User logged out, clearing state', {}, currentSessionId);
+            setProfile(null);
+            setLoading(false);
+          }
+        }, 0);
       }
     );
 
     // THEN check for existing session
-    logStart('session_check', 'Checking for existing session', {}, currentSessionId);
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    setTimeout(async () => {
       if (!isMounted) return;
       
-      logSuccess('session_check', 'Session check completed', { 
-        hasSession: !!session, 
-        hasUser: !!session?.user 
-      }, currentSessionId, session?.user?.id);
+      await logStart('session_check', 'Checking for existing session', {}, currentSessionId);
       
-      // Only update state if this is the first check
-      if (!user && !profile) {
-        setSession(session);
-        setUser(session?.user ?? null);
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
         
-        if (session?.user) {
-          logStart('existing_session_profile_fetch', 'Fetching profile for existing session', { 
-            userId: session.user.id 
-          }, currentSessionId, session.user.id);
-          fetchProfile(session.user.id);
-        } else {
-          logSuccess('no_existing_session', 'No existing session found', {}, currentSessionId);
+        if (!isMounted) return;
+        
+        await logSuccess('session_check', 'Session check completed', { 
+          hasSession: !!session, 
+          hasUser: !!session?.user 
+        }, currentSessionId, session?.user?.id);
+        
+        // Only update state if this is the first check
+        if (!user && !profile) {
+          setSession(session);
+          setUser(session?.user ?? null);
+          
+          if (session?.user) {
+            await logStart('existing_session_profile_fetch', 'Fetching profile for existing session', { 
+              userId: session.user.id 
+            }, currentSessionId, session.user.id);
+            fetchProfile(session.user.id);
+          } else {
+            await logSuccess('no_existing_session', 'No existing session found', {}, currentSessionId);
+            setLoading(false);
+          }
+        }
+      } catch (error) {
+        if (isMounted) {
+          await logError('session_check', error, currentSessionId);
           setLoading(false);
         }
       }
-    }).catch((error) => {
-      if (isMounted) {
-        logError('session_check', error, currentSessionId);
-        setLoading(false);
-      }
-    });
+    }, 0);
 
     return () => {
       isMounted = false;
