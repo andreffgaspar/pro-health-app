@@ -1,4 +1,4 @@
-name: FastlaneV3
+name: FastlaneV3 - Funcionando
 
 on:
   workflow_dispatch:
