@@ -126,15 +126,7 @@ jobs:
                 code_sign_identity: "Apple Distribution",
                 profile_name: "match AppStore com.prosoccerapp.prohealthappv2",
                 team_id: ENV["APPLE_TEAM_ID"],
-                bundle_identifier: ENV["APP_IDENTIFIER"]
-              )
-
-              update_project_provisioning(
-                xcodeproj: "App.xcodeproj",
-                target_filter: "App",
-                profile: "match AppStore com.prosoccerapp.prohealthappv2",
-                build_configuration: "Release",
-                code_signing_identity: "Apple Distribution",
+                bundle_identifier: ENV["APP_IDENTIFIER"],
                 entitlements_file: "App/App.entitlements"
               )
 
