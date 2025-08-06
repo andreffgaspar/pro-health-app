@@ -101,15 +101,6 @@ jobs:
               )
             
               sh("security set-key-partition-list -S apple-tool:,apple: -s -k buildpass build.keychain")
-              
-              update_code_signing_settings(
-                use_automatic_signing: false,
-                path: "App.xcodeproj",
-                code_sign_identity: "Apple Distribution",
-                profile_name: "match AppStore com.prosoccerapp.prohealthappv2",
-                team_id: ENV["APPLE_TEAM_ID"],
-                bundle_identifier: ENV["APP_IDENTIFIER"]
-              )
 
               clear_derived_data
               
@@ -197,14 +188,11 @@ jobs:
           </plist>
           EOF
 
-      - name: Adicionar caminho do .entitlements ao projeto Xcode
+      - name: Adicionar entitlements ao projeto
         run: |
-          sed -i '' 's/\/\* Entitlements \*\/ = {/\/* Entitlements \*\/ = {\n\t\t\t\tisa = PBXFileReference;\n\t\t\t\tlastKnownFileType = text.plist.entitlements;\n\t\t\t\tpath = App.entitlements;\n\t\t\t\tsourceTree = "<group>";\n\t\t\t};/' ios/App/App.xcodeproj/project.pbxproj
-          
-          sed -i '' 's/CODE_SIGN_ENTITLEMENTS = .*;/CODE_SIGN_ENTITLEMENTS = App.entitlements;/' ios/App/App.xcodeproj/project.pbxproj || echo "⚠️ CODE_SIGN_ENTITLEMENTS não encontrado, tentando adicionar"
+          sed -i '' 's/CODE_SIGN_ENTITLEMENTS = .*;/CODE_SIGN_ENTITLEMENTS = App.entitlements;/' ios/App/App.xcodeproj/project.pbxproj || true
+      
 
-          grep -q "CODE_SIGN_ENTITLEMENTS" ios/App/App.xcodeproj/project.pbxproj || \
-          echo '          CODE_SIGN_ENTITLEMENTS = App.entitlements;' >> ios/App/App.xcodeproj/project.pbxproj
       - name: Run Fastlane
         run: |
           cd ios/App
