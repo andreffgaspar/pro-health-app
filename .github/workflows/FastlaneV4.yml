@@ -127,7 +127,7 @@ jobs:
                 profile_name: "match AppStore com.prosoccerapp.prohealthappv2",
                 team_id: ENV["APPLE_TEAM_ID"],
                 bundle_identifier: ENV["APP_IDENTIFIER"],
-                entitlements_file: "App/App.entitlements"
+                entitlements_file_path: "App/App.entitlements"
               )
 
               clear_derived_data
