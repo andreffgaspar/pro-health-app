@@ -16,17 +16,18 @@ export interface HealthDataType {
   WATER: string;
 }
 
+// Apple HealthKit sample type identifiers
 export const SampleNames = {
-  STEP_COUNT: 'steps',
-  DISTANCE_WALKING_RUNNING: 'distance',
-  ACTIVE_ENERGY_BURNED: 'calories',
-  BASAL_ENERGY_BURNED: 'calories',
-  HEART_RATE: 'heart_rate',
-  BODY_MASS: 'weight',
-  HEIGHT: 'height',
-  SLEEP_ANALYSIS: 'sleep',
-  WORKOUT_TYPE: 'activity',
-  DIETARY_WATER: 'water'
+  STEP_COUNT: 'HKQuantityTypeIdentifierStepCount',
+  DISTANCE_WALKING_RUNNING: 'HKQuantityTypeIdentifierDistanceWalkingRunning',
+  ACTIVE_ENERGY_BURNED: 'HKQuantityTypeIdentifierActiveEnergyBurned',
+  BASAL_ENERGY_BURNED: 'HKQuantityTypeIdentifierBasalEnergyBurned',
+  HEART_RATE: 'HKQuantityTypeIdentifierHeartRate',
+  BODY_MASS: 'HKQuantityTypeIdentifierBodyMass',
+  HEIGHT: 'HKQuantityTypeIdentifierHeight',
+  SLEEP_ANALYSIS: 'HKCategoryTypeIdentifierSleepAnalysis',
+  WORKOUT_TYPE: 'HKWorkoutTypeIdentifier',
+  DIETARY_WATER: 'HKQuantityTypeIdentifierDietaryWater'
 } as const;
 
 export interface HealthDataPoint {
@@ -215,80 +216,27 @@ class PerfoodHealthService {
   }
 
   private generateMockData(dataType: string, startDate: Date, endDate: Date): HealthDataPoint[] {
-    if(false){
-      healthKitLogger.info('PerfoodHealthService', 'generateMockData', 'Generating mock data', { dataType });
-      
-      const mockData: HealthDataPoint[] = [];
-      const daysDiff = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
-      
-      for (let i = 0; i < Math.min(daysDiff, 30); i++) {
-        const date = new Date(startDate.getTime() + i * 24 * 60 * 60 * 1000);
-        
-        let value = 0;
-        let unit = '';
-        
-        switch (dataType) {
-          case SampleNames.STEP_COUNT:
-            value = Math.floor(Math.random() * 5000) + 5000;
-            unit = 'steps';
-            break;
-          case SampleNames.DISTANCE_WALKING_RUNNING:
-            value = Math.random() * 5 + 2;
-            unit = 'km';
-            break;
-          case SampleNames.ACTIVE_ENERGY_BURNED:
-            value = Math.floor(Math.random() * 300) + 200;
-            unit = 'kcal';
-            break;
-          case SampleNames.HEART_RATE:
-            value = Math.floor(Math.random() * 40) + 60;
-            unit = 'bpm';
-            break;
-          case SampleNames.BODY_MASS:
-            value = Math.random() * 20 + 60;
-            unit = 'kg';
-            break;
-          default:
-            value = Math.random() * 100;
-            unit = 'unit';
-        }
-        
-        mockData.push({
-          type: dataType,
-          value,
-          unit,
-          startDate: date,
-          endDate: new Date(date.getTime() + 60 * 60 * 1000), // 1 hour later
-          sourceName: 'Mock Health Data',
-          sourceVersion: '1.0.0'
-        });
-      }
-      
-      healthKitLogger.info('PerfoodHealthService', 'generateMockData', 'Generated mock data points', { 
-        dataType, 
-        count: mockData.length 
-      });
-      return mockData;
-    }
+    // Mock data generation is disabled - return empty array
+    return [];
   }
 
   private getUnitForDataType(dataType: string): string {
     switch (dataType) {
       case SampleNames.STEP_COUNT:
-        return 'steps';
+        return 'count';
       case SampleNames.DISTANCE_WALKING_RUNNING:
-        return 'km';
+        return 'm';
       case SampleNames.ACTIVE_ENERGY_BURNED:
       case SampleNames.BASAL_ENERGY_BURNED:
         return 'kcal';
       case SampleNames.HEART_RATE:
-        return 'bpm';
+        return 'count/min';
       case SampleNames.BODY_MASS:
         return 'kg';
       case SampleNames.HEIGHT:
-        return 'cm';
+        return 'm';
       case SampleNames.DIETARY_WATER:
-        return 'ml';
+        return 'L';
       default:
         return 'unit';
     }
