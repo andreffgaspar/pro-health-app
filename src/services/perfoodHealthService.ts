@@ -215,59 +215,61 @@ class PerfoodHealthService {
   }
 
   private generateMockData(dataType: string, startDate: Date, endDate: Date): HealthDataPoint[] {
-    healthKitLogger.info('PerfoodHealthService', 'generateMockData', 'Generating mock data', { dataType });
-    
-    const mockData: HealthDataPoint[] = [];
-    const daysDiff = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
-    
-    for (let i = 0; i < Math.min(daysDiff, 30); i++) {
-      const date = new Date(startDate.getTime() + i * 24 * 60 * 60 * 1000);
+    if(false){
+      healthKitLogger.info('PerfoodHealthService', 'generateMockData', 'Generating mock data', { dataType });
       
-      let value = 0;
-      let unit = '';
+      const mockData: HealthDataPoint[] = [];
+      const daysDiff = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
       
-      switch (dataType) {
-        case SampleNames.STEP_COUNT:
-          value = Math.floor(Math.random() * 5000) + 5000;
-          unit = 'steps';
-          break;
-        case SampleNames.DISTANCE_WALKING_RUNNING:
-          value = Math.random() * 5 + 2;
-          unit = 'km';
-          break;
-        case SampleNames.ACTIVE_ENERGY_BURNED:
-          value = Math.floor(Math.random() * 300) + 200;
-          unit = 'kcal';
-          break;
-        case SampleNames.HEART_RATE:
-          value = Math.floor(Math.random() * 40) + 60;
-          unit = 'bpm';
-          break;
-        case SampleNames.BODY_MASS:
-          value = Math.random() * 20 + 60;
-          unit = 'kg';
-          break;
-        default:
-          value = Math.random() * 100;
-          unit = 'unit';
+      for (let i = 0; i < Math.min(daysDiff, 30); i++) {
+        const date = new Date(startDate.getTime() + i * 24 * 60 * 60 * 1000);
+        
+        let value = 0;
+        let unit = '';
+        
+        switch (dataType) {
+          case SampleNames.STEP_COUNT:
+            value = Math.floor(Math.random() * 5000) + 5000;
+            unit = 'steps';
+            break;
+          case SampleNames.DISTANCE_WALKING_RUNNING:
+            value = Math.random() * 5 + 2;
+            unit = 'km';
+            break;
+          case SampleNames.ACTIVE_ENERGY_BURNED:
+            value = Math.floor(Math.random() * 300) + 200;
+            unit = 'kcal';
+            break;
+          case SampleNames.HEART_RATE:
+            value = Math.floor(Math.random() * 40) + 60;
+            unit = 'bpm';
+            break;
+          case SampleNames.BODY_MASS:
+            value = Math.random() * 20 + 60;
+            unit = 'kg';
+            break;
+          default:
+            value = Math.random() * 100;
+            unit = 'unit';
+        }
+        
+        mockData.push({
+          type: dataType,
+          value,
+          unit,
+          startDate: date,
+          endDate: new Date(date.getTime() + 60 * 60 * 1000), // 1 hour later
+          sourceName: 'Mock Health Data',
+          sourceVersion: '1.0.0'
+        });
       }
       
-      mockData.push({
-        type: dataType,
-        value,
-        unit,
-        startDate: date,
-        endDate: new Date(date.getTime() + 60 * 60 * 1000), // 1 hour later
-        sourceName: 'Mock Health Data',
-        sourceVersion: '1.0.0'
+      healthKitLogger.info('PerfoodHealthService', 'generateMockData', 'Generated mock data points', { 
+        dataType, 
+        count: mockData.length 
       });
+      return mockData;
     }
-    
-    healthKitLogger.info('PerfoodHealthService', 'generateMockData', 'Generated mock data points', { 
-      dataType, 
-      count: mockData.length 
-    });
-    return mockData;
   }
 
   private getUnitForDataType(dataType: string): string {
