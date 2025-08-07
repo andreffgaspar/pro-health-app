@@ -161,26 +161,71 @@ class PerfoodHealthService {
         limit: 1000
       };
 
+      await healthKitLogger.info('PerfoodHealthService', 'queryHealthData', 'Attempting query with options', { queryOptions });
       const result: QueryResult = await CapacitorHealthkit.queryHKitSampleType(queryOptions);
+      
+      await healthKitLogger.info('PerfoodHealthService', 'queryHealthData', 'Raw query result', { 
+        result,
+        hasResultData: !!result?.resultData,
+        resultDataType: typeof result?.resultData,
+        resultDataLength: Array.isArray(result?.resultData) ? result.resultData.length : 'not array'
+      });
+
+      // Validate the result structure
+      if (!result) {
+        await healthKitLogger.error('PerfoodHealthService', 'queryHealthData', 'Null result from query', '', { dataType });
+        return [];
+      }
+
+      if (!result.resultData || !Array.isArray(result.resultData)) {
+        await healthKitLogger.error('PerfoodHealthService', 'queryHealthData', 'Invalid result data structure', '', { 
+          dataType,
+          resultData: result.resultData,
+          resultDataType: typeof result.resultData
+        });
+        return [];
+      }
+
       await healthKitLogger.info('PerfoodHealthService', 'queryHealthData', 'Query completed successfully', { 
         count: result.countReturn, 
         dataPoints: result.resultData.length 
       });
 
-      // Convert result to HealthDataPoint format
-      return result.resultData.map((item: any) => ({
-        type: dataType,
-        value: item.value || item.quantity || 0,
-        unit: item.unit || this.getUnitForDataType(dataType),
-        startDate: new Date(item.startDate || item.startTime),
-        endDate: new Date(item.endDate || item.endTime),
-        sourceName: item.sourceName || 'HealthKit',
-        sourceVersion: item.sourceVersion || '1.0'
-      }));
+      // Convert result to HealthDataPoint format with null checks
+      const healthDataPoints: HealthDataPoint[] = [];
+      
+      for (const item of result.resultData) {
+        if (!item) {
+          continue;
+        }
+        
+        try {
+          healthDataPoints.push({
+            type: dataType,
+            value: item.value || item.quantity || 0,
+            unit: item.unit || this.getUnitForDataType(dataType),
+            startDate: new Date(item.startDate || item.startTime || Date.now()),
+            endDate: new Date(item.endDate || item.endTime || Date.now()),
+            sourceName: item.sourceName || 'HealthKit',
+            sourceVersion: item.sourceVersion || '1.0'
+          });
+        } catch (mapError) {
+          await healthKitLogger.error('PerfoodHealthService', 'queryHealthData', 'Error mapping data point', mapError.message, { item });
+        }
+      }
+      
+      return healthDataPoints;
     } catch (error) {
-      await healthKitLogger.error('PerfoodHealthService', 'queryHealthData', 'Error during query', error.message, { dataType, error });
-      // Return mock data on error for development
-      return this.generateMockData(dataType, startDate, endDate);
+      await healthKitLogger.error('PerfoodHealthService', 'queryHealthData', 'Error during query', error.message, { 
+        dataType, 
+        error: {
+          message: error.message,
+          name: error.name,
+          stack: error.stack
+        }
+      });
+      // Return empty array on error instead of mock data
+      return [];
     }
   }
 

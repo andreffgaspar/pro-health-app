@@ -143,34 +143,35 @@ export const useHealthIntegration = () => {
     try {
       setState(prev => ({ ...prev, status: 'initializing' }));
 
+      // Map permission names to HealthKit permission strings (not sample names)
       const readDataTypes = dataTypes.map(type => {
         switch (type) {
           case HealthDataType.STEPS:
-            return SampleNames.STEP_COUNT;
+            return 'steps';
           case HealthDataType.DISTANCE:
-            return SampleNames.DISTANCE_WALKING_RUNNING;
+            return 'distance';
           case HealthDataType.CALORIES:
-            return SampleNames.ACTIVE_ENERGY_BURNED;
+            return 'calories';
           case HealthDataType.HEART_RATE:
-            return SampleNames.HEART_RATE;
+            return 'calories'; // Heart rate might be grouped with calories in this plugin
           case HealthDataType.WEIGHT:
-            return SampleNames.BODY_MASS;
+            return 'weight';
           case HealthDataType.HEIGHT:
-            return SampleNames.HEIGHT;
+            return 'weight'; // Height might be grouped with weight
           case HealthDataType.SLEEP:
-            return SampleNames.SLEEP_ANALYSIS;
+            return 'duration'; // Sleep might use duration permission
           case HealthDataType.WATER:
-            return SampleNames.DIETARY_WATER;
+            return 'calories'; // Water might be grouped with calories
           case HealthDataType.WORKOUT:
-            return SampleNames.WORKOUT_TYPE;
+            return 'activity';
           default:
-            return SampleNames.STEP_COUNT;
+            return 'steps';
         }
       });
 
       const permissions = {
         read: readDataTypes,
-        write: [SampleNames.STEP_COUNT, SampleNames.ACTIVE_ENERGY_BURNED], // Allow writing some data types
+        write: ['steps', 'calories'], // Use permission names, not HealthKit identifiers
         all: []
       };
 
