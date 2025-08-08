@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from './useAuth';
 import { supabase } from '@/integrations/supabase/client';
-import { perfoodHealthService, SampleNames } from '@/services/perfoodHealthService';
+import { perfoodHealthService, HealthKitSampleNames } from '@/services/perfoodHealthService';
 import { healthKitLogger } from '@/services/healthKitLogger';
 import { toast } from 'sonner';
 
@@ -367,23 +367,23 @@ export const useHealthIntegration = () => {
   const getDataTypeForPermission = (permission: HealthDataType): string | null => {
     switch (permission) {
       case HealthDataType.STEPS:
-        return SampleNames.STEP_COUNT;
+        return HealthKitSampleNames.STEP_COUNT;
       case HealthDataType.DISTANCE:
-        return SampleNames.DISTANCE_WALKING_RUNNING;
+        return HealthKitSampleNames.DISTANCE_WALKING_RUNNING;
       case HealthDataType.CALORIES:
-        return SampleNames.ACTIVE_ENERGY_BURNED;
+        return HealthKitSampleNames.ACTIVE_ENERGY_BURNED;
       case HealthDataType.HEART_RATE:
-        return SampleNames.HEART_RATE;
+        return HealthKitSampleNames.HEART_RATE;
       case HealthDataType.WEIGHT:
-        return SampleNames.BODY_MASS;
+        return HealthKitSampleNames.BODY_MASS;
       case HealthDataType.HEIGHT:
-        return SampleNames.HEIGHT;
+        return HealthKitSampleNames.HEIGHT;
       case HealthDataType.SLEEP:
-        return SampleNames.SLEEP_ANALYSIS;
+        return HealthKitSampleNames.SLEEP_ANALYSIS;
       case HealthDataType.WATER:
-        return SampleNames.DIETARY_WATER;
+        return HealthKitSampleNames.DIETARY_WATER;
       case HealthDataType.WORKOUT:
-        return SampleNames.WORKOUT_TYPE;
+        return HealthKitSampleNames.WORKOUT_TYPE;
       default:
         return null;
     }

@@ -3,7 +3,6 @@ import {
   CapacitorHealthkit,
   OtherData,
   QueryOutput,
-  SampleNames,
   SleepData,
 } from '@perfood/capacitor-healthkit';
 import { Capacitor } from '@capacitor/core';
@@ -24,7 +23,7 @@ export interface HealthDataType {
 }
 
 // @perfood/capacitor-healthkit sample names (using plugin's permission strings)
-export const SampleNames = {
+export const HealthKitSampleNames = {
   STEP_COUNT: 'stepCount',
   DISTANCE_WALKING_RUNNING: 'distanceWalkingRunning',
   ACTIVE_ENERGY_BURNED: 'activeEnergyBurned',
@@ -274,25 +273,25 @@ class PerfoodHealthService {
 
   private getUnitForDataType(dataType: string): string {
     switch (dataType) {
-      case SampleNames.STEP_COUNT: // 'steps'
+      case HealthKitSampleNames.STEP_COUNT: // 'steps'
         return 'steps';
-      case SampleNames.DISTANCE_WALKING_RUNNING: // 'distance'
+      case HealthKitSampleNames.DISTANCE_WALKING_RUNNING: // 'distance'
         return 'm';
-      case SampleNames.ACTIVE_ENERGY_BURNED: // 'calories'
+      case HealthKitSampleNames.ACTIVE_ENERGY_BURNED: // 'calories'
         return 'kcal';
-      case SampleNames.BASAL_ENERGY_BURNED: // 'calories'
+      case HealthKitSampleNames.BASAL_ENERGY_BURNED: // 'calories'
         return 'kcal';
-      case SampleNames.DIETARY_WATER: // mL
+      case HealthKitSampleNames.DIETARY_WATER: // mL
         return 'ml';
-      case SampleNames.HEART_RATE: // bpm
+      case HealthKitSampleNames.HEART_RATE: // bpm
         return 'bpm';
-      case SampleNames.BODY_MASS: // 'weight'
+      case HealthKitSampleNames.BODY_MASS: // 'weight'
         return 'kg';
-      case SampleNames.HEIGHT: // cm
+      case HealthKitSampleNames.HEIGHT: // cm
         return 'cm';
-      case SampleNames.SLEEP_ANALYSIS: // 'duration'
+      case HealthKitSampleNames.SLEEP_ANALYSIS: // 'duration'
         return 'min';
-      case SampleNames.WORKOUT_TYPE: // 'activity'
+      case HealthKitSampleNames.WORKOUT_TYPE: // 'activity'
         return 'workout';
       default:
         return 'unit';

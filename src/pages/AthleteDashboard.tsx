@@ -11,6 +11,8 @@ import DataVisualization from "@/components/DataVisualization";
 import AthleteProfileSettings from "@/components/AthleteProfileSettings";
 import CommunicationCenter from "@/components/CommunicationCenter";
 import { HealthKitSyncCard } from "@/components/HealthKitSyncCard";
+import { HealthDataIndicators } from "@/components/HealthDataIndicators";
+import { EnhancedPerformanceChart } from "@/components/EnhancedPerformanceChart";
 import SessionScheduler from "@/components/SessionScheduler";
 import { Link, useNavigate } from "react-router-dom";
 import { LineChart, Line, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from "recharts";
@@ -87,6 +89,7 @@ const AthleterDashboard = () => {
   const [showCommunication, setShowCommunication] = useState(false);
   const [selectedMetric, setSelectedMetric] = useState("score");
   const [selectedPeriod, setSelectedPeriod] = useState("7");
+  const [selectedDataTypes, setSelectedDataTypes] = useState<string[]>(["calories", "heart_rate"]);
   const sleepTriggerRef = useRef<HTMLButtonElement>(null);
   const nutritionTriggerRef = useRef<HTMLButtonElement>(null);
   const trainingTriggerRef = useRef<HTMLButtonElement>(null);
@@ -127,6 +130,20 @@ const AthleterDashboard = () => {
   const getFilteredPerformanceData = () => {
     const days = parseInt(selectedPeriod);
     return performanceData.slice(-days);
+  };
+
+  const handleDataTypeSelect = (dataType: string) => {
+    setSelectedDataTypes(prev => {
+      if (prev.includes(dataType)) {
+        return prev.filter(type => type !== dataType);
+      } else {
+        return [...prev, dataType];
+      }
+    });
+  };
+
+  const handleDataTypeRemove = (dataType: string) => {
+    setSelectedDataTypes(prev => prev.filter(type => type !== dataType));
   };
   return <div className="min-h-screen bg-gradient-subtle">
       {/* Header */}
@@ -251,8 +268,20 @@ const AthleterDashboard = () => {
 
         {/* Main Content */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Performance Chart */}
-          <Card className="lg:col-span-2">
+          {/* Health Data Indicators */}
+          <HealthDataIndicators 
+            onDataTypeSelect={handleDataTypeSelect}
+            selectedDataTypes={selectedDataTypes}
+          />
+
+          {/* Enhanced Performance Chart */}
+          <EnhancedPerformanceChart
+            selectedDataTypes={selectedDataTypes}
+            onDataTypeRemove={handleDataTypeRemove}
+          />
+
+          {/* Legacy Performance Chart - keeping as fallback */}
+          <Card className="lg:col-span-2" style={{ display: 'none' }}>
             <CardHeader>
               <div className="flex items-center justify-between mb-4">
                 <div>
