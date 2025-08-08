@@ -1,5 +1,5 @@
 import { Capacitor } from '@capacitor/core';
-import { CapacitorHealth } from 'capacitor-health';
+import { Health } from 'capacitor-health';
 import { healthKitLogger } from './healthKitLogger';
 
 export interface HealthDataPoint {
@@ -37,7 +37,7 @@ class MleyHealthService {
       return false;
     }
     try {
-      await CapacitorHealth.initialize();
+      await Health.isHealthAvailable();
       this.initialized = true;
       return true;
     } catch (err) {
@@ -52,7 +52,7 @@ class MleyHealthService {
       return false;
     }
     try {
-      await CapacitorHealth.requestPermissions({ read: permissions });
+      await Health.requestHealthPermissions({permissions: ['READ_STEPS', 'READ_DISTANCE', /* etc */]});
       return true;
     } catch (err) {
       await healthKitLogger.error('MleyHealthService', 'requestPermissions', 'Failed to request permissions', (err as Error).message);
@@ -65,7 +65,7 @@ class MleyHealthService {
       return [];
     }
     try {
-      const result: any = await CapacitorHealth.queryAggregatedData({
+      const result: any = await Health.queryAggregated({
         dataType,
         startDate: startDate.toISOString(),
         endDate: endDate.toISOString(),
