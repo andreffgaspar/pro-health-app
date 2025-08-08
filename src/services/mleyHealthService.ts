@@ -1,5 +1,5 @@
 import { Capacitor } from '@capacitor/core';
-import { CapacitorHealth } from '@mley/capacitor-health';
+import { CapacitorHealth } from 'capacitor-health';
 import { healthKitLogger } from './healthKitLogger';
 
 export interface HealthDataPoint {
