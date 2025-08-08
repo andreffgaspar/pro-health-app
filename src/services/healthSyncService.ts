@@ -1,6 +1,6 @@
 import { Capacitor } from '@capacitor/core';
 import { supabase } from '@/integrations/supabase/client';
-import { perfoodHealthService, SampleNames } from './perfoodHealthService';
+import { perfoodHealthService, HealthKitSampleNames } from './perfoodHealthService';
 
 export interface SyncConfig {
   enabledDataTypes: string[];
