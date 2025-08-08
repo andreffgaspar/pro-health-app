@@ -153,19 +153,19 @@ export const useHealthIntegration = () => {
           case HealthDataType.CALORIES:
             return 'calories';
           case HealthDataType.HEART_RATE:
-            return 'calories'; // Heart rate might be grouped with calories in this plugin
+            return 'bpm'; // Heart rate might be grouped with calories in this plugin
           case HealthDataType.WEIGHT:
             return 'weight';
           case HealthDataType.HEIGHT:
-            return 'weight'; // Height might be grouped with weight
+            return 'height'; // Height might be grouped with weight
           case HealthDataType.SLEEP:
-            return 'duration'; // Sleep might use duration permission
+            return 'sleep'; // Sleep might use duration permission
           case HealthDataType.WATER:
-            return 'calories'; // Water might be grouped with calories
+            return 'ml'; // Water might be grouped with calories
           case HealthDataType.WORKOUT:
             return 'activity';
           default:
-            return 'steps';
+            return '';
         }
       });
 
