@@ -90,9 +90,9 @@ export function EnhancedPerformanceChart({ selectedDataTypes, onDataTypeRemove }
         selectedDataTypes.forEach(dataType => {
           const values = dataByDate[date]?.[dataType] || [];
           if (values.length > 0) {
-            // Calculate average for the day
-            const average = values.reduce((sum, val) => sum + val, 0) / values.length;
-            point[dataType] = Math.round(average * 100) / 100; // Round to 2 decimal places
+            // Calculate sum for the day
+            const sum = values.reduce((sum, val) => sum + val, 0);
+            point[dataType] = Math.round(sum * 100) / 100; // Round to 2 decimal places
           } else {
             point[dataType] = 0;
           }
