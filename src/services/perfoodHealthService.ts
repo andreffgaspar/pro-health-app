@@ -16,18 +16,18 @@ export interface HealthDataType {
   WATER: string;
 }
 
-// Apple HealthKit sample type identifiers
+// @perfood/capacitor-healthkit sample names (using plugin's permission strings)
 export const SampleNames = {
-  STEP_COUNT: 'HKQuantityTypeIdentifierStepCount',
-  DISTANCE_WALKING_RUNNING: 'HKQuantityTypeIdentifierDistanceWalkingRunning',
-  ACTIVE_ENERGY_BURNED: 'HKQuantityTypeIdentifierActiveEnergyBurned',
-  BASAL_ENERGY_BURNED: 'HKQuantityTypeIdentifierBasalEnergyBurned',
-  HEART_RATE: 'HKQuantityTypeIdentifierHeartRate',
-  BODY_MASS: 'HKQuantityTypeIdentifierBodyMass',
-  HEIGHT: 'HKQuantityTypeIdentifierHeight',
-  SLEEP_ANALYSIS: 'HKCategoryTypeIdentifierSleepAnalysis',
-  WORKOUT_TYPE: 'HKWorkoutTypeIdentifier',
-  DIETARY_WATER: 'HKQuantityTypeIdentifierDietaryWater'
+  STEP_COUNT: 'steps',
+  DISTANCE_WALKING_RUNNING: 'distance',
+  ACTIVE_ENERGY_BURNED: 'calories',
+  BASAL_ENERGY_BURNED: 'calories',
+  HEART_RATE: 'calories', // Heart rate might be grouped with calories in this plugin
+  BODY_MASS: 'weight',
+  HEIGHT: 'weight', // Height might be grouped with weight
+  SLEEP_ANALYSIS: 'duration', // Sleep data uses duration permission
+  WORKOUT_TYPE: 'activity',
+  DIETARY_WATER: 'calories' // Water data grouped with calories
 } as const;
 
 export interface HealthDataPoint {
@@ -267,21 +267,23 @@ class PerfoodHealthService {
 
   private getUnitForDataType(dataType: string): string {
     switch (dataType) {
-      case SampleNames.STEP_COUNT:
+      case SampleNames.STEP_COUNT: // 'steps'
         return 'count';
-      case SampleNames.DISTANCE_WALKING_RUNNING:
+      case SampleNames.DISTANCE_WALKING_RUNNING: // 'distance'
         return 'm';
-      case SampleNames.ACTIVE_ENERGY_BURNED:
-      case SampleNames.BASAL_ENERGY_BURNED:
+      case SampleNames.ACTIVE_ENERGY_BURNED: // 'calories'
+      case SampleNames.BASAL_ENERGY_BURNED: // 'calories'
+      case SampleNames.DIETARY_WATER: // 'calories' (grouped)
         return 'kcal';
-      case SampleNames.HEART_RATE:
+      case SampleNames.HEART_RATE: // 'calories' (grouped)
         return 'count/min';
-      case SampleNames.BODY_MASS:
+      case SampleNames.BODY_MASS: // 'weight'
+      case SampleNames.HEIGHT: // 'weight' (grouped)
         return 'kg';
-      case SampleNames.HEIGHT:
-        return 'm';
-      case SampleNames.DIETARY_WATER:
-        return 'L';
+      case SampleNames.SLEEP_ANALYSIS: // 'duration'
+        return 'min';
+      case SampleNames.WORKOUT_TYPE: // 'activity'
+        return 'workout';
       default:
         return 'unit';
     }
