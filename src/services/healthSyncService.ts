@@ -98,7 +98,7 @@ export class HealthSyncService {
           
           // Convert to our format
           const convertedData = data.map(item => ({
-            type: dataType,
+            type: item.type, // Use the mapped type from mleyHealthService
             value: item.value,
             unit: item.unit,
             timestamp: item.startDate,

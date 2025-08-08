@@ -116,7 +116,7 @@ class MleyHealthService {
       });
 
       return result.aggregatedData.map((item: any) => ({
-        type: dataType,
+        type: this.mapToDbDataType(dataType), // Map to database-compatible type
         value: item.value,
         unit: this.getUnitForDataType(dataType),
         startDate: new Date(item.startDate),
@@ -126,6 +126,15 @@ class MleyHealthService {
     } catch (err) {
       await healthKitLogger.error('MleyHealthService', 'queryAggregatedData', 'Query failed', (err as Error).message);
       return [];
+    }
+  }
+
+  private mapToDbDataType(pluginDataType: string): string {
+    // Map plugin data types to database-compatible types
+    switch (pluginDataType) {
+      case 'active-calories': return 'calories';
+      case 'steps': return 'steps';
+      default: return pluginDataType;
     }
   }
 
