@@ -5,17 +5,13 @@ import { mleyHealthService, MleySampleNames } from '@/services/mleyHealthService
 import { healthKitLogger } from '@/services/healthKitLogger';
 import { toast } from 'sonner';
 
-// Health data types enum matching perfood plugin
+// Health data types enum matching mley/capacitor-health plugin
 export enum HealthDataType {
-  STEPS = 'steps',
-  DISTANCE = 'distance',
-  CALORIES = 'calories',
-  HEART_RATE = 'heart_rate',
-  WEIGHT = 'weight',
-  HEIGHT = 'height',
-  SLEEP = 'sleep',
-  WATER = 'water',
-  WORKOUT = 'activity'
+  STEPS = 'READ_STEPS',
+  CALORIES = 'READ_CALORIES',
+  DISTANCE = 'READ_DISTANCE',
+  HEART_RATE = 'READ_HEART_RATE',
+  WORKOUTS = 'READ_WORKOUTS'
 }
 
 export interface HealthPermission {
@@ -143,40 +139,11 @@ export const useHealthIntegration = () => {
     try {
       setState(prev => ({ ...prev, status: 'initializing' }));
 
-      // Map permission names to HealthKit permission strings (not sample names)
-      const readDataTypes = dataTypes.map(type => {
-        switch (type) {
-          case HealthDataType.STEPS:
-            return 'steps';
-          case HealthDataType.DISTANCE:
-            return 'distance';
-          case HealthDataType.CALORIES:
-            return 'calories';
-          case HealthDataType.HEART_RATE:
-            return 'bpm'; // Heart rate might be grouped with calories in this plugin
-          case HealthDataType.WEIGHT:
-            return 'weight';
-          case HealthDataType.HEIGHT:
-            return 'height'; // Height might be grouped with weight
-          case HealthDataType.SLEEP:
-            return 'sleep'; // Sleep might use duration permission
-          case HealthDataType.WATER:
-            return 'ml'; // Water might be grouped with calories
-          case HealthDataType.WORKOUT:
-            return 'activity';
-          default:
-            return '';
-        }
-      });
+      // Convert HealthDataType enums to permission strings
+      const permissionStrings = dataTypes.map(type => type.toString());
 
-      const permissions = {
-        read: readDataTypes,
-        write: ['steps', 'calories'], // Use permission names, not HealthKit identifiers
-        all: []
-      };
-
-      await healthKitLogger.info('useHealthIntegration', 'requestPermissions', 'About to call mleyHealthService.requestPermissions', { permissions }, 'mobile', isNative);
-      const success = await mleyHealthService.requestPermissions(permissions);
+      await healthKitLogger.info('useHealthIntegration', 'requestPermissions', 'About to call mleyHealthService.requestPermissions', { permissionStrings }, 'mobile', isNative);
+      const success = await mleyHealthService.requestPermissions(permissionStrings);
       await healthKitLogger.info('useHealthIntegration', 'requestPermissions', 'mleyHealthService.requestPermissions completed', { success }, 'mobile', isNative);
       
       if (success) {
@@ -249,7 +216,7 @@ export const useHealthIntegration = () => {
         await healthKitLogger.info('useHealthIntegration', 'syncHealthData', 'About to fetch data', { dataType }, 'mobile', isNative);
         
         try {
-          const data = await mleyHealthService.queryAggregatedData(dataType, startDate, endDate, 'day');
+          const data = await mleyHealthService.queryAggregatedData(dataType as 'steps' | 'calories', startDate, endDate, 'day');
           await healthKitLogger.info('useHealthIntegration', 'syncHealthData', 'Fetched data points', { 
             dataType, 
             count: data.length,
@@ -364,26 +331,12 @@ export const useHealthIntegration = () => {
     await healthKitLogger.info('useHealthIntegration', 'saveHealthDataToDatabase', 'Successfully saved to database', { recordCount: records.length }, 'mobile', isNative);
   };
 
-  const getDataTypeForPermission = (permission: HealthDataType): string | null => {
+  const getDataTypeForPermission = (permission: HealthDataType): 'steps' | 'calories' | null => {
     switch (permission) {
       case HealthDataType.STEPS:
-        return MleySampleNames.STEPS;
-      case HealthDataType.DISTANCE:
-        return MleySampleNames.DISTANCE;
+        return 'steps';
       case HealthDataType.CALORIES:
-        return MleySampleNames.CALORIES_ACTIVE;
-      case HealthDataType.HEART_RATE:
-        return MleySampleNames.HEART_RATE;
-      case HealthDataType.WEIGHT:
-        return MleySampleNames.WEIGHT;
-      case HealthDataType.HEIGHT:
-        return MleySampleNames.HEIGHT;
-      case HealthDataType.SLEEP:
-        return MleySampleNames.SLEEP;
-      case HealthDataType.WATER:
-        return MleySampleNames.WATER;
-      case HealthDataType.WORKOUT:
-        return MleySampleNames.WORKOUT;
+        return 'calories';
       default:
         return null;
     }

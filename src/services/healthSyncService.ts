@@ -89,7 +89,12 @@ export class HealthSyncService {
       // Fetch data for each enabled type using Perfood Health
       for (const dataType of config.enabledDataTypes) {
         try {
-          const data = await mleyHealthService.queryAggregatedData(dataType, startDate, endDate, 'hour');
+          // Only query supported data types
+          const supportedTypes: ('steps' | 'calories')[] = ['steps', 'calories'];
+          if (!supportedTypes.includes(dataType as 'steps' | 'calories')) {
+            continue;
+          }
+          const data = await mleyHealthService.queryAggregatedData(dataType as 'steps' | 'calories', startDate, endDate, 'hour');
           
           // Convert to our format
           const convertedData = data.map(item => ({

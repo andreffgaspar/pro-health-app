@@ -1,6 +1,24 @@
 import { Capacitor } from '@capacitor/core';
-import { Health } from 'capacitor-health';
 import { healthKitLogger } from './healthKitLogger';
+
+// Define types based on mley/capacitor-health documentation
+type HealthPermission = 'READ_STEPS' | 'READ_WORKOUTS' | 'READ_CALORIES' | 'READ_DISTANCE' | 'READ_HEART_RATE' | 'READ_ROUTE';
+
+type DataType = 'steps' | 'calories';
+
+interface HealthPlugin {
+  isHealthAvailable(): Promise<{ available: boolean }>;
+  requestHealthPermissions(options: { permissions: HealthPermission[] }): Promise<any>;
+  queryAggregated(options: { 
+    dataType: DataType; 
+    startDate: string; 
+    endDate: string; 
+    bucket: string; 
+  }): Promise<{ aggregatedData: Array<{ startDate: string; endDate: string; value: number }> }>;
+}
+
+// Use type assertion to work with capacitor-health plugin
+const Health = (globalThis as any).Health as HealthPlugin;
 
 export interface HealthDataPoint {
   type: string;
@@ -13,15 +31,19 @@ export interface HealthDataPoint {
 
 export const MleySampleNames = {
   STEPS: 'steps',
+  CALORIES: 'calories', 
   DISTANCE: 'distance',
-  CALORIES_ACTIVE: 'calories.active',
-  CALORIES_BASAL: 'calories.basal',
   HEART_RATE: 'heart_rate',
-  WEIGHT: 'weight',
-  HEIGHT: 'height',
-  SLEEP: 'sleep',
-  WORKOUT: 'activity',
-  WATER: 'water'
+  WORKOUTS: 'workouts'
+} as const;
+
+export const HealthPermissions = {
+  READ_STEPS: 'READ_STEPS' as HealthPermission,
+  READ_CALORIES: 'READ_CALORIES' as HealthPermission,
+  READ_DISTANCE: 'READ_DISTANCE' as HealthPermission,
+  READ_HEART_RATE: 'READ_HEART_RATE' as HealthPermission,
+  READ_WORKOUTS: 'READ_WORKOUTS' as HealthPermission,
+  READ_ROUTE: 'READ_ROUTE' as HealthPermission
 } as const;
 
 class MleyHealthService {
@@ -37,6 +59,12 @@ class MleyHealthService {
       return false;
     }
     try {
+      // Try to import the plugin dynamically for native platforms
+      if (this.isNative) {
+        const { Health: HealthPlugin } = await import('capacitor-health');
+        (globalThis as any).Health = HealthPlugin;
+      }
+      
       await Health.isHealthAvailable();
       this.initialized = true;
       return true;
@@ -52,7 +80,15 @@ class MleyHealthService {
       return false;
     }
     try {
-      await Health.requestHealthPermissions({permissions: ['READ_STEPS', 'READ_DISTANCE', /* etc */]});
+      // Filter and map permissions to valid HealthPermission values
+      const validPermissions = permissions.filter(p => 
+        ['READ_STEPS', 'READ_CALORIES', 'READ_DISTANCE', 'READ_HEART_RATE', 'READ_WORKOUTS', 'READ_ROUTE'].includes(p)
+      ) as HealthPermission[];
+      
+      const response = await Health.requestHealthPermissions({ 
+        permissions: validPermissions
+      });
+      await healthKitLogger.info('MleyHealthService', 'requestPermissions', 'Permissions requested', { permissions: validPermissions, response });
       return true;
     } catch (err) {
       await healthKitLogger.error('MleyHealthService', 'requestPermissions', 'Failed to request permissions', (err as Error).message);
@@ -60,33 +96,49 @@ class MleyHealthService {
     }
   }
 
-  async queryAggregatedData(dataType: string, startDate: Date, endDate: Date, bucket: 'day' | 'hour' = 'day'): Promise<HealthDataPoint[]> {
+  async queryAggregatedData(dataType: DataType, startDate: Date, endDate: Date, bucket: string = 'day'): Promise<HealthDataPoint[]> {
     if (!this.isNative) {
       return [];
     }
     try {
-      const result: any = await Health.queryAggregated({
+      const result = await Health.queryAggregated({
         dataType,
         startDate: startDate.toISOString(),
         endDate: endDate.toISOString(),
         bucket
       });
 
-      if (!result || !Array.isArray(result.data)) {
+      if (!result?.aggregatedData || !Array.isArray(result.aggregatedData)) {
+        await healthKitLogger.warning('MleyHealthService', 'queryAggregatedData', 'No aggregated data returned', { dataType, result });
         return [];
       }
 
-      return result.data.map((item: any) => ({
+      await healthKitLogger.info('MleyHealthService', 'queryAggregatedData', 'Data retrieved successfully', { 
+        dataType, 
+        count: result.aggregatedData.length 
+      });
+
+      return result.aggregatedData.map((item: any) => ({
         type: dataType,
         value: item.value,
-        unit: item.unit,
-        startDate: new Date(item.startTime || item.startDate),
-        endDate: new Date(item.endTime || item.endDate),
-        sourceName: item.source
+        unit: this.getUnitForDataType(dataType),
+        startDate: new Date(item.startDate),
+        endDate: new Date(item.endDate),
+        sourceName: 'HealthKit'
       }));
     } catch (err) {
       await healthKitLogger.error('MleyHealthService', 'queryAggregatedData', 'Query failed', (err as Error).message);
       return [];
+    }
+  }
+
+  private getUnitForDataType(dataType: string): string {
+    switch (dataType) {
+      case 'steps': return 'count';
+      case 'calories': return 'kcal';
+      case 'distance': return 'm';
+      case 'heart_rate': return 'bpm';
+      default: return '';
     }
   }
 

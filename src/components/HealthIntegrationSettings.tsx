@@ -43,14 +43,10 @@ export const HealthIntegrationSettings: React.FC<HealthIntegrationSettingsProps>
       // Define all comprehensive health data types
       const allTypes = [
         HealthDataType.STEPS,
-        HealthDataType.DISTANCE,
         HealthDataType.CALORIES,
+        HealthDataType.DISTANCE,
         HealthDataType.HEART_RATE,
-        HealthDataType.SLEEP,
-        HealthDataType.WEIGHT,
-        HealthDataType.HEIGHT,
-        HealthDataType.WATER,
-        HealthDataType.WORKOUT
+        HealthDataType.WORKOUTS
       ];
       
       await debugLogger.log('HealthIntegrationSettings', 'About to request permissions', {
