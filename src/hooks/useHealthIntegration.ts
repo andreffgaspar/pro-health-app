@@ -225,7 +225,7 @@ export const useHealthIntegration = () => {
           
           // Convert to our HealthDataPoint format
           const convertedData = data.map(point => ({
-            type: permission,
+            type: point.type, // Use the mapped type from mleyHealthService
             value: point.value,
             unit: point.unit,
             timestamp: point.startDate,
