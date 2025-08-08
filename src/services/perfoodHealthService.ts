@@ -1,4 +1,11 @@
-import { CapacitorHealthkit } from '@perfood/capacitor-healthkit';
+import {
+  ActivityData,
+  CapacitorHealthkit,
+  OtherData,
+  QueryOutput,
+  SampleNames,
+  SleepData,
+} from '@perfood/capacitor-healthkit';
 import { Capacitor } from '@capacitor/core';
 import { healthKitLogger } from './healthKitLogger';
 
@@ -18,7 +25,7 @@ export interface HealthDataType {
 
 // @perfood/capacitor-healthkit sample names (using plugin's permission strings)
 export const SampleNames = {
-  STEP_COUNT: 'steps',
+  STEP_COUNT: 'stepCount',
   DISTANCE_WALKING_RUNNING: 'distance',
   ACTIVE_ENERGY_BURNED: 'activeEnergy',
   BASAL_ENERGY_BURNED: 'basalEnergy',
