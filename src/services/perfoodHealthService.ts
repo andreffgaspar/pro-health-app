@@ -20,14 +20,14 @@ export interface HealthDataType {
 export const SampleNames = {
   STEP_COUNT: 'steps',
   DISTANCE_WALKING_RUNNING: 'distance',
-  ACTIVE_ENERGY_BURNED: 'calories',
-  BASAL_ENERGY_BURNED: 'calories',
-  HEART_RATE: 'calories', // Heart rate might be grouped with calories in this plugin
+  ACTIVE_ENERGY_BURNED: 'activeEnergy',
+  BASAL_ENERGY_BURNED: 'basalEnergy',
+  HEART_RATE: 'heartRate',
   BODY_MASS: 'weight',
-  HEIGHT: 'weight', // Height might be grouped with weight
-  SLEEP_ANALYSIS: 'duration', // Sleep data uses duration permission
-  WORKOUT_TYPE: 'activity',
-  DIETARY_WATER: 'calories' // Water data grouped with calories
+  HEIGHT: 'height',
+  SLEEP_ANALYSIS: 'sleep',
+  WORKOUT_TYPE: 'workout',
+  DIETARY_WATER: 'water',
 } as const;
 
 export interface HealthDataPoint {
@@ -268,18 +268,21 @@ class PerfoodHealthService {
   private getUnitForDataType(dataType: string): string {
     switch (dataType) {
       case SampleNames.STEP_COUNT: // 'steps'
-        return 'count';
+        return 'steps';
       case SampleNames.DISTANCE_WALKING_RUNNING: // 'distance'
         return 'm';
       case SampleNames.ACTIVE_ENERGY_BURNED: // 'calories'
-      case SampleNames.BASAL_ENERGY_BURNED: // 'calories'
-      case SampleNames.DIETARY_WATER: // 'calories' (grouped)
         return 'kcal';
-      case SampleNames.HEART_RATE: // 'calories' (grouped)
-        return 'count/min';
+      case SampleNames.BASAL_ENERGY_BURNED: // 'calories'
+        return 'kcal';
+      case SampleNames.DIETARY_WATER: // mL
+        return 'ml';
+      case SampleNames.HEART_RATE: // bpm
+        return 'bpm';
       case SampleNames.BODY_MASS: // 'weight'
-      case SampleNames.HEIGHT: // 'weight' (grouped)
         return 'kg';
+      case SampleNames.HEIGHT: // cm
+        return 'cm';
       case SampleNames.SLEEP_ANALYSIS: // 'duration'
         return 'min';
       case SampleNames.WORKOUT_TYPE: // 'activity'
