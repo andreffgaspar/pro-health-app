@@ -8,6 +8,9 @@ import {
 import { Capacitor } from '@capacitor/core';
 import { healthKitLogger } from './healthKitLogger';
 
+//ATÉ ESSE COMMIT ESTAVA FUNCIONANDO ALGUNS RECURSOS DO PERFOOD PLUGIN.
+
+
 // Types matching the @perfood/capacitor-healthkit plugin
 export interface HealthDataType {
   STEPS: string;
