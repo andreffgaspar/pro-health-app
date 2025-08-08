@@ -166,7 +166,7 @@ class PerfoodHealthService {
         sampleName: dataType,
         startDate: startDate.toISOString(),
         endDate: endDate.toISOString(),
-        limit: 1000
+        limit: 100000
       };
 
       await healthKitLogger.info('PerfoodHealthService', 'queryHealthData', 'Attempting query with options', { queryOptions });
