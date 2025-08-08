@@ -1,6 +1,5 @@
-import { Capacitor } from '@capacitor/core';
 import { supabase } from '@/integrations/supabase/client';
-import { perfoodHealthService, HealthKitSampleNames } from './perfoodHealthService';
+import { mleyHealthService } from './mleyHealthService';
 
 export interface SyncConfig {
   enabledDataTypes: string[];
@@ -35,7 +34,7 @@ export class HealthSyncService {
     console.log('Starting background health sync with config:', config);
     
     // Initialize health service first
-    const isAvailable = await perfoodHealthService.initialize();
+    const isAvailable = await mleyHealthService.initialize();
     if (!isAvailable) {
       console.warn('Health service not available, sync will use mock data');
     }
@@ -90,7 +89,7 @@ export class HealthSyncService {
       // Fetch data for each enabled type using Perfood Health
       for (const dataType of config.enabledDataTypes) {
         try {
-          const data = await perfoodHealthService.queryHealthData(dataType, startDate, endDate);
+          const data = await mleyHealthService.queryAggregatedData(dataType, startDate, endDate, 'hour');
           
           // Convert to our format
           const convertedData = data.map(item => ({

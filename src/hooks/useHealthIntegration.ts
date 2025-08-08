@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from './useAuth';
 import { supabase } from '@/integrations/supabase/client';
-import { perfoodHealthService, HealthKitSampleNames } from '@/services/perfoodHealthService';
+import { mleyHealthService, MleySampleNames } from '@/services/mleyHealthService';
 import { healthKitLogger } from '@/services/healthKitLogger';
 import { toast } from 'sonner';
 
@@ -46,7 +46,7 @@ export interface HealthIntegrationState {
 
 export const useHealthIntegration = () => {
   const { user } = useAuth();
-  const isNative = perfoodHealthService.getIsNative();
+  const isNative = mleyHealthService.getIsNative();
   
   const [state, setState] = useState<HealthIntegrationState>({
     isAvailable: false,
@@ -58,7 +58,7 @@ export const useHealthIntegration = () => {
   });
 
   const initializeHealthIntegration = useCallback(async () => {
-    await healthKitLogger.info('useHealthIntegration', 'initializeHealthIntegration', 'Starting initialization', {}, perfoodHealthService.getIsNative() ? 'mobile' : 'web', isNative);
+    await healthKitLogger.info('useHealthIntegration', 'initializeHealthIntegration', 'Starting initialization', {}, mleyHealthService.getIsNative() ? 'mobile' : 'web', isNative);
     
     // Skip initialization on web platform
     if (!isNative) {
@@ -74,9 +74,9 @@ export const useHealthIntegration = () => {
     
     try {
       setState(prev => ({ ...prev, status: 'initializing' }));
-      await healthKitLogger.info('useHealthIntegration', 'initializeHealthIntegration', 'Calling perfoodHealthService.initialize...', {}, 'mobile', isNative);
+      await healthKitLogger.info('useHealthIntegration', 'initializeHealthIntegration', 'Calling mleyHealthService.initialize...', {}, 'mobile', isNative);
       
-      const available = await perfoodHealthService.initialize();
+      const available = await mleyHealthService.initialize();
       await healthKitLogger.info('useHealthIntegration', 'initializeHealthIntegration', 'Service initialized', { available }, 'mobile', isNative);
       
       if (available) {
@@ -175,9 +175,9 @@ export const useHealthIntegration = () => {
         all: []
       };
 
-      await healthKitLogger.info('useHealthIntegration', 'requestPermissions', 'About to call perfoodHealthService.requestPermissions', { permissions }, 'mobile', isNative);
-      const success = await perfoodHealthService.requestPermissions(permissions);
-      await healthKitLogger.info('useHealthIntegration', 'requestPermissions', 'perfoodHealthService.requestPermissions completed', { success }, 'mobile', isNative);
+      await healthKitLogger.info('useHealthIntegration', 'requestPermissions', 'About to call mleyHealthService.requestPermissions', { permissions }, 'mobile', isNative);
+      const success = await mleyHealthService.requestPermissions(permissions);
+      await healthKitLogger.info('useHealthIntegration', 'requestPermissions', 'mleyHealthService.requestPermissions completed', { success }, 'mobile', isNative);
       
       if (success) {
         setState(prev => ({
@@ -249,7 +249,7 @@ export const useHealthIntegration = () => {
         await healthKitLogger.info('useHealthIntegration', 'syncHealthData', 'About to fetch data', { dataType }, 'mobile', isNative);
         
         try {
-          const data = await perfoodHealthService.queryHealthData(dataType, startDate, endDate);
+          const data = await mleyHealthService.queryAggregatedData(dataType, startDate, endDate, 'day');
           await healthKitLogger.info('useHealthIntegration', 'syncHealthData', 'Fetched data points', { 
             dataType, 
             count: data.length,
@@ -367,23 +367,23 @@ export const useHealthIntegration = () => {
   const getDataTypeForPermission = (permission: HealthDataType): string | null => {
     switch (permission) {
       case HealthDataType.STEPS:
-        return HealthKitSampleNames.STEP_COUNT;
+        return MleySampleNames.STEPS;
       case HealthDataType.DISTANCE:
-        return HealthKitSampleNames.DISTANCE_WALKING_RUNNING;
+        return MleySampleNames.DISTANCE;
       case HealthDataType.CALORIES:
-        return HealthKitSampleNames.ACTIVE_ENERGY_BURNED;
+        return MleySampleNames.CALORIES_ACTIVE;
       case HealthDataType.HEART_RATE:
-        return HealthKitSampleNames.HEART_RATE;
+        return MleySampleNames.HEART_RATE;
       case HealthDataType.WEIGHT:
-        return HealthKitSampleNames.BODY_MASS;
+        return MleySampleNames.WEIGHT;
       case HealthDataType.HEIGHT:
-        return HealthKitSampleNames.HEIGHT;
+        return MleySampleNames.HEIGHT;
       case HealthDataType.SLEEP:
-        return HealthKitSampleNames.SLEEP_ANALYSIS;
+        return MleySampleNames.SLEEP;
       case HealthDataType.WATER:
-        return HealthKitSampleNames.DIETARY_WATER;
+        return MleySampleNames.WATER;
       case HealthDataType.WORKOUT:
-        return HealthKitSampleNames.WORKOUT_TYPE;
+        return MleySampleNames.WORKOUT;
       default:
         return null;
     }
