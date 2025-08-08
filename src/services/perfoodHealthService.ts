@@ -25,14 +25,14 @@ export interface HealthDataType {
 
 // @perfood/capacitor-healthkit sample names (using plugin's permission strings)
 export const SampleNames = {
-  STEP_COUNT: 'stepCount',
-  DISTANCE_WALKING_RUNNING: 'distanceWalkingRunning',
-  ACTIVE_ENERGY_BURNED: 'activeEnergyBurned',
-  BASAL_ENERGY_BURNED: 'basalEnergyBurned',
+  STEP_COUNT: 'stepCount', //OK
+  DISTANCE_WALKING_RUNNING: 'distanceWalkingRunning', //OK
+  ACTIVE_ENERGY_BURNED: 'activeEnergyBurned', //Analisar Diferença enrte active e basal
+  BASAL_ENERGY_BURNED: 'basalEnergyBurned', //Analisar Diferença enrte active e basal
   HEART_RATE: 'heartRate',
-  BODY_MASS: 'bodyMass',
+  BODY_MASS: 'weight', //OK
   HEIGHT: 'height',
-  SLEEP_ANALYSIS: 'sleepAnalysis',
+  SLEEP_ANALYSIS: 'sleepAnalysis', //Analisar veio tudo com zero
   WORKOUT_TYPE: 'workoutType',
   DIETARY_WATER: 'dietaryWater',
 } as const;
