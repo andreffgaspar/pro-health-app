@@ -216,7 +216,7 @@ export const useHealthIntegration = () => {
         await healthKitLogger.info('useHealthIntegration', 'syncHealthData', 'About to fetch data', { dataType }, 'mobile', isNative);
         
         try {
-          const data = await mleyHealthService.queryAggregatedData(dataType as 'steps' | 'calories', startDate, endDate, 'day');
+          const data = await mleyHealthService.queryAggregatedData(dataType as 'steps' | 'active-calories', startDate, endDate, 'day');
           await healthKitLogger.info('useHealthIntegration', 'syncHealthData', 'Fetched data points', { 
             dataType, 
             count: data.length,
@@ -331,12 +331,12 @@ export const useHealthIntegration = () => {
     await healthKitLogger.info('useHealthIntegration', 'saveHealthDataToDatabase', 'Successfully saved to database', { recordCount: records.length }, 'mobile', isNative);
   };
 
-  const getDataTypeForPermission = (permission: HealthDataType): 'steps' | 'calories' | null => {
+  const getDataTypeForPermission = (permission: HealthDataType): 'steps' | 'active-calories' | null => {
     switch (permission) {
       case HealthDataType.STEPS:
         return 'steps';
       case HealthDataType.CALORIES:
-        return 'calories';
+        return 'active-calories';
       default:
         return null;
     }

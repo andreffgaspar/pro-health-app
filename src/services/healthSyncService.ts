@@ -90,11 +90,11 @@ export class HealthSyncService {
       for (const dataType of config.enabledDataTypes) {
         try {
           // Only query supported data types
-          const supportedTypes: ('steps' | 'calories')[] = ['steps', 'calories'];
-          if (!supportedTypes.includes(dataType as 'steps' | 'calories')) {
+          const supportedTypes: ('steps' | 'active-calories')[] = ['steps', 'active-calories'];
+          if (!supportedTypes.includes(dataType as 'steps' | 'active-calories')) {
             continue;
           }
-          const data = await mleyHealthService.queryAggregatedData(dataType as 'steps' | 'calories', startDate, endDate, 'hour');
+          const data = await mleyHealthService.queryAggregatedData(dataType as 'steps' | 'active-calories', startDate, endDate, 'hour');
           
           // Convert to our format
           const convertedData = data.map(item => ({
