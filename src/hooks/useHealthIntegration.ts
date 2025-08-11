@@ -191,7 +191,11 @@ export const useHealthIntegration = () => {
 
       const endDate = new Date();
       const days = options?.days || 7;
+      // Calculate start date and normalize to beginning of day
       const startDate = new Date(endDate.getTime() - (days * 24 * 60 * 60 * 1000));
+      startDate.setHours(0, 0, 0, 0);
+      // End date normalized to end of current day
+      endDate.setHours(23, 59, 59, 999);
       
       await healthKitLogger.info('useHealthIntegration', 'syncHealthData', 'Date range configured', {
         startDate: startDate.toISOString(),

@@ -82,7 +82,9 @@ export class HealthSyncService {
       }
 
       const endDate = new Date();
-      const startDate = new Date(endDate.getTime() - (60 * 60 * 1000)); // Last hour
+      endDate.setHours(23, 59, 59, 999); // End of current day
+      const startDate = new Date(endDate.getTime() - (24 * 60 * 60 * 1000)); // Last 24 hours
+      startDate.setHours(0, 0, 0, 0); // Start of yesterday
       
       const allHealthData: any[] = [];
 
@@ -94,7 +96,7 @@ export class HealthSyncService {
           if (!supportedTypes.includes(dataType as 'steps' | 'active-calories')) {
             continue;
           }
-          const data = await mleyHealthService.queryAggregatedData(dataType as 'steps' | 'active-calories', startDate, endDate, 'hour');
+          const data = await mleyHealthService.queryAggregatedData(dataType as 'steps' | 'active-calories', startDate, endDate, 'day');
           
           // Convert to our format
           const convertedData = data.map(item => ({

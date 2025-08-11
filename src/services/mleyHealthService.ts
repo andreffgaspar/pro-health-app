@@ -98,10 +98,19 @@ class MleyHealthService {
     }
     
     try {
+      // Normalize dates to start at midnight and end at 23:59:59 in local timezone
+      const normalizedStartDate = this.normalizeToStartOfDay(startDate);
+      const normalizedEndDate = this.normalizeToEndOfDay(endDate);
+      
+      await healthKitLogger.info('MleyHealthService', 'queryAggregatedData', 'Normalized dates', {
+        original: { start: startDate.toISOString(), end: endDate.toISOString() },
+        normalized: { start: normalizedStartDate.toISOString(), end: normalizedEndDate.toISOString() }
+      });
+      
       const result = await Health.queryAggregated({
         dataType,
-        startDate: startDate.toISOString(),
-        endDate: endDate.toISOString(),
+        startDate: normalizedStartDate.toISOString(),
+        endDate: normalizedEndDate.toISOString(),
         bucket
       });
 
@@ -119,8 +128,8 @@ class MleyHealthService {
         type: this.mapToDbDataType(dataType), // Map to database-compatible type
         value: item.value,
         unit: this.getUnitForDataType(dataType),
-        startDate: new Date(item.startDate),
-        endDate: new Date(item.endDate),
+        startDate: this.normalizeTimestampForDay(new Date(item.startDate)),
+        endDate: this.normalizeTimestampForDay(new Date(item.endDate)),
         sourceName: 'HealthKit'
       }));
     } catch (err) {
@@ -146,6 +155,25 @@ class MleyHealthService {
       case 'heart_rate': return 'bpm';
       default: return '';
     }
+  }
+
+  private normalizeToStartOfDay(date: Date): Date {
+    const normalized = new Date(date);
+    normalized.setHours(0, 0, 0, 0);
+    return normalized;
+  }
+
+  private normalizeToEndOfDay(date: Date): Date {
+    const normalized = new Date(date);
+    normalized.setHours(23, 59, 59, 999);
+    return normalized;
+  }
+
+  private normalizeTimestampForDay(date: Date): Date {
+    // Set timestamp to noon of the day to represent the entire day
+    const normalized = new Date(date);
+    normalized.setHours(12, 0, 0, 0);
+    return normalized;
   }
 
   getIsNative(): boolean {
