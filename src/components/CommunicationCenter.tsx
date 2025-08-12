@@ -450,262 +450,267 @@ const CommunicationCenter = () => {
   const currentConversationMessages = selectedConversation ? messages[selectedConversation] || [] : [];
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 h-[600px]">
-      {/* Contacts List */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Users className="h-5 w-5" />
-            {isAthlete ? 'Profissionais' : 'Atletas'}
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <ScrollArea className="h-[200px]">
-            <div className="space-y-2">
-              {(isAthlete ? professionals : athletes).map((contact) => (
-                <div
-                  key={contact.user_id}
-                  className="flex items-center justify-between p-2 rounded-lg border hover:bg-accent cursor-pointer"
-                  onClick={() => startConversation(contact.user_id)}
-                >
-                  <div className="flex items-center gap-2">
-                    <Avatar className="h-8 w-8">
-                      <AvatarFallback>
-                        {contact.full_name?.charAt(0).toUpperCase() || (isAthlete ? 'P' : 'A')}
-                      </AvatarFallback>
-                    </Avatar>
-                    <span className="text-sm font-medium">
-                      {contact.full_name || (isAthlete ? 'Profissional' : 'Atleta')}
-                    </span>
-                  </div>
-                  <MessageCircle className="h-4 w-4 text-muted-foreground" />
-                </div>
-              ))}
-            </div>
-          </ScrollArea>
-        </CardContent>
-      </Card>
-
-      {/* Conversations List with Unread Indicators */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle>Conversas</CardTitle>
-            {isAthlete && (
-              <Dialog open={showCreateGroupDialog} onOpenChange={setShowCreateGroupDialog}>
-                <DialogTrigger asChild>
-                  <Button variant="outline" size="sm">
-                    <Plus className="h-4 w-4 mr-1" />
-                    Grupo
-                  </Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>Criar Grupo de Conversa</DialogTitle>
-                  </DialogHeader>
-                  <div className="space-y-4">
-                    <div>
-                      <Label htmlFor="groupName">Nome do Grupo</Label>
-                      <Input
-                        id="groupName"
-                        value={newGroupName}
-                        onChange={(e) => setNewGroupName(e.target.value)}
-                        placeholder="Ex: Equipe Médica"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="groupDescription">Descrição (opcional)</Label>
-                      <Textarea
-                        id="groupDescription"
-                        value={newGroupDescription}
-                        onChange={(e) => setNewGroupDescription(e.target.value)}
-                        placeholder="Descreva o propósito do grupo..."
-                      />
-                    </div>
-                    <div>
-                      <Label>Selecionar Profissionais</Label>
-                      <div className="space-y-2 max-h-40 overflow-y-auto">
-                        {professionals.map((professional) => (
-                          <div key={professional.user_id} className="flex items-center space-x-2">
-                            <Checkbox
-                              id={professional.user_id}
-                              checked={selectedProfessionals.includes(professional.user_id)}
-                              onCheckedChange={(checked) => {
-                                if (checked) {
-                                  setSelectedProfessionals([...selectedProfessionals, professional.user_id]);
-                                } else {
-                                  setSelectedProfessionals(selectedProfessionals.filter(id => id !== professional.user_id));
-                                }
-                              }}
-                            />
-                            <Label htmlFor={professional.user_id} className="flex items-center gap-2 cursor-pointer">
-                              <Avatar className="h-6 w-6">
-                                <AvatarFallback className="text-xs">
-                                  {professional.full_name?.charAt(0) || 'P'}
-                                </AvatarFallback>
-                              </Avatar>
-                              {professional.full_name || 'Profissional'}
-                            </Label>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                    <div className="flex gap-2">
-                      <Button
-                        onClick={createGroupConversation}
-                        disabled={loading || !newGroupName.trim() || selectedProfessionals.length === 0}
-                        className="flex-1"
-                      >
-                        {loading ? 'Criando...' : 'Criar Grupo'}
-                      </Button>
-                      <Button
-                        variant="outline"
-                        onClick={() => setShowCreateGroupDialog(false)}
-                      >
-                        Cancelar
-                      </Button>
-                    </div>
-                  </div>
-                </DialogContent>
-              </Dialog>
-            )}
-          </div>
-        </CardHeader>
-        <CardContent>
-          <ScrollArea className="h-[500px]">
-            <div className="space-y-2">
-              {/* Group Conversations */}
-              {groupConversations.map((group) => (
-                <div
-                  key={group.id}
-                  className={`p-3 rounded-lg border cursor-pointer transition-colors ${
-                    selectedGroupConversation === group.id
-                      ? 'bg-primary text-primary-foreground'
-                      : 'hover:bg-accent'
-                  }`}
-                  onClick={() => setSelectedGroupConversation(group.id)}
-                >
-                  <div className="flex items-center justify-between">
+    <div className="w-full max-w-full overflow-hidden">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6 h-[90vh] md:h-[600px]">
+        {/* Mobile: Stack vertically, Desktop: 3 columns */}
+        
+        {/* Contacts List */}
+        <Card className="z-10 relative">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-sm lg:text-base">
+              <Users className="h-4 w-4 lg:h-5 lg:w-5" />
+              {isAthlete ? 'Profissionais' : 'Atletas'}
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ScrollArea className="h-[150px] lg:h-[200px]">
+              <div className="space-y-2">
+                {(isAthlete ? professionals : athletes).map((contact) => (
+                  <div
+                    key={contact.user_id}
+                    className="flex items-center justify-between p-2 rounded-lg border hover:bg-accent cursor-pointer"
+                    onClick={() => startConversation(contact.user_id)}
+                  >
                     <div className="flex items-center gap-2">
-                      <UsersIcon className="h-4 w-4" />
-                      <div className="font-medium text-sm">{group.name}</div>
+                      <Avatar className="h-6 w-6 lg:h-8 lg:w-8">
+                        <AvatarFallback className="text-xs">
+                          {contact.full_name?.charAt(0).toUpperCase() || (isAthlete ? 'P' : 'A')}
+                        </AvatarFallback>
+                      </Avatar>
+                      <span className="text-xs lg:text-sm font-medium truncate">
+                        {contact.full_name || (isAthlete ? 'Profissional' : 'Atleta')}
+                      </span>
                     </div>
+                    <MessageCircle className="h-3 w-3 lg:h-4 lg:w-4 text-muted-foreground" />
                   </div>
-                  <div className="text-xs text-muted-foreground mt-1">
-                    {group.participants_count} participantes • {new Date(group.last_message_at).toLocaleDateString()}
-                  </div>
-                </div>
-              ))}
-              
-              {/* Individual Conversations with Unread Count */}
-              {conversations.map((conversation) => (
-                <div
-                  key={conversation.id}
-                  className={`p-3 rounded-lg border cursor-pointer transition-colors ${
-                    selectedConversation === conversation.id
-                      ? 'bg-primary text-primary-foreground'
-                      : 'hover:bg-accent'
-                  }`}
-                   onClick={() => {
-                     // Always refresh the conversation when clicked, even if already selected
-                     if (selectedConversation === conversation.id) {
-                       fetchMessages(conversation.id);
-                       markConversationAsRead(conversation.id);
-                       setTimeout(() => scrollToBottom(), 100);
-                     } else {
-                       setSelectedConversation(conversation.id);
-                     }
-                   }}
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="font-medium text-sm">
-                      {conversation.other_party_name}
-                    </div>
-                    {conversation.unread_count > 0 && (
-                      <Badge variant="destructive" className="ml-2 text-xs">
-                        {conversation.unread_count}
-                      </Badge>
-                    )}
-                  </div>
-                  <div className="text-xs text-muted-foreground mt-1">
-                    {new Date(conversation.updated_at).toLocaleDateString()}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </ScrollArea>
-        </CardContent>
-      </Card>
+                ))}
+              </div>
+            </ScrollArea>
+          </CardContent>
+        </Card>
 
-      {/* Chat Area */}
-      <Card>
-        <CardHeader>
-          <CardTitle>
-            {selectedConversation 
-              ? conversations.find(c => c.id === selectedConversation)?.other_party_name
-              : selectedGroupConversation
-              ? groupConversations.find(g => g.id === selectedGroupConversation)?.name
-              : 'Selecione uma conversa'
-            }
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="flex flex-col h-[500px]">
-          {(selectedConversation || selectedGroupConversation) ? (
-            <>
-              <ScrollArea className="flex-1 mb-4">
-                <div className="space-y-4">
-                  {(selectedConversation ? currentConversationMessages : groupMessages).map((message) => (
-                    <div
-                      key={message.id}
-                      className={`flex ${
-                        message.sender_id === user?.id ? 'justify-end' : 'justify-start'
-                      }`}
-                    >
-                      <div
-                        className={`max-w-[70%] p-3 rounded-lg ${
-                          message.sender_id === user?.id
-                            ? 'bg-primary text-primary-foreground'
-                            : 'bg-muted'
-                        }`}
-                      >
-                        <div className="text-sm">{message.content}</div>
-                        <div className="text-xs opacity-70 mt-1">
-                          {new Date(message.created_at).toLocaleTimeString()}
+        {/* Conversations List with Unread Indicators */}
+        <Card className="z-10 relative">
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-sm lg:text-base">Conversas</CardTitle>
+              {isAthlete && (
+                <Dialog open={showCreateGroupDialog} onOpenChange={setShowCreateGroupDialog}>
+                  <DialogTrigger asChild>
+                    <Button variant="outline" size="sm" className="text-xs lg:text-sm">
+                      <Plus className="h-3 w-3 lg:h-4 lg:w-4 mr-1" />
+                      <span className="hidden sm:inline">Grupo</span>
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-md mx-auto z-50">
+                    <DialogHeader>
+                      <DialogTitle>Criar Grupo de Conversa</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4">
+                      <div>
+                        <Label htmlFor="groupName">Nome do Grupo</Label>
+                        <Input
+                          id="groupName"
+                          value={newGroupName}
+                          onChange={(e) => setNewGroupName(e.target.value)}
+                          placeholder="Ex: Equipe Médica"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="groupDescription">Descrição (opcional)</Label>
+                        <Textarea
+                          id="groupDescription"
+                          value={newGroupDescription}
+                          onChange={(e) => setNewGroupDescription(e.target.value)}
+                          placeholder="Descreva o propósito do grupo..."
+                        />
+                      </div>
+                      <div>
+                        <Label>Selecionar Profissionais</Label>
+                        <div className="space-y-2 max-h-40 overflow-y-auto">
+                          {professionals.map((professional) => (
+                            <div key={professional.user_id} className="flex items-center space-x-2">
+                              <Checkbox
+                                id={professional.user_id}
+                                checked={selectedProfessionals.includes(professional.user_id)}
+                                onCheckedChange={(checked) => {
+                                  if (checked) {
+                                    setSelectedProfessionals([...selectedProfessionals, professional.user_id]);
+                                  } else {
+                                    setSelectedProfessionals(selectedProfessionals.filter(id => id !== professional.user_id));
+                                  }
+                                }}
+                              />
+                              <Label htmlFor={professional.user_id} className="flex items-center gap-2 cursor-pointer">
+                                <Avatar className="h-6 w-6">
+                                  <AvatarFallback className="text-xs">
+                                    {professional.full_name?.charAt(0) || 'P'}
+                                  </AvatarFallback>
+                                </Avatar>
+                                {professional.full_name || 'Profissional'}
+                              </Label>
+                            </div>
+                          ))}
                         </div>
                       </div>
+                      <div className="flex gap-2">
+                        <Button
+                          onClick={createGroupConversation}
+                          disabled={loading || !newGroupName.trim() || selectedProfessionals.length === 0}
+                          className="flex-1"
+                        >
+                          {loading ? 'Criando...' : 'Criar Grupo'}
+                        </Button>
+                        <Button
+                          variant="outline"
+                          onClick={() => setShowCreateGroupDialog(false)}
+                        >
+                          Cancelar
+                        </Button>
+                      </div>
                     </div>
-                  ))}
-                  <div ref={messagesEndRef} />
-                </div>
-              </ScrollArea>
-              
-              <div className="flex gap-2">
-                <Input
-                  value={newMessage}
-                  onChange={(e) => setNewMessage(e.target.value)}
-                  onKeyPress={handleKeyPress}
-                  placeholder="Digite sua mensagem..."
-                  className="flex-1"
-                />
-                <Button
-                  onClick={sendMessage}
-                  disabled={!newMessage.trim()}
-                  size="icon"
-                >
-                  <Send className="h-4 w-4" />
-                </Button>
-              </div>
-            </>
-          ) : (
-            <div className="flex items-center justify-center h-full text-muted-foreground">
-              <div className="text-center">
-                <MessageCircle className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p>Selecione uma conversa ou inicie uma nova</p>
-              </div>
+                  </DialogContent>
+                </Dialog>
+              )}
             </div>
-          )}
-        </CardContent>
-      </Card>
+          </CardHeader>
+          <CardContent>
+            <ScrollArea className="h-[300px] lg:h-[500px]">
+              <div className="space-y-2">
+                {/* Group Conversations */}
+                {groupConversations.map((group) => (
+                  <div
+                    key={group.id}
+                    className={`p-2 lg:p-3 rounded-lg border cursor-pointer transition-colors ${
+                      selectedGroupConversation === group.id
+                        ? 'bg-primary text-primary-foreground'
+                        : 'hover:bg-accent'
+                    }`}
+                    onClick={() => setSelectedGroupConversation(group.id)}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <UsersIcon className="h-3 w-3 lg:h-4 lg:w-4" />
+                        <div className="font-medium text-xs lg:text-sm truncate">{group.name}</div>
+                      </div>
+                    </div>
+                    <div className="text-xs text-muted-foreground mt-1">
+                      {group.participants_count} participantes • {new Date(group.last_message_at).toLocaleDateString()}
+                    </div>
+                  </div>
+                ))}
+                
+                {/* Individual Conversations with Unread Count */}
+                {conversations.map((conversation) => (
+                  <div
+                    key={conversation.id}
+                    className={`p-2 lg:p-3 rounded-lg border cursor-pointer transition-colors ${
+                      selectedConversation === conversation.id
+                        ? 'bg-primary text-primary-foreground'
+                        : 'hover:bg-accent'
+                    }`}
+                     onClick={() => {
+                        // Always refresh the conversation when clicked, even if already selected
+                        if (selectedConversation === conversation.id) {
+                          fetchMessages(conversation.id);
+                          markConversationAsRead(conversation.id);
+                          setTimeout(() => scrollToBottom(), 100);
+                        } else {
+                          setSelectedConversation(conversation.id);
+                        }
+                      }}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="font-medium text-xs lg:text-sm truncate">
+                        {conversation.other_party_name}
+                      </div>
+                      {conversation.unread_count > 0 && (
+                        <Badge variant="destructive" className="ml-2 text-xs">
+                          {conversation.unread_count}
+                        </Badge>
+                      )}
+                    </div>
+                    <div className="text-xs text-muted-foreground mt-1">
+                      {new Date(conversation.updated_at).toLocaleDateString()}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </ScrollArea>
+          </CardContent>
+        </Card>
+
+        {/* Chat Area */}
+        <Card className="z-10 relative lg:col-span-1">
+          <CardHeader>
+            <CardTitle className="text-sm lg:text-base truncate">
+              {selectedConversation 
+                ? conversations.find(c => c.id === selectedConversation)?.other_party_name
+                : selectedGroupConversation
+                ? groupConversations.find(g => g.id === selectedGroupConversation)?.name
+                : 'Selecione uma conversa'
+              }
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="flex flex-col h-[300px] lg:h-[500px]">
+            {(selectedConversation || selectedGroupConversation) ? (
+              <>
+                <ScrollArea className="flex-1 mb-4">
+                  <div className="space-y-4">
+                    {(selectedConversation ? currentConversationMessages : groupMessages).map((message) => (
+                      <div
+                        key={message.id}
+                        className={`flex ${
+                          message.sender_id === user?.id ? 'justify-end' : 'justify-start'
+                        }`}
+                      >
+                        <div
+                          className={`max-w-[85%] lg:max-w-[70%] p-2 lg:p-3 rounded-lg ${
+                            message.sender_id === user?.id
+                              ? 'bg-primary text-primary-foreground'
+                              : 'bg-muted'
+                          }`}
+                        >
+                          <div className="text-xs lg:text-sm">{message.content}</div>
+                          <div className="text-xs opacity-70 mt-1">
+                            {new Date(message.created_at).toLocaleTimeString()}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                    <div ref={messagesEndRef} />
+                  </div>
+                </ScrollArea>
+                
+                <div className="flex gap-2">
+                  <Input
+                    value={newMessage}
+                    onChange={(e) => setNewMessage(e.target.value)}
+                    onKeyPress={handleKeyPress}
+                    placeholder="Digite sua mensagem..."
+                    className="flex-1 text-sm"
+                  />
+                  <Button
+                    onClick={sendMessage}
+                    disabled={!newMessage.trim()}
+                    size="icon"
+                    className="h-9 w-9 lg:h-10 lg:w-10"
+                  >
+                    <Send className="h-3 w-3 lg:h-4 lg:w-4" />
+                  </Button>
+                </div>
+              </>
+            ) : (
+              <div className="flex items-center justify-center h-full text-muted-foreground">
+                <div className="text-center">
+                  <MessageCircle className="h-8 w-8 lg:h-12 lg:w-12 mx-auto mb-4 opacity-50" />
+                  <p className="text-xs lg:text-sm">Selecione uma conversa ou inicie uma nova</p>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 };
