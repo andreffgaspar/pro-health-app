@@ -485,26 +485,30 @@ const ProfessionalDashboard = () => {
         {/* Main Content - Flex grow para ocupar espaço disponível */}
         <div className="flex-1">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-5 mb-8">
-            <TabsTrigger value="athletes" className="gap-2">
-              <Users className="w-4 h-4" />
-              Meus Atletas
+          <TabsList className="grid w-full grid-cols-2 md:grid-cols-5 mb-8 h-auto">
+            <TabsTrigger value="athletes" className="gap-1 md:gap-2 text-xs md:text-sm">
+              <Users className="w-3 h-3 md:w-4 md:h-4" />
+              <span className="hidden sm:inline">Meus Atletas</span>
+              <span className="sm:hidden">Atletas</span>
             </TabsTrigger>
-            <TabsTrigger value="sessions" className="gap-2">
-              <Calendar className="w-4 h-4" />
-              Agenda
+            <TabsTrigger value="sessions" className="gap-1 md:gap-2 text-xs md:text-sm">
+              <Calendar className="w-3 h-3 md:w-4 md:h-4" />
+              <span className="hidden sm:inline">Agenda</span>
+              <span className="sm:hidden">Agenda</span>
             </TabsTrigger>
-            <TabsTrigger value="communication" className="gap-2">
-              <MessageSquare className="w-4 h-4" />
-              Comunicação
+            <TabsTrigger value="communication" className="gap-1 md:gap-2 text-xs md:text-sm">
+              <MessageSquare className="w-3 h-3 md:w-4 md:h-4" />
+              <span className="hidden sm:inline">Comunicação</span>
+              <span className="sm:hidden">Chat</span>
             </TabsTrigger>
-            <TabsTrigger value="ai-chat" className="gap-2">
-              <Brain className="w-4 h-4" />
+            <TabsTrigger value="ai-chat" className="gap-1 md:gap-2 text-xs md:text-sm">
+              <Brain className="w-3 h-3 md:w-4 md:h-4" />
               IA
             </TabsTrigger>
-            <TabsTrigger value="analytics" className="gap-2">
-              <TrendingUp className="w-4 h-4" />
-              Análises
+            <TabsTrigger value="analytics" className="gap-1 md:gap-2 text-xs md:text-sm">
+              <TrendingUp className="w-3 h-3 md:w-4 md:h-4" />
+              <span className="hidden sm:inline">Análises</span>
+              <span className="sm:hidden">Stats</span>
             </TabsTrigger>
           </TabsList>
 
