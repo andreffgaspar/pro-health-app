@@ -93,7 +93,7 @@ interface Relationship {
   specialty: string;
   invited_at: string;
   accepted_at?: string;
-  professional: Professional;
+  professional: Professional | null;
 }
 
 interface Invitation {
@@ -300,7 +300,7 @@ const AthleteProfileSettings = ({ open, onOpenChange }: AthleteProfileSettingsPr
       // Filter out existing relationships
       const filteredData = data?.filter(profile => 
         !existingProfessionalIds.includes(profile.user_id)
-      )
+      );
       if (error) throw error;
       setSearchResults(filteredData || []);
     } catch (error) {
@@ -778,8 +778,8 @@ const AthleteProfileSettings = ({ open, onOpenChange }: AthleteProfileSettingsPr
                             <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
                               <User className="w-5 h-5 text-primary" />
                             </div>
-                            <div>
-                              <p className="font-medium">{relationship.professional.full_name}</p>
+                           <div>
+                              <p className="font-medium">{relationship.professional?.full_name || 'Profissional'}</p>
                               <p className="text-sm text-muted-foreground">
                                 {getSpecialtyText(relationship.specialty)}
                               </p>
