@@ -20,7 +20,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useAthleteData } from "@/hooks/useAthleteData";
 import { useRealtimeCommunication } from "@/hooks/useRealtimeCommunication";
 import { useLoginLogger } from "@/hooks/useLoginLogger";
-const AthleterDashboard = () => {
+const AthleteDashboard = () => {
   const navigate = useNavigate();
   const {
     user,
@@ -566,4 +566,4 @@ const AthleterDashboard = () => {
       </div>
     </div>;
 };
-export default AthleterDashboard;
+export default AthleteDashboard;

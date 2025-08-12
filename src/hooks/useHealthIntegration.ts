@@ -5,13 +5,10 @@ import { mleyHealthService, MleySampleNames } from '@/services/mleyHealthService
 import { healthKitLogger } from '@/services/healthKitLogger';
 import { toast } from 'sonner';
 
-// Health data types enum matching mley/capacitor-health plugin
+// Health data types enum - simplified for web compatibility
 export enum HealthDataType {
   STEPS = 'READ_STEPS',
-  CALORIES = 'READ_CALORIES',
-  DISTANCE = 'READ_DISTANCE',
-  HEART_RATE = 'READ_HEART_RATE',
-  WORKOUTS = 'READ_WORKOUTS'
+  CALORIES = 'READ_CALORIES'
 }
 
 export interface HealthPermission {

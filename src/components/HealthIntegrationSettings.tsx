@@ -40,13 +40,10 @@ export const HealthIntegrationSettings: React.FC<HealthIntegrationSettingsProps>
       const { HealthDataType } = await import('@/hooks/useHealthIntegration');
       await debugLogger.log('HealthIntegrationSettings', 'HealthDataType imported successfully');
       
-      // Define all comprehensive health data types
+      // Define supported health data types (simplified for web compatibility)
       const allTypes = [
         HealthDataType.STEPS,
-        HealthDataType.CALORIES,
-        HealthDataType.DISTANCE,
-        HealthDataType.HEART_RATE,
-        HealthDataType.WORKOUTS
+        HealthDataType.CALORIES
       ];
       
       await debugLogger.log('HealthIntegrationSettings', 'About to request permissions', {

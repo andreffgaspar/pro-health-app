@@ -1,10 +1,21 @@
 import { Capacitor } from '@capacitor/core';
 import { healthKitLogger } from './healthKitLogger';
-import type { HealthPlugin, HealthPermission } from 'capacitor-health';
 
 type DataType = 'steps' | 'active-calories';
 
-// Declare Health plugin variable
+// Simplified Health interface for web compatibility
+interface HealthPlugin {
+  isHealthAvailable(): Promise<{ available: boolean }>;
+  requestHealthPermissions(options: { permissions: string[] }): Promise<any>;
+  queryAggregated(options: {
+    dataType: string;
+    startDate: string;
+    endDate: string;
+    bucket: string;
+  }): Promise<{ aggregatedData?: Array<{ value: number; startDate: string; endDate: string }> }>;
+}
+
+// Health plugin variable
 let Health: HealthPlugin;
 
 export interface HealthDataPoint {
@@ -26,11 +37,7 @@ export const MleySampleNames = {
 
 export const HealthPermissions = {
   READ_STEPS: 'READ_STEPS' as const,
-  READ_CALORIES: 'READ_CALORIES' as const,
-  READ_DISTANCE: 'READ_DISTANCE' as const,
-  READ_HEART_RATE: 'READ_HEART_RATE' as const,
-  READ_WORKOUTS: 'READ_WORKOUTS' as const,
-  READ_ROUTE: 'READ_ROUTE' as const
+  READ_CALORIES: 'READ_CALORIES' as const
 } as const;
 
 class MleyHealthService {
@@ -49,8 +56,8 @@ class MleyHealthService {
     
     try {
       // Try to import the plugin dynamically for native platforms
-      const { Health: HealthPlugin } = await import('capacitor-health');
-      Health = HealthPlugin;
+      const healthModule = await import('capacitor-health');
+      Health = healthModule.Health;
       
       await healthKitLogger.info('MleyHealthService', 'initialize', 'Plugin imported, checking availability');
       const result = await Health.isHealthAvailable();
@@ -72,10 +79,10 @@ class MleyHealthService {
     }
     
     try {
-      // Filter and map permissions to valid HealthPermission values
+      // Filter to only supported permissions for web compatibility
       const validPermissions = permissions.filter(p => 
-        ['READ_STEPS', 'READ_CALORIES', 'READ_DISTANCE', 'READ_HEART_RATE', 'READ_WORKOUTS', 'READ_ROUTE'].includes(p)
-      ) as HealthPermission[];
+        ['READ_STEPS', 'READ_CALORIES'].includes(p)
+      );
       
       await healthKitLogger.info('MleyHealthService', 'requestPermissions', 'About to request permissions', { validPermissions });
       
