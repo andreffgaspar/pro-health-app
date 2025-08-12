@@ -680,6 +680,22 @@ export type Database = {
         Args: { group_id_param: string; user_id_param: string }
         Returns: boolean
       }
+      search_athletes: {
+        Args: { search_query: string; requesting_user_id: string }
+        Returns: {
+          user_id: string
+          full_name: string
+          user_type: string
+        }[]
+      }
+      search_professionals: {
+        Args: { search_query: string; requesting_user_id: string }
+        Returns: {
+          user_id: string
+          full_name: string
+          user_type: string
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never
