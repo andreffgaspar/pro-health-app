@@ -91,6 +91,12 @@ const CommunicationCenter = () => {
   const isAthlete = profile?.user_type === 'athlete';
   const isProfessional = profile?.user_type === 'professional';
 
+  // Debug conversations data
+  useEffect(() => {
+    console.log('🔍 DEBUG: conversations data:', conversations);
+    console.log('🔍 DEBUG: messages data:', messages);
+  }, [conversations, messages]);
+
   // Combine conversations for unified list
   const allConversations: ConversationItem[] = [
     // Group conversations
@@ -108,12 +114,13 @@ const CommunicationCenter = () => {
     })),
     // Individual conversations
     ...conversations.map(conv => {
+      console.log('🔍 DEBUG: processing conversation:', conv);
       const lastMessages = messages[conv.id] || [];
       const lastMessage = lastMessages.length > 0 ? lastMessages[lastMessages.length - 1] : null;
       
       return {
         id: conv.id,
-        name: conv.other_party_name,
+        name: conv.other_party_name || 'Nome não encontrado',
         type: 'individual' as const,
         lastMessage: lastMessage ? lastMessage.content : 'Clique para iniciar conversa',
         lastMessageTime: conv.updated_at ? new Date(conv.updated_at).toLocaleTimeString('pt-BR', { 
@@ -440,6 +447,10 @@ const CommunicationCenter = () => {
     (conv.type === 'individual' && conv.id === selectedConversation) ||
     (conv.type === 'group' && conv.id === selectedGroupConversation)
   );
+
+  console.log('🔍 DEBUG: currentConversation:', currentConversation);
+  console.log('🔍 DEBUG: selectedConversation:', selectedConversation);
+  console.log('🔍 DEBUG: selectedGroupConversation:', selectedGroupConversation);
 
   const filteredConversations = allConversations.filter(conv => 
     conv.name.toLowerCase().includes(searchQuery.toLowerCase())
