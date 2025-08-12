@@ -138,12 +138,10 @@ const AthleteSettings = () => {
       console.log('🔍 Searching for:', query);
       console.log('🏠 Current relationships:', relationships);
       
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('user_id, full_name')
-        .eq('user_type', 'professional')
-        .ilike('full_name', `%${query}%`)
-        .limit(10);
+      const { data, error } = await supabase.rpc('search_professionals', {
+        search_query: query,
+        requesting_user_id: user?.id
+      });
 
       console.log('📊 Raw search results:', data);
       console.log('❌ Search error:', error);

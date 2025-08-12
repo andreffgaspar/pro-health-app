@@ -292,16 +292,17 @@ const AthleteProfileSettings = ({ open, onOpenChange }: AthleteProfileSettingsPr
     try {
       const existingProfessionalIds = relationships.map(rel => rel.professional_id);
       
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('user_id, full_name, user_type')
-        .eq('user_type', 'professional')
-        .ilike('full_name', `%${query}%`)
-        .not('user_id', 'in', `(${existingProfessionalIds.join(',')})`)
-        .limit(10);
-
+      const { data, error } = await supabase.rpc('search_professionals', {
+        search_query: query,
+        requesting_user_id: user?.id
+      });
+      
+      // Filter out existing relationships
+      const filteredData = data?.filter(profile => 
+        !existingProfessionalIds.includes(profile.user_id)
+      )
       if (error) throw error;
-      setSearchResults(data || []);
+      setSearchResults(filteredData || []);
     } catch (error) {
       console.error('Error searching professionals:', error);
     }

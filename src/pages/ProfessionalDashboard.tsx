@@ -227,10 +227,10 @@ const ProfessionalDashboard = () => {
     }
     try {
       setSearchLoading(true);
-      const {
-        data,
-        error
-      } = await supabase.from('profiles').select('user_id, full_name').eq('user_type', 'athlete').ilike('full_name', `%${query}%`).limit(10);
+      const { data, error } = await supabase.rpc('search_athletes', {
+        search_query: query,
+        requesting_user_id: user?.id
+      });
       if (error) throw error;
 
       // Filter out athletes already in relationships
