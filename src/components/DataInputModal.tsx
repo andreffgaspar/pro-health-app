@@ -38,7 +38,7 @@ const DataInputModal = ({ trigger, initialTab = "sleep" }: DataInputModalProps) 
   const [activeTab, setActiveTab] = useState(initialTab);
   const { toast } = useToast();
   const { user } = useAuth();
-  const { extractDataFromPdf, populateFormWithExtractedData, isExtracting } = usePdfExtraction();
+  const { extractDataFromFile, populateFormWithExtractedData, isExtracting } = usePdfExtraction();
   
   // Update active tab when initialTab prop changes
   useEffect(() => {
@@ -343,7 +343,7 @@ const DataInputModal = ({ trigger, initialTab = "sleep" }: DataInputModalProps) 
   };
 
   const handlePdfExtraction = async (file: File) => {
-    const result = await extractDataFromPdf(file);
+    const result = await extractDataFromFile(file);
     
     if (result.success && result.extractedData) {
       const extractedFormData = populateFormWithExtractedData(result.extractedData);
@@ -1046,18 +1046,93 @@ const DataInputModal = ({ trigger, initialTab = "sleep" }: DataInputModalProps) 
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
+                {/* File Upload Section - Moved to top */}
+                <div className="space-y-4 bg-card border border-border rounded-lg p-4">
+                  <div className="flex items-center gap-2">
+                    <Upload className="w-5 h-5 text-primary" />
+                    <Label className="text-foreground font-medium">1. Anexar Arquivo Médico (Primeiro)</Label>
+                  </div>
+                  <div className="border-2 border-dashed border-border rounded-lg p-6">
+                    <div className="text-center">
+                      <Upload className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
+                      <p className="text-sm text-muted-foreground mb-2">
+                        Clique para anexar ou arraste arquivos aqui
+                      </p>
+                      <p className="text-xs text-muted-foreground mb-2">
+                        PDF, JPG, PNG, DOC, DOCX até 10MB
+                      </p>
+                      <div className="bg-blue-50 border border-blue-200 rounded p-2 mb-4">
+                        <p className="text-xs text-blue-700 flex items-center gap-1">
+                          <Zap className="w-3 h-3" />
+                          Gemini AI extrairá automaticamente todas as informações médicas!
+                        </p>
+                      </div>
+                      <Input
+                        type="file"
+                        multiple
+                        accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+                        onChange={(e) => handleFileUpload(e.target.files)}
+                        className="hidden"
+                        id="file-upload"
+                        disabled={isExtracting}
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => document.getElementById('file-upload')?.click()}
+                        disabled={isExtracting}
+                      >
+                        {isExtracting ? "Processando com IA..." : "Selecionar Arquivos"}
+                      </Button>
+                    </div>
+                  </div>
+
+                  {/* File List */}
+                  {medicalData.files.length > 0 && (
+                    <div className="space-y-2">
+                      <Label>Arquivos Selecionados ({medicalData.files.length})</Label>
+                      <div className="space-y-2 max-h-32 overflow-y-auto">
+                        {medicalData.files.map((file, index) => (
+                          <div key={index} className="flex items-center justify-between p-2 bg-muted rounded-lg">
+                            <div className="flex items-center gap-2">
+                              <FileText className="w-4 h-4 text-muted-foreground" />
+                              <span className="text-sm truncate">{file.name}</span>
+                              <span className="text-xs text-muted-foreground">
+                                ({(file.size / 1024 / 1024).toFixed(1)}MB)
+                              </span>
+                            </div>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => removeFile(index)}
+                            >
+                              <X className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
                 {/* Extraction Status */}
                 {isExtracting && (
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                     <div className="flex items-center gap-2">
                       <Zap className="w-5 h-5 text-blue-600 animate-pulse" />
-                      <span className="text-blue-800 font-medium">Extraindo dados do PDF...</span>
+                      <span className="text-blue-800 font-medium">Extraindo dados com Gemini AI...</span>
                     </div>
                     <p className="text-blue-600 text-sm mt-1">
-                      Processando arquivo com IA para extrair informações automaticamente.
+                      Analisando arquivo e extraindo informações médicas automaticamente.
                     </p>
                   </div>
                 )}
+
+                <div className="flex items-center gap-2 mb-4">
+                  <span className="text-muted-foreground">2.</span>
+                  <Label className="text-foreground font-medium">Dados Básicos do Exame</Label>
+                </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className="space-y-2">
@@ -1227,72 +1302,6 @@ const DataInputModal = ({ trigger, initialTab = "sleep" }: DataInputModalProps) 
                   </div>
                 )}
 
-                {/* File Upload Section */}
-                <div className="space-y-4">
-                  <Label>Anexar Arquivos Médicos</Label>
-                  <div className="border-2 border-dashed border-border rounded-lg p-6">
-                    <div className="text-center">
-                      <Upload className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
-                      <p className="text-sm text-muted-foreground mb-2">
-                        Clique para anexar ou arraste arquivos aqui
-                      </p>
-                      <p className="text-xs text-muted-foreground mb-2">
-                        PDF, JPG, PNG, DOC, DOCX até 10MB
-                      </p>
-                      <div className="bg-blue-50 border border-blue-200 rounded p-2 mb-4">
-                        <p className="text-xs text-blue-700 flex items-center gap-1">
-                          <Zap className="w-3 h-3" />
-                          PDFs de exames são automaticamente processados para extrair dados!
-                        </p>
-                      </div>
-                      <Input
-                        type="file"
-                        multiple
-                        accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
-                        onChange={(e) => handleFileUpload(e.target.files)}
-                        className="hidden"
-                        id="file-upload"
-                        disabled={isExtracting}
-                      />
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={() => document.getElementById('file-upload')?.click()}
-                        disabled={isExtracting}
-                      >
-                        {isExtracting ? "Processando..." : "Selecionar Arquivos"}
-                      </Button>
-                    </div>
-                  </div>
-
-                  {/* File List */}
-                  {medicalData.files.length > 0 && (
-                    <div className="space-y-2">
-                      <Label>Arquivos Selecionados ({medicalData.files.length})</Label>
-                      <div className="space-y-2 max-h-32 overflow-y-auto">
-                        {medicalData.files.map((file, index) => (
-                          <div key={index} className="flex items-center justify-between p-2 bg-muted rounded-lg">
-                            <div className="flex items-center gap-2">
-                              <FileText className="w-4 h-4 text-muted-foreground" />
-                              <span className="text-sm truncate">{file.name}</span>
-                              <span className="text-xs text-muted-foreground">
-                                ({(file.size / 1024 / 1024).toFixed(1)}MB)
-                              </span>
-                            </div>
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => removeFile(index)}
-                            >
-                              <X className="w-4 h-4" />
-                            </Button>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
 
                 <div className="space-y-2">
                   <Label htmlFor="medical-notes">Observações Médicas</Label>

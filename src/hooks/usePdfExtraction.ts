@@ -31,7 +31,7 @@ export const usePdfExtraction = () => {
   const [isExtracting, setIsExtracting] = useState(false);
   const { toast } = useToast();
 
-  const convertPdfToBuffer = async (file: File): Promise<string> => {
+const convertFileToBuffer = async (file: File): Promise<string> => {
     try {
       const arrayBuffer = await file.arrayBuffer();
       const uint8Array = new Uint8Array(arrayBuffer);
@@ -48,55 +48,58 @@ export const usePdfExtraction = () => {
       const base64String = btoa(binaryString);
       return base64String;
     } catch (error) {
-      console.error('Error converting PDF to buffer:', error);
-      throw new Error('Falha ao converter PDF');
+      console.error('Error converting file to buffer:', error);
+      throw new Error('Falha ao converter arquivo');
     }
   };
 
-  const extractDataFromPdf = async (file: File): Promise<PdfExtractionResult> => {
+  const extractDataFromFile = async (file: File): Promise<PdfExtractionResult> => {
     if (!file) {
       return { success: false, error: 'Nenhum arquivo fornecido' };
     }
 
-    if (file.type !== 'application/pdf') {
-      return { success: false, error: 'Apenas arquivos PDF são suportados para extração automática' };
+    const supportedTypes = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png'];
+    if (!supportedTypes.includes(file.type)) {
+      return { success: false, error: 'Apenas PDFs e imagens (JPG, PNG) são suportados para extração automática' };
     }
 
     setIsExtracting(true);
 
     try {
+      const fileTypeMessage = file.type.startsWith('image/') ? 'imagem médica' : 'documento PDF';
       toast({
         title: "Extraindo dados...",
-        description: "Processando PDF e extraindo informações médicas. Aguarde...",
+        description: `Processando ${fileTypeMessage} com Gemini AI. Aguarde...`,
       });
 
-      // Convert PDF to buffer for Document AI processing
-      const pdfBuffer = await convertPdfToBuffer(file);
+      // Convert file to buffer for Gemini processing
+      const fileBuffer = await convertFileToBuffer(file);
       
-      if (!pdfBuffer) {
-        throw new Error('Não foi possível converter o PDF');
+      if (!fileBuffer) {
+        throw new Error('Não foi possível converter o arquivo');
       }
 
-      // Call the edge function to process the PDF with Google Cloud Document AI
-      const { data, error } = await supabase.functions.invoke('extract-pdf-data', {
+      // Call the edge function to process with Gemini AI
+      const { data, error } = await supabase.functions.invoke('extract-medical-data', {
         body: {
-          pdfBuffer: pdfBuffer,
-          fileName: file.name
+          fileBuffer: fileBuffer,
+          fileName: file.name,
+          fileType: file.type
         }
       });
 
       if (error) {
         console.error('Error from edge function:', error);
-        throw new Error(error.message || 'Erro ao processar PDF com IA');
+        throw new Error(error.message || 'Erro ao processar arquivo com IA');
       }
 
       if (!data.success) {
-        throw new Error(data.error || 'Falha no processamento do PDF');
+        throw new Error(data.error || 'Falha no processamento do arquivo');
       }
 
       toast({
         title: "Dados extraídos com sucesso!",
-        description: "As informações do exame foram extraídas automaticamente do PDF.",
+        description: "As informações médicas foram extraídas automaticamente com Gemini AI.",
       });
 
       return {
@@ -171,7 +174,7 @@ export const usePdfExtraction = () => {
   };
 
   return {
-    extractDataFromPdf,
+    extractDataFromFile,
     populateFormWithExtractedData,
     isExtracting
   };
