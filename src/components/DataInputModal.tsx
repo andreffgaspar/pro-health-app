@@ -329,33 +329,38 @@ const DataInputModal = ({ trigger, initialTab = "sleep" }: DataInputModalProps) 
       files: [...medicalData.files, ...validFiles]
     });
 
-    // If there's a PDF file, offer automatic extraction
-    const pdfFile = validFiles.find(file => file.type === 'application/pdf');
-    if (pdfFile) {
-      const shouldExtract = window.confirm(
-        `Detectamos um arquivo PDF (${pdfFile.name}). Deseja extrair automaticamente os dados do exame?`
-      );
-      
-      if (shouldExtract) {
-        await handlePdfExtraction(pdfFile);
-      }
+    // Trigger extraction automatically for supported files (PDF or images)
+    const supportedFiles = validFiles.filter(file => 
+      file.type === 'application/pdf' || file.type.startsWith('image/')
+    );
+    
+    if (supportedFiles.length > 0) {
+      // Extract data from the first supported file automatically
+      await handleFileExtraction(supportedFiles[0]);
     }
   };
 
-  const handlePdfExtraction = async (file: File) => {
-    const result = await extractDataFromFile(file);
-    
-    if (result.success && result.extractedData) {
-      const extractedFormData = populateFormWithExtractedData(result.extractedData);
-      
-      setMedicalData(prevData => ({
-        ...prevData,
-        ...extractedFormData
-      }));
-      
+  const handleFileExtraction = async (file: File) => {
+    try {
+      const result = await extractDataFromFile(file);
+      if (result.success && result.extractedData) {
+        const formData = populateFormWithExtractedData(result.extractedData);
+        setMedicalData(prev => ({
+          ...prev,
+          ...formData
+        }));
+        
+        toast({
+          title: "Dados extraídos com sucesso!",
+          description: `Informações extraídas automaticamente de ${file.name} usando Gemini AI.`,
+        });
+      }
+    } catch (error) {
+      console.error('Error in file extraction:', error);
       toast({
-        title: "Dados preenchidos automaticamente!",
-        description: "Verifique os campos extraídos e faça ajustes se necessário.",
+        title: "Erro na extração",
+        description: "Não foi possível extrair dados automaticamente. Preencha manualmente.",
+        variant: "destructive"
       });
     }
   };

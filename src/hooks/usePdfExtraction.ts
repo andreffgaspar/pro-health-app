@@ -7,6 +7,8 @@ import * as pdfjsLib from 'pdfjs-dist';
 pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
 
 interface ExtractedMedicalData {
+  exam_type?: string;
+  body_part?: string;
   exam_date?: string;
   doctor?: string;
   laboratory?: string;
@@ -15,7 +17,16 @@ interface ExtractedMedicalData {
     value: string;
     unit?: string;
     reference_range?: string;
+    status?: string;
   }>;
+  diagnosis?: string;
+  medications?: Array<{
+    name: string;
+    dosage?: string;
+    frequency?: string;
+  }>;
+  symptoms?: string[];
+  recommendations?: string[];
   report?: string;
   raw_text?: string;
 }
@@ -133,7 +144,6 @@ const convertFileToBuffer = async (file: File): Promise<string> => {
     }
 
     if (extractedData.exam_date) {
-      // Try to format the date if it's not already in the correct format
       try {
         const date = new Date(extractedData.exam_date);
         if (!isNaN(date.getTime())) {
@@ -152,6 +162,39 @@ const convertFileToBuffer = async (file: File): Promise<string> => {
       formData.labResults = extractedData.report;
     }
 
+    // Handle new Gemini extraction fields
+    if (extractedData.exam_type) {
+      formData.appointmentType = extractedData.exam_type;
+    }
+
+    if (extractedData.body_part) {
+      formData.symptoms = extractedData.body_part;
+    }
+
+    if (extractedData.diagnosis) {
+      formData.diagnosis = extractedData.diagnosis;
+    }
+
+    if (extractedData.medications && extractedData.medications.length > 0) {
+      const medicationsText = extractedData.medications
+        .map(med => {
+          let text = med.name;
+          if (med.dosage) text += ` - ${med.dosage}`;
+          if (med.frequency) text += ` (${med.frequency})`;
+          return text;
+        })
+        .join('\n');
+      formData.medications = medicationsText;
+    }
+
+    if (extractedData.symptoms && extractedData.symptoms.length > 0) {
+      formData.symptoms = extractedData.symptoms.join(', ');
+    }
+
+    if (extractedData.recommendations && extractedData.recommendations.length > 0) {
+      formData.recommendations = extractedData.recommendations.join('\n');
+    }
+
     // Format variables into a readable string
     if (extractedData.variables && extractedData.variables.length > 0) {
       const variablesText = extractedData.variables
@@ -159,6 +202,7 @@ const convertFileToBuffer = async (file: File): Promise<string> => {
           let text = `${v.name}: ${v.value}`;
           if (v.unit) text += ` ${v.unit}`;
           if (v.reference_range) text += ` (Ref: ${v.reference_range})`;
+          if (v.status) text += ` [${v.status}]`;
           return text;
         })
         .join('\n');
