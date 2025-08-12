@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
@@ -12,10 +13,12 @@ import {
   Calendar,
   Target,
   Clock,
-  Zap
+  Zap,
+  Smartphone
 } from "lucide-react";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from "recharts";
 import { supabase } from "@/integrations/supabase/client";
+import HealthKitDashboard from "./HealthKitDashboard";
 
 interface AthleteData {
   id: string;
@@ -61,6 +64,7 @@ interface AthleteEnvironmentViewProps {
 const AthleteEnvironmentView = ({ athleteId, athleteName }: AthleteEnvironmentViewProps) => {
   const [athleteData, setAthleteData] = useState<AthleteData[]>([]);
   const [loading, setLoading] = useState(true);
+  const [activeView, setActiveView] = useState('overview');
   const [todaysMetrics, setTodaysMetrics] = useState<ProcessedMetrics>({
     sleep: 0,
     heartRate: 0,
@@ -266,12 +270,36 @@ const AthleteEnvironmentView = ({ athleteId, athleteName }: AthleteEnvironmentVi
     return performanceData;
   };
 
+  if (activeView === 'healthkit') {
+    return <HealthKitDashboard athleteId={athleteId} athleteName={athleteName} />;
+  }
+
   return (
     <div className="bg-gradient-subtle p-6 space-y-6">
       {/* Header */}
-      <div className="text-center">
+      <div className="text-center space-y-4">
         <h2 className="text-2xl font-bold">Dashboard de {athleteName}</h2>
         <p className="text-muted-foreground">Visualização do ambiente do atleta</p>
+        
+        {/* View Toggle */}
+        <div className="flex justify-center gap-2">
+          <Button
+            variant={activeView === 'overview' ? 'default' : 'outline'}
+            onClick={() => setActiveView('overview')}
+            size="sm"
+          >
+            <Activity className="w-4 h-4 mr-2" />
+            Visão Geral
+          </Button>
+          <Button
+            variant={activeView === 'healthkit' ? 'default' : 'outline'}
+            onClick={() => setActiveView('healthkit')}
+            size="sm"
+          >
+            <Smartphone className="w-4 h-4 mr-2" />
+            HealthKit
+          </Button>
+        </div>
       </div>
 
       {/* Quick Metrics */}
