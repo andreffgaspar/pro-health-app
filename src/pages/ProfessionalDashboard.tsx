@@ -227,7 +227,10 @@ const ProfessionalDashboard = () => {
     }
     try {
       setSearchLoading(true);
-      const { data, error } = await supabase.rpc('search_athletes', {
+      const {
+        data,
+        error
+      } = await supabase.rpc('search_athletes', {
         search_query: query,
         requesting_user_id: user?.id
       });
@@ -341,23 +344,15 @@ const ProfessionalDashboard = () => {
   return <div className="min-h-screen bg-gradient-subtle">
       {/* Header */}
       <header className="bg-background/80 backdrop-blur-md border-b border-border sticky top-0 z-40">
-        <div className="container mx-auto px-4 py-3">
+        <div className="container mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 md:w-10 md:h-10 bg-gradient-performance rounded-lg flex items-center justify-center">
-                <Users className="w-4 h-4 md:w-6 md:h-6 text-secondary-foreground" />
+            <div className="flex items-center gap-4">
+              <div className="w-10 h-10 bg-gradient-performance rounded-lg flex items-center justify-center">
+                <Users className="w-6 h-6 text-secondary-foreground" />
               </div>
-              <div className="min-w-0 flex-1">
-                {profile?.full_name && (
-                  <h1 className="text-base md:text-xl font-bold truncate">
-                    <span className="hidden md:inline">Olá, Dr. {profile.full_name}!</span>
-                    <span className="md:hidden">Dr. {profile.full_name.split(' ')[0]}</span>
-                  </h1>
-                )}
-                <p className="text-xs md:text-sm text-muted-foreground">
-                  <span className="hidden md:inline">Dashboard Profissional</span>
-                  <span className="md:hidden">Dashboard</span>
-                </p>
+              <div>
+                {profile?.full_name && <h1 className="text-xl font-bold">Olá, Dr. {profile.full_name}!</h1>}
+                <p className="text-sm text-muted-foreground">Dashboard Profissional</p>
               </div>
             </div>
             
@@ -375,7 +370,7 @@ const ProfessionalDashboard = () => {
                 Plano Pro
               </Badge>
               <Button variant="ghost" size="icon" onClick={() => setShowProfileSettings(true)}>
-                <Settings className="w-5 h-5" />
+                
               </Button>
               <Button variant="ghost" size="icon" onClick={handleLogout}>
                 <LogOut className="w-5 h-5" />
@@ -485,30 +480,26 @@ const ProfessionalDashboard = () => {
         {/* Main Content - Flex grow para ocupar espaço disponível */}
         <div className="flex-1">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-2 md:grid-cols-5 mb-8 h-auto">
-            <TabsTrigger value="athletes" className="gap-1 md:gap-2 text-xs md:text-sm">
-              <Users className="w-3 h-3 md:w-4 md:h-4" />
-              <span className="hidden sm:inline">Meus Atletas</span>
-              <span className="sm:hidden">Atletas</span>
+          <TabsList className="grid w-full grid-cols-5 mb-8">
+            <TabsTrigger value="athletes" className="gap-2">
+              <Users className="w-4 h-4" />
+              Meus Atletas
             </TabsTrigger>
-            <TabsTrigger value="sessions" className="gap-1 md:gap-2 text-xs md:text-sm">
-              <Calendar className="w-3 h-3 md:w-4 md:h-4" />
-              <span className="hidden sm:inline">Agenda</span>
-              <span className="sm:hidden">Agenda</span>
+            <TabsTrigger value="sessions" className="gap-2">
+              <Calendar className="w-4 h-4" />
+              Agenda
             </TabsTrigger>
-            <TabsTrigger value="communication" className="gap-1 md:gap-2 text-xs md:text-sm">
-              <MessageSquare className="w-3 h-3 md:w-4 md:h-4" />
-              <span className="hidden sm:inline">Comunicação</span>
-              <span className="sm:hidden">Chat</span>
+            <TabsTrigger value="communication" className="gap-2">
+              <MessageSquare className="w-4 h-4" />
+              Comunicação
             </TabsTrigger>
-            <TabsTrigger value="ai-chat" className="gap-1 md:gap-2 text-xs md:text-sm">
-              <Brain className="w-3 h-3 md:w-4 md:h-4" />
+            <TabsTrigger value="ai-chat" className="gap-2">
+              <Brain className="w-4 h-4" />
               IA
             </TabsTrigger>
-            <TabsTrigger value="analytics" className="gap-1 md:gap-2 text-xs md:text-sm">
-              <TrendingUp className="w-3 h-3 md:w-4 md:h-4" />
-              <span className="hidden sm:inline">Análises</span>
-              <span className="sm:hidden">Stats</span>
+            <TabsTrigger value="analytics" className="gap-2">
+              <TrendingUp className="w-4 h-4" />
+              Análises
             </TabsTrigger>
           </TabsList>
 
