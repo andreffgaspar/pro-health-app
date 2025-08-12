@@ -20,8 +20,6 @@ import {
   Search,
   MoreVertical,
   UserPlus,
-  Phone,
-  Video,
   Paperclip
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
@@ -100,7 +98,7 @@ const CommunicationCenter = () => {
       id: group.id,
       name: group.name,
       type: 'group' as const,
-      lastMessage: 'Mensagem do grupo...',
+      lastMessage: 'Grupo de conversa',
       lastMessageTime: new Date(group.last_message_at).toLocaleTimeString('pt-BR', { 
         hour: '2-digit', 
         minute: '2-digit' 
@@ -109,18 +107,23 @@ const CommunicationCenter = () => {
       isOnline: false
     })),
     // Individual conversations
-    ...conversations.map(conv => ({
-      id: conv.id,
-      name: conv.other_party_name,
-      type: 'individual' as const,
-      lastMessage: 'Última mensagem...',
-      lastMessageTime: new Date(conv.updated_at).toLocaleTimeString('pt-BR', { 
-        hour: '2-digit', 
-        minute: '2-digit' 
-      }),
-      unreadCount: conv.unread_count,
-      isOnline: Math.random() > 0.5 // Mock online status
-    }))
+    ...conversations.map(conv => {
+      const lastMessages = messages[conv.id] || [];
+      const lastMessage = lastMessages.length > 0 ? lastMessages[lastMessages.length - 1] : null;
+      
+      return {
+        id: conv.id,
+        name: conv.other_party_name,
+        type: 'individual' as const,
+        lastMessage: lastMessage ? lastMessage.content : 'Clique para iniciar conversa',
+        lastMessageTime: conv.updated_at ? new Date(conv.updated_at).toLocaleTimeString('pt-BR', { 
+          hour: '2-digit', 
+          minute: '2-digit' 
+        }) : '',
+        unreadCount: conv.unread_count,
+        isOnline: Math.random() > 0.5 // Mock online status
+      };
+    })
   ].sort((a, b) => new Date(b.lastMessageTime || 0).getTime() - new Date(a.lastMessageTime || 0).getTime());
 
   useEffect(() => {
@@ -603,8 +606,10 @@ const CommunicationCenter = () => {
                         onClick={() => {
                           if (conversation.type === 'group') {
                             setSelectedGroupConversation(conversation.id);
+                            setSelectedConversation(null);
                           } else {
                             setSelectedConversation(conversation.id);
+                            setSelectedGroupConversation(null);
                           }
                         }}
                       >
@@ -672,12 +677,6 @@ const CommunicationCenter = () => {
                   )}
                 </div>
                 <div className="flex gap-1">
-                  <Button variant="ghost" size="icon">
-                    <Phone className="h-4 w-4" />
-                  </Button>
-                  <Button variant="ghost" size="icon">
-                    <Video className="h-4 w-4" />
-                  </Button>
                   <Button variant="ghost" size="icon">
                     <MoreVertical className="h-4 w-4" />
                   </Button>
@@ -906,8 +905,10 @@ const CommunicationCenter = () => {
                     onClick={() => {
                       if (conversation.type === 'group') {
                         setSelectedGroupConversation(conversation.id);
+                        setSelectedConversation(null);
                       } else {
                         setSelectedConversation(conversation.id);
+                        setSelectedGroupConversation(null);
                       }
                     }}
                   >
@@ -970,12 +971,6 @@ const CommunicationCenter = () => {
                   )}
                 </div>
                 <div className="flex gap-2">
-                  <Button variant="ghost" size="icon">
-                    <Phone className="h-4 w-4" />
-                  </Button>
-                  <Button variant="ghost" size="icon">
-                    <Video className="h-4 w-4" />
-                  </Button>
                   <Button variant="ghost" size="icon">
                     <MoreVertical className="h-4 w-4" />
                   </Button>
