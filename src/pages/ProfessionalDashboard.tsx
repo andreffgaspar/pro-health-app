@@ -341,15 +341,23 @@ const ProfessionalDashboard = () => {
   return <div className="min-h-screen bg-gradient-subtle">
       {/* Header */}
       <header className="bg-background/80 backdrop-blur-md border-b border-border sticky top-0 z-40">
-        <div className="container mx-auto px-6 py-4">
+        <div className="container mx-auto px-4 py-3">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="w-10 h-10 bg-gradient-performance rounded-lg flex items-center justify-center">
-                <Users className="w-6 h-6 text-secondary-foreground" />
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 md:w-10 md:h-10 bg-gradient-performance rounded-lg flex items-center justify-center">
+                <Users className="w-4 h-4 md:w-6 md:h-6 text-secondary-foreground" />
               </div>
-              <div>
-                {profile?.full_name && <h1 className="text-xl font-bold">Olá, Dr. {profile.full_name}!</h1>}
-                <p className="text-sm text-muted-foreground">Dashboard Profissional</p>
+              <div className="min-w-0 flex-1">
+                {profile?.full_name && (
+                  <h1 className="text-base md:text-xl font-bold truncate">
+                    <span className="hidden md:inline">Olá, Dr. {profile.full_name}!</span>
+                    <span className="md:hidden">Dr. {profile.full_name.split(' ')[0]}</span>
+                  </h1>
+                )}
+                <p className="text-xs md:text-sm text-muted-foreground">
+                  <span className="hidden md:inline">Dashboard Profissional</span>
+                  <span className="md:hidden">Dashboard</span>
+                </p>
               </div>
             </div>
             
