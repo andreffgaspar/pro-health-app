@@ -435,13 +435,31 @@ const AthleteProfileSettings = ({ open, onOpenChange }: AthleteProfileSettingsPr
         </DialogHeader>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-6">
-            <TabsTrigger value="profile">Perfil</TabsTrigger>
-            <TabsTrigger value="sports">Esporte</TabsTrigger>
-            <TabsTrigger value="health">Saúde</TabsTrigger>
-            <TabsTrigger value="professionals">Profissionais</TabsTrigger>
-            <TabsTrigger value="notifications">Notificações</TabsTrigger>
-            <TabsTrigger value="security">Segurança</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-1 h-auto p-1">
+            <TabsTrigger value="profile" className="text-xs sm:text-sm p-2 flex flex-col sm:flex-row items-center gap-1">
+              <User className="w-3 h-3 sm:w-4 sm:h-4" />
+              <span className="hidden sm:inline">Perfil</span>
+            </TabsTrigger>
+            <TabsTrigger value="sports" className="text-xs sm:text-sm p-2 flex flex-col sm:flex-row items-center gap-1">
+              <Activity className="w-3 h-3 sm:w-4 sm:h-4" />
+              <span className="hidden sm:inline">Esporte</span>
+            </TabsTrigger>
+            <TabsTrigger value="health" className="text-xs sm:text-sm p-2 flex flex-col sm:flex-row items-center gap-1">
+              <Heart className="w-3 h-3 sm:w-4 sm:h-4" />
+              <span className="hidden sm:inline">Saúde</span>
+            </TabsTrigger>
+            <TabsTrigger value="professionals" className="text-xs sm:text-sm p-2 flex flex-col sm:flex-row items-center gap-1">
+              <Users className="w-3 h-3 sm:w-4 sm:h-4" />
+              <span className="hidden sm:inline">Equipe</span>
+            </TabsTrigger>
+            <TabsTrigger value="notifications" className="text-xs sm:text-sm p-2 flex flex-col sm:flex-row items-center gap-1">
+              <Bell className="w-3 h-3 sm:w-4 sm:h-4" />
+              <span className="hidden sm:inline">Notifs</span>
+            </TabsTrigger>
+            <TabsTrigger value="security" className="text-xs sm:text-sm p-2 flex flex-col sm:flex-row items-center gap-1">
+              <Shield className="w-3 h-3 sm:w-4 sm:h-4" />
+              <span className="hidden sm:inline">Segurança</span>
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="profile" className="space-y-6">
