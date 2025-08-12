@@ -10,7 +10,6 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/co
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Separator } from '@/components/ui/separator';
 import { 
   Send, 
   MessageCircle, 
@@ -36,17 +35,6 @@ interface Professional {
 interface Athlete {
   user_id: string;
   full_name: string | null;
-}
-
-interface ConversationItem {
-  id: string;
-  name: string;
-  type: 'individual' | 'group';
-  lastMessage?: string;
-  lastMessageTime?: string;
-  unreadCount: number;
-  avatar?: string;
-  isOnline?: boolean;
 }
 
 interface GroupConversation {
@@ -91,47 +79,33 @@ const CommunicationCenter = () => {
   const isAthlete = profile?.user_type === 'athlete';
   const isProfessional = profile?.user_type === 'professional';
 
-  // Debug conversations data
-  useEffect(() => {
-    console.log('🔍 DEBUG: conversations data:', conversations);
-    console.log('🔍 DEBUG: messages data:', messages);
-  }, [conversations, messages]);
+  // Get current conversation name
+  const getCurrentConversationName = () => {
+    if (selectedConversation) {
+      const conv = conversations.find(c => c.id === selectedConversation);
+      return conv?.other_party_name || 'Conversa';
+    } else if (selectedGroupConversation) {
+      const group = groupConversations.find(g => g.id === selectedGroupConversation);
+      return group?.name || 'Grupo';
+    }
+    return 'Selecione uma conversa';
+  };
 
-  // Combine conversations for unified list
-  const allConversations: ConversationItem[] = [
-    // Group conversations
-    ...groupConversations.map(group => ({
-      id: group.id,
-      name: group.name,
-      type: 'group' as const,
-      lastMessage: 'Grupo de conversa',
-      lastMessageTime: new Date(group.last_message_at).toLocaleTimeString('pt-BR', { 
-        hour: '2-digit', 
-        minute: '2-digit' 
-      }),
-      unreadCount: 0,
-      isOnline: false
-    })),
-    // Individual conversations
-    ...conversations.map(conv => {
-      console.log('🔍 DEBUG: processing conversation:', conv);
-      const lastMessages = messages[conv.id] || [];
-      const lastMessage = lastMessages.length > 0 ? lastMessages[lastMessages.length - 1] : null;
-      
-      return {
-        id: conv.id,
-        name: conv.other_party_name || 'Nome não encontrado',
-        type: 'individual' as const,
-        lastMessage: lastMessage ? lastMessage.content : 'Clique para iniciar conversa',
-        lastMessageTime: conv.updated_at ? new Date(conv.updated_at).toLocaleTimeString('pt-BR', { 
-          hour: '2-digit', 
-          minute: '2-digit' 
-        }) : '',
-        unreadCount: conv.unread_count,
-        isOnline: Math.random() > 0.5 // Mock online status
-      };
-    })
-  ].sort((a, b) => new Date(b.lastMessageTime || 0).getTime() - new Date(a.lastMessageTime || 0).getTime());
+  // Get last message for a conversation
+  const getLastMessage = (conversationId: string) => {
+    const convMessages = messages[conversationId] || [];
+    const lastMessage = convMessages[convMessages.length - 1];
+    return lastMessage ? lastMessage.content : 'Clique para iniciar conversa';
+  };
+
+  // Filter conversations and groups based on search
+  const filteredConversations = conversations.filter(conv => 
+    conv.other_party_name?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+  
+  const filteredGroupConversations = groupConversations.filter(group =>
+    group.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   useEffect(() => {
     if (user && (isAthlete || isProfessional)) {
@@ -281,10 +255,11 @@ const CommunicationCenter = () => {
         .select('id')
         .eq('athlete_id', isAthlete ? user?.id : otherPartyId)
         .eq('professional_id', isAthlete ? otherPartyId : user?.id)
-        .single();
+        .maybeSingle();
 
       if (existingConv) {
         setSelectedConversation(existingConv.id);
+        setSelectedGroupConversation(null);
         setShowContactsList(false);
         return;
       }
@@ -305,7 +280,11 @@ const CommunicationCenter = () => {
       if (error) throw error;
 
       setSelectedConversation(data.id);
+      setSelectedGroupConversation(null);
       setShowContactsList(false);
+      
+      // Refresh conversations to get the new one with proper name
+      await refetchConversations?.();
       
       toast({
         title: "Conversa iniciada",
@@ -442,23 +421,21 @@ const CommunicationCenter = () => {
     }
   };
 
-  const currentConversationMessages = selectedConversation ? messages[selectedConversation] || [] : [];
-  const currentConversation = allConversations.find(conv => 
-    (conv.type === 'individual' && conv.id === selectedConversation) ||
-    (conv.type === 'group' && conv.id === selectedGroupConversation)
-  );
-
-  console.log('🔍 DEBUG: currentConversation:', currentConversation);
-  console.log('🔍 DEBUG: selectedConversation:', selectedConversation);
-  console.log('🔍 DEBUG: selectedGroupConversation:', selectedGroupConversation);
-
-  const filteredConversations = allConversations.filter(conv => 
-    conv.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const handleConversationClick = (conversationId: string, isGroup: boolean = false) => {
+    if (isGroup) {
+      setSelectedGroupConversation(conversationId);
+      setSelectedConversation(null);
+    } else {
+      setSelectedConversation(conversationId);
+      setSelectedGroupConversation(null);
+    }
+  };
 
   if (!isAthlete && !isProfessional) {
     return null;
   }
+
+  const currentConversationMessages = selectedConversation ? messages[selectedConversation] || [] : [];
 
   // Mobile Layout
   if (isMobile) {
@@ -602,7 +579,7 @@ const CommunicationCenter = () => {
             {/* Conversations List */}
             <ScrollArea className="flex-1">
               <div className="p-2">
-                {filteredConversations.length === 0 ? (
+                {filteredConversations.length === 0 && filteredGroupConversations.length === 0 ? (
                   <div className="text-center py-8 text-muted-foreground">
                     <MessageCircle className="h-12 w-12 mx-auto mb-4 opacity-50" />
                     <p>Nenhuma conversa encontrada</p>
@@ -610,44 +587,60 @@ const CommunicationCenter = () => {
                   </div>
                 ) : (
                   <div className="space-y-1">
-                    {filteredConversations.map((conversation) => (
+                    {/* Group Conversations */}
+                    {filteredGroupConversations.map((group) => (
                       <div
-                        key={conversation.id}
+                        key={`group-${group.id}`}
                         className="flex items-center gap-3 p-3 rounded-lg hover:bg-accent cursor-pointer"
-                        onClick={() => {
-                          if (conversation.type === 'group') {
-                            setSelectedGroupConversation(conversation.id);
-                            setSelectedConversation(null);
-                          } else {
-                            setSelectedConversation(conversation.id);
-                            setSelectedGroupConversation(null);
-                          }
-                        }}
+                        onClick={() => handleConversationClick(group.id, true)}
                       >
-                        <div className="relative">
-                          <Avatar className="h-12 w-12">
-                            <AvatarFallback>
-                              {conversation.type === 'group' ? (
-                                <Users className="h-6 w-6" />
-                              ) : (
-                                conversation.name.charAt(0).toUpperCase()
-                              )}
-                            </AvatarFallback>
-                          </Avatar>
-                          {conversation.type === 'individual' && conversation.isOnline && (
-                            <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-background rounded-full"></div>
-                          )}
-                        </div>
+                        <Avatar className="h-12 w-12">
+                          <AvatarFallback>
+                            <Users className="h-6 w-6" />
+                          </AvatarFallback>
+                        </Avatar>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center justify-between">
-                            <p className="font-medium truncate">{conversation.name}</p>
-                            <span className="text-xs text-muted-foreground">{conversation.lastMessageTime}</span>
+                            <p className="font-medium truncate">{group.name}</p>
+                            <span className="text-xs text-muted-foreground">
+                              {new Date(group.last_message_at).toLocaleTimeString('pt-BR', { 
+                                hour: '2-digit', 
+                                minute: '2-digit' 
+                              })}
+                            </span>
                           </div>
-                          <p className="text-sm text-muted-foreground truncate">{conversation.lastMessage}</p>
+                          <p className="text-sm text-muted-foreground truncate">Grupo de conversa</p>
                         </div>
-                        {conversation.unreadCount > 0 && (
+                      </div>
+                    ))}
+
+                    {/* Individual Conversations */}
+                    {filteredConversations.map((conversation) => (
+                      <div
+                        key={`conv-${conversation.id}`}
+                        className="flex items-center gap-3 p-3 rounded-lg hover:bg-accent cursor-pointer"
+                        onClick={() => handleConversationClick(conversation.id)}
+                      >
+                        <Avatar className="h-12 w-12">
+                          <AvatarFallback>
+                            {conversation.other_party_name?.charAt(0).toUpperCase() || 'U'}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between">
+                            <p className="font-medium truncate">{conversation.other_party_name || 'Usuário'}</p>
+                            <span className="text-xs text-muted-foreground">
+                              {new Date(conversation.updated_at).toLocaleTimeString('pt-BR', { 
+                                hour: '2-digit', 
+                                minute: '2-digit' 
+                              })}
+                            </span>
+                          </div>
+                          <p className="text-sm text-muted-foreground truncate">{getLastMessage(conversation.id)}</p>
+                        </div>
+                        {conversation.unread_count > 0 && (
                           <Badge variant="destructive" className="min-w-[20px] h-5 text-xs">
-                            {conversation.unreadCount}
+                            {conversation.unread_count}
                           </Badge>
                         )}
                       </div>
@@ -672,26 +665,24 @@ const CommunicationCenter = () => {
                 </Button>
                 <Avatar className="h-8 w-8">
                   <AvatarFallback>
-                    {currentConversation?.type === 'group' ? (
+                    {selectedGroupConversation ? (
                       <Users className="h-4 w-4" />
                     ) : (
-                      currentConversation?.name.charAt(0).toUpperCase()
+                      getCurrentConversationName().charAt(0).toUpperCase()
                     )}
                   </AvatarFallback>
                 </Avatar>
                 <div className="flex-1 min-w-0">
-                  <p className="font-medium truncate">{currentConversation?.name}</p>
-                  {currentConversation?.type === 'individual' && (
+                  <p className="font-medium truncate">{getCurrentConversationName()}</p>
+                  {selectedConversation && (
                     <p className="text-xs text-muted-foreground">
-                      {currentConversation.isOnline ? 'Online' : 'Visto por último às 15:30'}
+                      Online
                     </p>
                   )}
                 </div>
-                <div className="flex gap-1">
-                  <Button variant="ghost" size="icon">
-                    <MoreVertical className="h-4 w-4" />
-                  </Button>
-                </div>
+                <Button variant="ghost" size="icon">
+                  <MoreVertical className="h-4 w-4" />
+                </Button>
               </div>
             </div>
 
@@ -897,56 +888,75 @@ const CommunicationCenter = () => {
         {/* Conversations List */}
         <ScrollArea className="flex-1">
           <div className="p-2">
-            {filteredConversations.length === 0 ? (
+            {filteredConversations.length === 0 && filteredGroupConversations.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
                 <MessageCircle className="h-12 w-12 mx-auto mb-4 opacity-50" />
                 <p>Nenhuma conversa encontrada</p>
               </div>
             ) : (
               <div className="space-y-1">
-                {filteredConversations.map((conversation) => (
+                {/* Group Conversations */}
+                {filteredGroupConversations.map((group) => (
                   <div
-                    key={conversation.id}
+                    key={`group-${group.id}`}
                     className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-colors ${
-                      (conversation.type === 'individual' && conversation.id === selectedConversation) ||
-                      (conversation.type === 'group' && conversation.id === selectedGroupConversation)
+                      selectedGroupConversation === group.id
                         ? 'bg-primary text-primary-foreground'
                         : 'hover:bg-accent'
                     }`}
-                    onClick={() => {
-                      if (conversation.type === 'group') {
-                        setSelectedGroupConversation(conversation.id);
-                        setSelectedConversation(null);
-                      } else {
-                        setSelectedConversation(conversation.id);
-                        setSelectedGroupConversation(null);
-                      }
-                    }}
+                    onClick={() => handleConversationClick(group.id, true)}
                   >
-                    <div className="relative">
-                      <Avatar className="h-10 w-10">
-                        <AvatarFallback>
-                          {conversation.type === 'group' ? (
-                            <Users className="h-5 w-5" />
-                          ) : (
-                            conversation.name.charAt(0).toUpperCase()
-                          )}
-                        </AvatarFallback>
-                      </Avatar>
-                      {conversation.type === 'individual' && conversation.isOnline && (
-                        <div className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 border-2 border-background rounded-full"></div>
-                      )}
-                    </div>
+                    <Avatar className="h-10 w-10">
+                      <AvatarFallback>
+                        <Users className="h-5 w-5" />
+                      </AvatarFallback>
+                    </Avatar>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between">
-                        <p className="font-medium truncate text-sm">{conversation.name}</p>
-                        <span className="text-xs opacity-70">{conversation.lastMessageTime}</span>
+                        <p className="font-medium truncate text-sm">{group.name}</p>
+                        <span className="text-xs opacity-70">
+                          {new Date(group.last_message_at).toLocaleTimeString('pt-BR', { 
+                            hour: '2-digit', 
+                            minute: '2-digit' 
+                          })}
+                        </span>
                       </div>
-                      <p className="text-xs opacity-70 truncate">{conversation.lastMessage}</p>
+                      <p className="text-xs opacity-70 truncate">Grupo de conversa</p>
                     </div>
-                    {conversation.unreadCount > 0 && (
+                  </div>
+                ))}
+
+                {/* Individual Conversations */}
+                {filteredConversations.map((conversation) => (
+                  <div
+                    key={`conv-${conversation.id}`}
+                    className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-colors ${
+                      selectedConversation === conversation.id
+                        ? 'bg-primary text-primary-foreground'
+                        : 'hover:bg-accent'
+                    }`}
+                    onClick={() => handleConversationClick(conversation.id)}
+                  >
+                    <Avatar className="h-10 w-10">
+                      <AvatarFallback>
+                        {conversation.other_party_name?.charAt(0).toUpperCase() || 'U'}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between">
+                        <p className="font-medium truncate text-sm">{conversation.other_party_name || 'Usuário'}</p>
+                        <span className="text-xs opacity-70">
+                          {new Date(conversation.updated_at).toLocaleTimeString('pt-BR', { 
+                            hour: '2-digit', 
+                            minute: '2-digit' 
+                          })}
+                        </span>
+                      </div>
+                      <p className="text-xs opacity-70 truncate">{getLastMessage(conversation.id)}</p>
+                    </div>
+                    {conversation.unread_count > 0 && (
                       <Badge variant="destructive" className="min-w-[18px] h-4 text-xs">
-                        {conversation.unreadCount}
+                        {conversation.unread_count}
                       </Badge>
                     )}
                   </div>
@@ -966,26 +976,24 @@ const CommunicationCenter = () => {
               <div className="flex items-center gap-3">
                 <Avatar className="h-8 w-8">
                   <AvatarFallback>
-                    {currentConversation?.type === 'group' ? (
+                    {selectedGroupConversation ? (
                       <Users className="h-4 w-4" />
                     ) : (
-                      currentConversation?.name.charAt(0).toUpperCase()
+                      getCurrentConversationName().charAt(0).toUpperCase()
                     )}
                   </AvatarFallback>
                 </Avatar>
                 <div className="flex-1">
-                  <p className="font-medium">{currentConversation?.name}</p>
-                  {currentConversation?.type === 'individual' && (
+                  <p className="font-medium">{getCurrentConversationName()}</p>
+                  {selectedConversation && (
                     <p className="text-xs text-muted-foreground">
-                      {currentConversation.isOnline ? 'Online' : 'Visto por último às 15:30'}
+                      Online
                     </p>
                   )}
                 </div>
-                <div className="flex gap-2">
-                  <Button variant="ghost" size="icon">
-                    <MoreVertical className="h-4 w-4" />
-                  </Button>
-                </div>
+                <Button variant="ghost" size="icon">
+                  <MoreVertical className="h-4 w-4" />
+                </Button>
               </div>
             </div>
 
