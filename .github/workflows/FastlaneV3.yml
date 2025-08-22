@@ -37,7 +37,7 @@ jobs:
           node-version: 20
 
       - run: npm install --legacy-peer-deps
-      - run: NODE_ENV=production npm run build:cap
+      - run: NODE_ENV=production npm run build
 
       - run: rm -rf ios
       - run: |
