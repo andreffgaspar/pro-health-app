@@ -38,11 +38,14 @@ npm run dev
 
 ## Building the project
 
-Run `npm run build` to generate the production build in the `build/` directory.
+Run `npm run build` to automatically choose the correct build target for the current platform. In web preview environments this outputs to the `dist/` directory, while mobile previews (iOS/Android) output to the `www/` directory.
 
-For a Capacitor build, run `npm run build:cap` to output to the `www/` directory.
+To force a specific target:
 
-These `build` and `www` directories are generated and not committed to source control.
+- `npm run build:web` – always build the web preview (`dist/`).
+- `npm run build:cap` – build using Capacitor (`www/`).
+
+These `dist` and `www` directories are generated and not committed to source control.
 
 
 **Edit a file directly in GitHub**

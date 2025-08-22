@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "node scripts/build.mjs",
+    "build:web": "vite build",
     "build:dev": "vite build --mode development",
     "build:cap": "BUILD_TARGET=capacitor vite build",
     "lint": "eslint .",
