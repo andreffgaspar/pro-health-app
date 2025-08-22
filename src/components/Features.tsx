@@ -112,7 +112,11 @@ const Features = () => {
                   key={index} 
                   className="p-8 hover:shadow-sport transition-all duration-300 hover:-translate-y-2 group"
                 >
-                  <div className={`w-16 h-16 bg-${feature.gradient} rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300`}>
+                  <div className={`w-16 h-16 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300 ${
+                    feature.gradient === 'gradient-performance' ? 'bg-gradient-performance' :
+                    feature.gradient === 'gradient-hero' ? 'bg-gradient-hero' :
+                    feature.gradient === 'gradient-energy' ? 'bg-gradient-energy' : ''
+                  }`}>
                     <Icon className="w-8 h-8 text-white" />
                   </div>
                   <h4 className="text-xl font-semibold mb-4">{feature.title}</h4>
@@ -140,7 +144,11 @@ const Features = () => {
                   key={index} 
                   className="p-8 hover:shadow-performance transition-all duration-300 hover:-translate-y-2 group"
                 >
-                  <div className={`w-16 h-16 bg-${feature.gradient} rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300`}>
+                  <div className={`w-16 h-16 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300 ${
+                    feature.gradient === 'gradient-performance' ? 'bg-gradient-performance' :
+                    feature.gradient === 'gradient-hero' ? 'bg-gradient-hero' :
+                    feature.gradient === 'gradient-energy' ? 'bg-gradient-energy' : ''
+                  }`}>
                     <Icon className="w-8 h-8 text-white" />
                   </div>
                   <h4 className="text-xl font-semibold mb-4">{feature.title}</h4>
