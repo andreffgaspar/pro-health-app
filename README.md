@@ -36,6 +36,15 @@ npm i
 npm run dev
 ```
 
+## Building the project
+
+Run `npm run build` to generate the production build in the `build/` directory.
+
+For a Capacitor build, run `npm run build:cap` to output to the `www/` directory.
+
+These `build` and `www` directories are generated and not committed to source control.
+
+
 **Edit a file directly in GitHub**
 
 - Navigate to the desired file(s).
