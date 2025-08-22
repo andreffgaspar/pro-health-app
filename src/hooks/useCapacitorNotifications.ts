@@ -37,19 +37,19 @@ export const useCapacitorNotifications = () => {
   // Verificar se Capacitor está disponível
   useEffect(() => {
     const checkCapacitor = async () => {
-      try {
-        // @ts-ignore - Capacitor será carregado dinamicamente
-        const { Capacitor } = await import('@capacitor/core');
-        setIsCapacitorAvailable(Capacitor.isNativePlatform());
-        
-        if (Capacitor.isNativePlatform()) {
-          await initializeNotifications();
-        }
-      } catch (error) {
-        console.log('Capacitor não disponível - modo web');
-        setIsCapacitorAvailable(false);
+    try {
+      // @ts-ignore - Capacitor será carregado dinamicamente
+      const { Capacitor } = await import('@capacitor/core');
+      setIsCapacitorAvailable(Capacitor.isNativePlatform());
+
+      if (Capacitor.isNativePlatform()) {
+        await initializeNotifications();
       }
-    };
+    } catch (error) {
+      console.log('Capacitor não disponível - modo web');
+      setIsCapacitorAvailable(false);
+    }
+  };
 
     checkCapacitor();
   }, []);
@@ -61,17 +61,18 @@ export const useCapacitorNotifications = () => {
     try {
       // @ts-ignore
       const { LocalNotifications } = await import('@capacitor/local-notifications');
-      
+      if (!LocalNotifications) return;
+
       // Verificar permissão para notificações locais
-      const localPermission = await LocalNotifications.checkPermissions();
-      setHasPermission(localPermission.display === 'granted');
+      const localPermission = await LocalNotifications.checkPermissions?.();
+      setHasPermission(localPermission?.display === 'granted');
 
       // Configurar listeners para notificações locais
-      await LocalNotifications.addListener('localNotificationReceived', (notification) => {
+      await LocalNotifications.addListener?.('localNotificationReceived', (notification) => {
         console.log('Notificação local recebida:', notification);
       });
 
-      await LocalNotifications.addListener('localNotificationActionPerformed', (notificationAction) => {
+      await LocalNotifications.addListener?.('localNotificationActionPerformed', (notificationAction) => {
         console.log('Ação da notificação local:', notificationAction);
         handleNotificationAction(notificationAction);
       });
@@ -80,12 +81,12 @@ export const useCapacitorNotifications = () => {
       try {
         // @ts-ignore
         const pushModule = await import('@capacitor/push-notifications');
-        const { PushNotifications } = pushModule;
+        const { PushNotifications } = pushModule || {};
 
         // Verificar permissão para push notifications
-        const pushPermission = await PushNotifications.checkPermissions();
-        
-        if (pushPermission.receive === 'granted') {
+        const pushPermission = await PushNotifications?.checkPermissions?.();
+
+        if (pushPermission?.receive === 'granted') {
           await setupPushNotifications();
         }
 
@@ -103,27 +104,28 @@ export const useCapacitorNotifications = () => {
     try {
       // @ts-ignore
       const { PushNotifications } = await import('@capacitor/push-notifications');
+      if (!PushNotifications) return;
 
       // Registrar para push notifications
-      await PushNotifications.register();
+      await PushNotifications.register?.();
 
       // Listeners para push notifications
-      await PushNotifications.addListener('registration', (token: PushNotificationToken) => {
+      await PushNotifications.addListener?.('registration', (token: PushNotificationToken) => {
         console.log('Push registration success, token: ' + token.value);
         setPushToken(token.value);
         savePushToken(token.value);
       });
 
-      await PushNotifications.addListener('registrationError', (error: any) => {
+      await PushNotifications.addListener?.('registrationError', (error: any) => {
         console.error('Error on registration: ' + JSON.stringify(error));
       });
 
-      await PushNotifications.addListener('pushNotificationReceived', (notification: any) => {
+      await PushNotifications.addListener?.('pushNotificationReceived', (notification: any) => {
         console.log('Push notification received: ', notification);
         handlePushNotificationReceived(notification);
       });
 
-      await PushNotifications.addListener('pushNotificationActionPerformed', (notification: any) => {
+      await PushNotifications.addListener?.('pushNotificationActionPerformed', (notification: any) => {
         console.log('Push notification action performed', notification);
         handleNotificationAction(notification);
       });
@@ -148,9 +150,9 @@ export const useCapacitorNotifications = () => {
     try {
       // @ts-ignore
       const { LocalNotifications } = await import('@capacitor/local-notifications');
-      
-      const permission = await LocalNotifications.requestPermissions();
-      const granted = permission.display === 'granted';
+
+      const permission = await LocalNotifications?.requestPermissions?.();
+      const granted = permission?.display === 'granted';
       setHasPermission(granted);
 
       if (granted) {
@@ -158,7 +160,7 @@ export const useCapacitorNotifications = () => {
         try {
           // @ts-ignore
           const { PushNotifications } = await import('@capacitor/push-notifications');
-          await PushNotifications.requestPermissions();
+          await PushNotifications?.requestPermissions?.();
           await setupPushNotifications();
         } catch (error) {
           console.log('Push notifications não disponível');
@@ -202,8 +204,8 @@ export const useCapacitorNotifications = () => {
       // @ts-ignore
       const { LocalNotifications } = await import('@capacitor/local-notifications');
 
-      await LocalNotifications.schedule({
-        notifications: [config]
+      await LocalNotifications?.schedule?.({
+        notifications: [config],
       });
 
       console.log('Notificação local agendada:', config);
@@ -221,8 +223,8 @@ export const useCapacitorNotifications = () => {
       // @ts-ignore
       const { LocalNotifications } = await import('@capacitor/local-notifications');
 
-      await LocalNotifications.cancel({
-        notifications: [{ id }]
+      await LocalNotifications?.cancel?.({
+        notifications: [{ id }],
       });
 
     } catch (error) {
@@ -238,8 +240,8 @@ export const useCapacitorNotifications = () => {
       // @ts-ignore
       const { LocalNotifications } = await import('@capacitor/local-notifications');
 
-      const pending = await LocalNotifications.getPending();
-      return pending.notifications;
+      const pending = await LocalNotifications?.getPending?.();
+      return pending?.notifications || [];
 
     } catch (error) {
       console.error('Erro ao buscar notificações pendentes:', error);

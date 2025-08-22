@@ -17,6 +17,22 @@ export default defineConfig(({ mode }) => ({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
+      ...(isCapacitor
+        ? {}
+        : {
+            "capacitor-health": path.resolve(
+              __dirname,
+              "./src/stubs/capacitor-health.ts",
+            ),
+            "@capacitor/local-notifications": path.resolve(
+              __dirname,
+              "./src/stubs/local-notifications.ts",
+            ),
+            "@capacitor/push-notifications": path.resolve(
+              __dirname,
+              "./src/stubs/push-notifications.ts",
+            ),
+          }),
     },
   },
   build: {

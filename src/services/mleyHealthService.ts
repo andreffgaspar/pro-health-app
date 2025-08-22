@@ -57,14 +57,29 @@ class MleyHealthService {
     try {
       // Try to import the plugin dynamically for native platforms
       const healthModule = await import('capacitor-health');
-      Health = healthModule.Health;
-      
-      await healthKitLogger.info('MleyHealthService', 'initialize', 'Plugin imported, checking availability');
+      Health = healthModule?.Health;
+
+      if (!Health?.isHealthAvailable) {
+        await healthKitLogger.warning('MleyHealthService', 'initialize', 'Health plugin not available');
+        this.initialized = false;
+        return false;
+      }
+
+      await healthKitLogger.info(
+        'MleyHealthService',
+        'initialize',
+        'Plugin imported, checking availability',
+      );
       const result = await Health.isHealthAvailable();
-      await healthKitLogger.info('MleyHealthService', 'initialize', 'Health availability checked', { available: result.available });
-      
+      await healthKitLogger.info(
+        'MleyHealthService',
+        'initialize',
+        'Health availability checked',
+        { available: result?.available },
+      );
+
       this.initialized = true;
-      return result.available;
+      return !!result?.available;
     } catch (err) {
       await healthKitLogger.error('MleyHealthService', 'initialize', 'Failed to initialize', (err as Error).message);
       this.initialized = false;
@@ -86,8 +101,17 @@ class MleyHealthService {
       
       await healthKitLogger.info('MleyHealthService', 'requestPermissions', 'About to request permissions', { validPermissions });
       
-      const response = await Health.requestHealthPermissions({ 
-        permissions: validPermissions
+      if (!Health?.requestHealthPermissions) {
+        await healthKitLogger.warning(
+          'MleyHealthService',
+          'requestPermissions',
+          'Health plugin not available',
+        );
+        return false;
+      }
+
+      const response = await Health.requestHealthPermissions({
+        permissions: validPermissions,
       });
       
       await healthKitLogger.info('MleyHealthService', 'requestPermissions', 'Permissions requested successfully', { permissions: validPermissions, response });
@@ -114,11 +138,20 @@ class MleyHealthService {
         normalized: { start: normalizedStartDate.toISOString(), end: normalizedEndDate.toISOString() }
       });
       
+      if (!Health?.queryAggregated) {
+        await healthKitLogger.warning(
+          'MleyHealthService',
+          'queryAggregatedData',
+          'Health plugin not available',
+        );
+        return [];
+      }
+
       const result = await Health.queryAggregated({
         dataType,
         startDate: normalizedStartDate.toISOString(),
         endDate: normalizedEndDate.toISOString(),
-        bucket
+        bucket,
       });
 
       if (!result?.aggregatedData || !Array.isArray(result.aggregatedData)) {
